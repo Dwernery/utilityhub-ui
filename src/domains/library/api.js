@@ -57,3 +57,35 @@ export async function createSeries(seriesName) {
 
   return { name: seriesName };
 }
+
+export async function addBook({
+  title,
+  pages,
+  authorName,
+  seriesName,
+  isbn13,
+}) {
+  const response = await fetch(`${API_URL}/api/library/books`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      pages:
+        pages === "" || pages === null || pages === undefined
+          ? null
+          : Number(pages),
+      authorName,
+      seriesName: seriesName || null,
+      isbn13: isbn13 || null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to create book (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return "Success";
+}

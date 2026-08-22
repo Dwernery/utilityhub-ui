@@ -3,6 +3,7 @@ import SearchableDropdown from "./SearchableDropdown";
 import { useLibrary } from "../context/LibraryContext";
 import { useCreateAuthor } from "../hooks/useCreateAuthor";
 import { useCreateSeries } from "../hooks/useCreateSeries";
+import { useAddBook } from "../hooks/useAddBook";
 import { useToast } from "../../../context/ToastContext";
 
 export default function AddBookForm({ setShowAddForm }) {
@@ -17,8 +18,45 @@ export default function AddBookForm({ setShowAddForm }) {
     isbn: "",
   });
 
+  const handleAddBook = () => {
+    if (!newBook.title.trim() || !newBook.authorName.trim() || !newBook.pages || newBook.pages <= 0 || !newBook.isbn.trim()) {
+      addToast("Title, author, pages, and ISBN are required", "error");
+      return;
+    }
+
+    addBookMutation.mutate(
+      {
+        title: newBook.title.trim(),
+        authorName: newBook.authorName.trim(),
+        seriesName: newBook.seriesName.trim(),
+        pages: newBook.pages,
+        isbn13: newBook.isbn.trim(),
+      },
+      {
+        onSuccess: () => {
+          setNewBook({
+            title: "",
+            authorName: "",
+            seriesName: "",
+            pages: "",
+            isbn: "",
+          });
+          setShowAddForm(false);
+          addToast(`Book "${newBook.title.trim()}" saved`, "success");
+        },
+        onError: (err) => {
+          addToast(
+            `Failed to save book: ${err?.message || "Unknown error"}`,
+            "error",
+          );
+        },
+      },
+    );
+  };
+
   const createAuthor = useCreateAuthor();
   const createSeries = useCreateSeries();
+  const addBookMutation = useAddBook();
   const addToast = useToast();
 
   return (
@@ -29,6 +67,13 @@ export default function AddBookForm({ setShowAddForm }) {
           placeholder="Title *"
           value={newBook.title}
           onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <input
+          type="number"
+          placeholder="Pages *"
+          value={newBook.pages}
+          onChange={(e) => setNewBook({ ...newBook, pages: e.target.value })}
           className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <SearchableDropdown
@@ -77,13 +122,7 @@ export default function AddBookForm({ setShowAddForm }) {
           }
           addNewLabel="Add series"
         />
-        <input
-          type="number"
-          placeholder="Pages"
-          value={newBook.pages}
-          onChange={(e) => setNewBook({ ...newBook, pages: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+
         <input
           type="text"
           placeholder="ISBN (optional)"
@@ -94,7 +133,7 @@ export default function AddBookForm({ setShowAddForm }) {
       </div>
       <div className="flex gap-2">
         <button
-          //onClick={handleAddBook}
+          onClick={handleAddBook}
           className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
         >
           Save
@@ -102,13 +141,13 @@ export default function AddBookForm({ setShowAddForm }) {
         <button
           onClick={() => {
             setShowAddForm(false);
-            // setNewBook({
-            //   title: "",
-            //   author: "",
-            //   series: "",
-            //   totalPages: "",
-            //   isbn: "",
-            // });
+            setNewBook({
+              title: "",
+              author: "",
+              series: "",
+              totalPages: "",
+              isbn: "",
+            });
           }}
           className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
         >
