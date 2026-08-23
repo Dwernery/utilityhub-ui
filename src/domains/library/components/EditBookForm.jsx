@@ -49,7 +49,7 @@ export default function EditBookForm() {
         pages: selectedBook.pages,
         authorName: selectedBook.authorName.trim(),
         seriesName: selectedBook.seriesName?.trim() || "",
-        isbn13: selectedBook.isbn || "",
+        isbn13: selectedBook.isbn13 || "",
         status: selectedBook.status,
         startDate: selectedBook.startDate || null,
         endDate: selectedBook.endDate || null,
