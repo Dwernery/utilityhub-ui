@@ -11,13 +11,14 @@ import StarRating from "../components/StarRating";
 import { useLibrary } from "../context/LibraryContext";
 import AddBookForm from "../components/AddBookForm";
 import { useBooks } from "../hooks/useGetBooks";
+import BookDetailModal from "../components/BookDetailModal";
+import AuthorDetailModal from "../components/AuthorDetailModal";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const { data: books = [] } = useBooks();
-  const { openBookDialog, setAuthor } = useLibrary();
-
+  const { openBookDialog, selectedBook, author, setAuthor } = useLibrary();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
   let filteredBooks = books?.filter((book) => {
@@ -146,6 +147,17 @@ export function Inventory() {
           </div>
         )}
       </div>
+      {selectedBook && <BookDetailModal />}
+      {author && (
+        <AuthorDetailModal
+          author={author}
+          onClose={() => setAuthor(null)}
+          onBookClick={(book) => {
+            setAuthor(null);
+            openBookDialog(book);
+          }}
+        />
+      )}
     </>
   );
 }

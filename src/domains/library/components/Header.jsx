@@ -7,18 +7,15 @@ export default function Header() {
   const navigate = useNavigate();
   const { data: books = [] } = useBooks();
 
-  const activeTab = location.pathname.toLowerCase().includes("inventory")
-    ? "Inventory"
-    : location.pathname.toLowerCase().includes("metrics")
-      ? "Metrics"
-      : location.pathname.toLowerCase().includes("select")
-        ? "Select"
-        : "Inventory";
-
+  const tabMapping = {
+    "/library/inventory": "Inventory",
+    "/library/metrics": "Metrics",
+    "/library/select": "Select",
+  };
+  const activeTab = tabMapping[location.pathname] || "Inventory";
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.status === "READ").length;
-  const percentageComplete =
-    totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
+  const percentageComplete = totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
 
   return (
     <div className="mb-4 bg-white rounded-xl shadow-sm p-4 border border-slate-200">

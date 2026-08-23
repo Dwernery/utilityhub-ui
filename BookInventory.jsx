@@ -228,6 +228,7 @@ export default function BookInventoryDashboard() {
   const [selectedBook, setSelectedBook]   = useState(null);
   const [isEditingInDialog, setIsEditingInDialog] = useState(false);
   const [selectedReadingYear, setSelectedReadingYear] = useState(null);
+  const [showAddCurrentlyReading, setShowAddCurrentlyReading] = useState(false);
   const [currentlyReadingSearch, setCurrentlyReadingSearch]   = useState('');
   const [authorStatsFor, setAuthorStatsFor] = useState(null);
 
