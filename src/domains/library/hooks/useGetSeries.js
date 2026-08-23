@@ -5,5 +5,6 @@ export function useSeries() {
   return useQuery({
     queryKey: ["series"],
     queryFn: getSeries,
+    refetchOnWindowFocus: false,
   });
 }

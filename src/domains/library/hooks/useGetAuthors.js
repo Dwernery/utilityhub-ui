@@ -5,5 +5,6 @@ export function useAuthors() {
   return useQuery({
     queryKey: ["authors"],
     queryFn: getAuthors,
+    refetchOnWindowFocus: false,
   });
 }

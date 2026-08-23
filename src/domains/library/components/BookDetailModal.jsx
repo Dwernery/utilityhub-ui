@@ -20,6 +20,29 @@ export default function BookDetailModal() {
   const deleteBookMutation = useDeleteBook();
   const addToast = useToast();
 
+  const parseLocalDate = (dateStr) => {
+    if (!dateStr) return null;
+    const m = String(dateStr).match(/^(\d{4})-(\d{2})-(\d{2})(?:$|T)/);
+    if (m) {
+      const y = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const d = Number(m[3]);
+      return new Date(y, mo, d);
+    }
+    const dt = new Date(dateStr);
+    return Number.isNaN(dt.getTime()) ? null : dt;
+  };
+
+  const formatDate = (dateStr) => {
+    const dt = parseLocalDate(dateStr);
+    if (!dt) return "—";
+    return dt.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
   const handleRatingChange = (nextRating) => {
     if (!selectedBook?.id) return;
 
@@ -138,23 +161,13 @@ export default function BookDetailModal() {
                 <div className="text-center">
                   <div className="text-xs text-slate-400 mb-0.5">Started</div>
                   <div className="text-base font-bold text-slate-800">
-                    {selectedBook.startDate
-                      ? new Date(selectedBook.startDate).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric", year: "numeric" },
-                        )
-                      : "—"}
+                    {formatDate(selectedBook.startDate)}
                   </div>
                 </div>
                 <div className="text-center">
                   <div className="text-xs text-slate-400 mb-0.5">Finished</div>
                   <div className="text-base font-bold text-slate-800">
-                    {selectedBook.endDate
-                      ? new Date(selectedBook.endDate).toLocaleDateString(
-                          "en-US",
-                          { month: "short", day: "numeric", year: "numeric" },
-                        )
-                      : "—"}
+                    {formatDate(selectedBook.endDate)}
                   </div>
                 </div>
               </div>
