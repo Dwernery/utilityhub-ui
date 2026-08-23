@@ -93,10 +93,18 @@ export function Inventory() {
                 </span>
               </div>
               {books.map((book, i) => (
-                <button
+                <div
                   key={book.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => openBookDialog(book)}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors ${i < books.length - 1 ? "border-b border-slate-100" : ""}`}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      event.preventDefault();
+                      openBookDialog(book);
+                    }
+                  }}
+                  className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${i < books.length - 1 ? "border-b border-slate-100" : ""}`}
                 >
                   <div className="flex-shrink-0">
                     {book.status === "READ" ? (
@@ -128,7 +136,7 @@ export function Inventory() {
                     {book.pages}p
                   </span>
                   <ChevronDown className="w-4 h-4 text-slate-300 flex-shrink-0 -rotate-90" />
-                </button>
+                </div>
               ))}
             </div>
           ))}

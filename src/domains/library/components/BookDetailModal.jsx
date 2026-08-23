@@ -3,7 +3,7 @@ import { X } from "lucide-react";
 import StarRating from "./StarRating";
 import BookCover from "./BookCover";
 import EditBookForm from "./EditBookForm";
-import { useUpdateBookRating } from "../hooks/useUpdateBookRating";
+import { useUpdateBook } from "../hooks/useUpdateBook";
 import { useDeleteBook } from "../hooks/useDeleteBook";
 import { useToast } from "../../../context/ToastContext";
 
@@ -16,7 +16,7 @@ export default function BookDetailModal() {
     isEditingInDialog,
     closeBookDialog,
   } = useLibrary();
-  const updateBookRatingMutation = useUpdateBookRating();
+  const updateBookMutation = useUpdateBook();
   const deleteBookMutation = useDeleteBook();
   const addToast = useToast();
 
@@ -49,11 +49,8 @@ export default function BookDetailModal() {
     const prevRating = selectedBook.rating ?? 0;
     setSelectedBook({ ...selectedBook, rating: nextRating });
 
-    updateBookRatingMutation.mutate(
-      {
-        id: selectedBook.id,
-        rating: nextRating,
-      },
+    updateBookMutation.mutate(
+      { id: selectedBook.id, rating: nextRating },
       {
         onSuccess: () => {
           addToast(`Rated "${selectedBook.title}" ${nextRating}/5`, "success");

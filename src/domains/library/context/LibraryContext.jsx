@@ -7,6 +7,7 @@ export function LibraryProvider({ children }) {
   const { data: authors = [] } = useAuthors();
   const { data: series = [] } = useSeries();
   const [selectedBook, setSelectedBook] = useState(null);
+  const [selectedBookOriginal, setSelectedBookOriginal] = useState(null);
   const [author, setAuthor] = useState(null);
   const [isEditingInDialog, setIsEditingInDialog] = useState(false);
   const [customAuthors, setCustomAuthors] = useState([]);
@@ -27,17 +28,20 @@ export function LibraryProvider({ children }) {
 
   const openBookDialog = (book) => {
     setSelectedBook({ ...book });
+    setSelectedBookOriginal({ ...book });
     setIsEditingInDialog(false);
   };
   const closeBookDialog = () => {
     setSelectedBook(null);
     setIsEditingInDialog(false);
+    setSelectedBookOriginal(null);
   };
 
   return (
     <LibraryContext.Provider
       value={{
         selectedBook,
+        selectedBookOriginal,
         setSelectedBook,
         author,
         setAuthor,
@@ -45,6 +49,7 @@ export function LibraryProvider({ children }) {
         setIsEditingInDialog,
         openBookDialog,
         closeBookDialog,
+        setSelectedBookOriginal,
         setCustomAuthors,
         setCustomSeries,
         seriesOptions,

@@ -8,6 +8,8 @@ export default function EditBookForm() {
   const {
     closeBookDialog,
     selectedBook,
+    selectedBookOriginal,
+    setSelectedBookOriginal,
     setSelectedBook,
     setCustomAuthors,
     setCustomSeries,
@@ -42,31 +44,84 @@ export default function EditBookForm() {
       }
     }
 
-    updateBookMutation.mutate(
-      {
-        id: selectedBook.id,
-        title: selectedBook.title.trim(),
-        pages: selectedBook.pages,
-        authorName: selectedBook.authorName.trim(),
-        seriesName: selectedBook.seriesName?.trim() || "",
-        isbn13: selectedBook.isbn13 || "",
-        status: selectedBook.status,
-        startDate: selectedBook.startDate || null,
-        endDate: selectedBook.endDate || null,
+    // Build a minimal patch payload by diffing against the original opened book
+    const payload = { id: selectedBook.id };
+
+    const norm = (v) => (v === "" ? null : v);
+
+    const current = {
+      title: selectedBook.title?.trim(),
+      pages:
+        selectedBook.pages === "" ||
+        selectedBook.pages === null ||
+        selectedBook.pages === undefined
+          ? null
+          : Number(selectedBook.pages),
+      authorName: selectedBook.authorName?.trim(),
+      seriesName: norm(selectedBook.seriesName?.trim() || null),
+      isbn13: norm(selectedBook.isbn13 || null),
+      status: selectedBook.status,
+      startDate: selectedBook.startDate || null,
+      endDate: selectedBook.endDate || null,
+    };
+
+    const original = selectedBookOriginal
+      ? {
+          title: selectedBookOriginal.title?.trim(),
+          pages:
+            selectedBookOriginal.pages === "" ||
+            selectedBookOriginal.pages === null ||
+            selectedBookOriginal.pages === undefined
+              ? null
+              : Number(selectedBookOriginal.pages),
+          authorName: selectedBookOriginal.authorName?.trim(),
+          seriesName: norm(selectedBookOriginal.seriesName || null),
+          isbn13: norm(selectedBookOriginal.isbn13 || null),
+          status: selectedBookOriginal.status,
+          startDate: selectedBookOriginal.startDate || null,
+          endDate: selectedBookOriginal.endDate || null,
+        }
+      : null;
+
+    const fields = [
+      "title",
+      "pages",
+      "authorName",
+      "seriesName",
+      "isbn13",
+      "status",
+      "startDate",
+      "endDate",
+    ];
+
+    for (const f of fields) {
+      const cur = current[f];
+      const orig = original ? original[f] : undefined;
+      const changed = orig === undefined ? true : cur !== orig;
+      if (changed) payload[f] = cur;
+    }
+
+    // If nothing changed, just close the dialog
+    if (Object.keys(payload).length <= 1) {
+      setIsEditingInDialog(false);
+      addToast("No changes to save", "info");
+      return;
+    }
+
+    updateBookMutation.mutate(payload, {
+      onSuccess: () => {
+        addToast(`Book "${selectedBook.title.trim()}" updated`, "success");
+        // Update the original snapshot so subsequent diffs are correct
+        setSelectedBookOriginal({ ...selectedBook });
+        setIsEditingInDialog(false);
       },
-      {
-        onSuccess: () => {
-          addToast(`Book "${selectedBook.title.trim()}" updated`, "success");
-          setIsEditingInDialog(false);
-        },
-        onError: (err) => {
-          addToast(
-            `Failed to update book: ${err?.message || "Unknown error"}`,
-            "error",
-          );
-        },
+      onError: (err) => {
+        addToast(
+          `Failed to update book: ${err?.message || "Unknown error"}`,
+          "error",
+        );
       },
-    );
+    });
   };
 
   return (

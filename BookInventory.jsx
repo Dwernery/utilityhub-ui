@@ -228,7 +228,6 @@ export default function BookInventoryDashboard() {
   const [selectedBook, setSelectedBook]   = useState(null);
   const [isEditingInDialog, setIsEditingInDialog] = useState(false);
   const [selectedReadingYear, setSelectedReadingYear] = useState(null);
-  const [showAddCurrentlyReading, setShowAddCurrentlyReading] = useState(false);
   const [currentlyReadingSearch, setCurrentlyReadingSearch]   = useState('');
   const [authorStatsFor, setAuthorStatsFor] = useState(null);
 
@@ -266,13 +265,7 @@ export default function BookInventoryDashboard() {
 
 
 
-  const handleAddBook = () => {
-    if (newBook.title && newBook.author) {
-      setBooks(p => [...p, { ...newBook, id: Date.now(), status: 'unread', totalPages: parseInt(newBook.totalPages) || 0, currentPage: 0, startDate: null, endDate: null, isbn: newBook.isbn || '', rating: 0 }]);
-      setNewBook({ title: '', author: '', series: '', totalPages: '', isbn: '' });
-      setShowAddForm(false);
-    }
-  };
+
   const updateBookProgress = (id, v) => setBooks(books.map(b => b.id === id ? { ...b, currentPage: parseInt(v) || 0 } : b));
   const deleteBook         = (id) => { setBooks(books.filter(b => b.id !== id)); setSelectedBook(null); setIsEditingInDialog(false); };
   const saveBookFromDialog = () => { if (selectedBook?.title && selectedBook?.author) { setBooks(books.map(b => b.id === selectedBook.id ? selectedBook : b)); setIsEditingInDialog(false); } };
@@ -497,39 +490,7 @@ export default function BookInventoryDashboard() {
 
       {/* Start Reading Modal */}
       {showAddCurrentlyReading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-0 sm:p-4" onClick={() => setShowAddCurrentlyReading(false)}>
-          <div className="bg-white w-full sm:rounded-xl sm:max-w-3xl max-h-[85vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="sticky top-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-              <h2 className="font-semibold text-slate-800">Start Reading</h2>
-              <button onClick={() => { setShowAddCurrentlyReading(false); setCurrentlyReadingSearch(''); }}><X className="w-5 h-5 text-slate-400" /></button>
-            </div>
-            <div className="p-4">
-              <div className="relative mb-3">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                <input type="text" placeholder="Search…" value={currentlyReadingSearch} onChange={e => setCurrentlyReadingSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
-              <div className="space-y-2">
-                {books.filter(b => b.status === 'unread')
-                  .filter(b => !currentlyReadingSearch || b.title.toLowerCase().includes(currentlyReadingSearch.toLowerCase()) || b.author.toLowerCase().includes(currentlyReadingSearch.toLowerCase()))
-                  .sort((a, b) => a.title.localeCompare(b.title))
-                  .map(book => (
-                    <button key={book.id} onClick={() => startReading(book.id)}
-                      className="w-full text-left flex items-center gap-3 p-3 border border-slate-200 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors">
-                      <div className="w-9 h-12 rounded flex-shrink-0 overflow-hidden">
-                        <BookCover book={book} className="w-full h-full" />
-                      </div>
-                      <div className="min-w-0">
-                        <div className="text-sm font-medium text-slate-800 truncate">{book.title}</div>
-                        <div className="text-xs text-slate-500">{book.author}</div>
-                        {book.series && <div className="text-xs text-blue-500 mt-0.5">{book.series}</div>}
-                      </div>
-                    </button>
-                  ))}
-              </div>
-            </div>
-          </div>
-        </div>
+
       )}
     </div>
   );
