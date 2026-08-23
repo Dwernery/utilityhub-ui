@@ -89,3 +89,42 @@ export async function addBook({
 
   return "Success";
 }
+
+export async function updateBook({
+  id,
+  title,
+  pages,
+  authorName,
+  seriesName,
+  isbn13,
+  status,
+  startDate,
+  endDate,
+}) {
+  const response = await fetch(`${API_URL}/api/library/books/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      title,
+      pages:
+        pages === "" || pages === null || pages === undefined
+          ? null
+          : Number(pages),
+      authorName,
+      seriesName: seriesName || null,
+      isbn13: isbn13 || null,
+      status,
+      startDate: startDate || null,
+      endDate: endDate || null,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to update book (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return "Success";
+}
