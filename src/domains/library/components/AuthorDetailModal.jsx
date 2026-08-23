@@ -76,7 +76,7 @@ export default function AuthorDetailModal({ author, onClose, onBookClick }) {
                   {book.status === "READ" && (
                     <CheckCircle2 className="w-3.5 h-3.5 text-green-500" />
                   )}
-                  {book.status === "IN-PROGRESS" && (
+                  {book.status === "IN_PROGRESS" && (
                     <div className="w-3.5 h-3.5 rounded-full border-2 border-blue-400 flex items-center justify-center">
                       <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                     </div>

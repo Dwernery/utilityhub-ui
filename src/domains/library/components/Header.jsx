@@ -1,12 +1,19 @@
 import { Book } from "lucide-react";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useBooks } from "../hooks/useGetBooks";
 
 export default function Header() {
-  const [activeTab, setActiveTab] = useState("Inventory");
+  const location = useLocation();
   const navigate = useNavigate();
   const { data: books = [] } = useBooks();
+
+  const activeTab = location.pathname.toLowerCase().includes("inventory")
+    ? "Inventory"
+    : location.pathname.toLowerCase().includes("metrics")
+      ? "Metrics"
+      : location.pathname.toLowerCase().includes("select")
+        ? "Select"
+        : "Inventory";
 
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.status === "READ").length;
@@ -43,10 +50,7 @@ export default function Header() {
           {["Inventory", "Metrics", "Select"].map((label) => (
             <button
               key={label}
-              onClick={() => {
-                setActiveTab(label);
-                navigate(`/library/${label}`);
-              }}
+              onClick={() => navigate(`/library/${label.toLowerCase()}`)}
               className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === label ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-500 hover:text-slate-700"}`}
             >
               {label}

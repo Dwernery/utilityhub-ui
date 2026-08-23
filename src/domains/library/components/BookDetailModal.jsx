@@ -3,15 +3,70 @@ import { X } from "lucide-react";
 import StarRating from "./StarRating";
 import BookCover from "./BookCover";
 import EditBookForm from "./EditBookForm";
+import { useUpdateBookRating } from "../hooks/useUpdateBookRating";
+import { useDeleteBook } from "../hooks/useDeleteBook";
+import { useToast } from "../../../context/ToastContext";
 
 export default function BookDetailModal() {
   const {
     setIsEditingInDialog,
     selectedBook,
+    setSelectedBook,
     setAuthor,
     isEditingInDialog,
     closeBookDialog,
   } = useLibrary();
+  const updateBookRatingMutation = useUpdateBookRating();
+  const deleteBookMutation = useDeleteBook();
+  const addToast = useToast();
+
+  const handleRatingChange = (nextRating) => {
+    if (!selectedBook?.id) return;
+
+    const prevRating = selectedBook.rating ?? 0;
+    setSelectedBook({ ...selectedBook, rating: nextRating });
+
+    updateBookRatingMutation.mutate(
+      {
+        id: selectedBook.id,
+        rating: nextRating,
+      },
+      {
+        onSuccess: () => {
+          addToast(`Rated "${selectedBook.title}" ${nextRating}/5`, "success");
+        },
+        onError: (err) => {
+          setSelectedBook({ ...selectedBook, rating: prevRating });
+          addToast(
+            `Failed to save rating: ${err?.message || "Unknown error"}`,
+            "error",
+          );
+        },
+      },
+    );
+  };
+
+  const handleDeleteBook = () => {
+    if (!selectedBook?.id) return;
+
+    const confirmed = window.confirm(
+      `Delete "${selectedBook.title}" from your library?`,
+    );
+    if (!confirmed) return;
+
+    deleteBookMutation.mutate(selectedBook.id, {
+      onSuccess: () => {
+        addToast(`Deleted "${selectedBook.title}"`, "success");
+        closeBookDialog();
+      },
+      onError: (err) => {
+        addToast(
+          `Failed to delete book: ${err?.message || "Unknown error"}`,
+          "error",
+        );
+      },
+    });
+  };
 
   return (
     <div
@@ -68,19 +123,7 @@ export default function BookDetailModal() {
               <div className="mt-3 flex items-center gap-2">
                 <StarRating
                   value={selectedBook.rating || 0}
-                  //   onChange={
-                  //     selectedBook.status === "read"
-                  //       ? (r) => {
-                  //           const u = { ...selectedBook, rating: r };
-                  //           setSelectedBook(u);
-                  //           setBooks(
-                  //             books.map((b) =>
-                  //               b.id === selectedBook.id ? u : b,
-                  //             ),
-                  //           );
-                  //         }
-                  //       : null
-                  //   }
+                  onChange={handleRatingChange}
                   readonly={selectedBook.status !== "READ"}
                 />
               </div>
@@ -116,9 +159,9 @@ export default function BookDetailModal() {
                 </div>
               </div>
 
-              {selectedBook.isbn && (
+              {(selectedBook.isbn13 ?? selectedBook.isbn) && (
                 <div className="mt-2 text-xs text-slate-400">
-                  ISBN: {selectedBook.isbn}
+                  ISBN: {selectedBook.isbn13 ?? selectedBook.isbn}
                 </div>
               )}
 
@@ -130,13 +173,11 @@ export default function BookDetailModal() {
                   Edit
                 </button>
                 <button
-                  //   onClick={() => {
-                  //     if (window.confirm("Delete this book?"))
-                  //       deleteBook(selectedBook.id);
-                  //   }}
-                  className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100"
+                  onClick={handleDeleteBook}
+                  className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-60"
+                  disabled={deleteBookMutation.isPending}
                 >
-                  Delete
+                  {deleteBookMutation.isPending ? "Deleting..." : "Delete"}
                 </button>
               </div>
             </div>

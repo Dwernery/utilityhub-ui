@@ -18,12 +18,20 @@ export function Inventory() {
   const { data: books = [] } = useBooks();
   const { openBookDialog, setAuthor } = useLibrary();
 
-  let filteredBooks = books?.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.authorName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      book.seriesName?.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  let filteredBooks = books?.filter((book) => {
+    const title = String(book?.title ?? "").toLowerCase();
+    const author = String(book?.authorName ?? "").toLowerCase();
+    const series = String(book?.seriesName ?? "").toLowerCase();
+
+    return (
+      !normalizedSearch ||
+      title.includes(normalizedSearch) ||
+      author.includes(normalizedSearch) ||
+      series.includes(normalizedSearch)
+    );
+  });
 
   const bookGroups = useMemo(() => {
     const groups = {};
@@ -93,7 +101,7 @@ export function Inventory() {
                   <div className="flex-shrink-0">
                     {book.status === "READ" ? (
                       <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : book.status === "IN-PROGRESS" ? (
+                    ) : book.status === "IN_PROGRESS" ? (
                       <div className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center">
                         <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
                       </div>

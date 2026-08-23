@@ -15,11 +15,17 @@ export default function AddBookForm({ setShowAddForm }) {
     authorName: "",
     seriesName: "",
     pages: "",
-    isbn: "",
+    isbn13: "",
   });
 
   const handleAddBook = () => {
-    if (!newBook.title.trim() || !newBook.authorName.trim() || !newBook.pages || newBook.pages <= 0 || !newBook.isbn.trim()) {
+    if (
+      !newBook.title.trim() ||
+      !newBook.authorName.trim() ||
+      !newBook.pages ||
+      newBook.pages <= 0 ||
+      !newBook.isbn13.trim()
+    ) {
       addToast("Title, author, pages, and ISBN are required", "error");
       return;
     }
@@ -30,7 +36,7 @@ export default function AddBookForm({ setShowAddForm }) {
         authorName: newBook.authorName.trim(),
         seriesName: newBook.seriesName.trim(),
         pages: newBook.pages,
-        isbn13: newBook.isbn.trim(),
+        isbn13: newBook.isbn13.trim(),
       },
       {
         onSuccess: () => {
@@ -39,7 +45,7 @@ export default function AddBookForm({ setShowAddForm }) {
             authorName: "",
             seriesName: "",
             pages: "",
-            isbn: "",
+            isbn13: "",
           });
           setShowAddForm(false);
           addToast(`Book "${newBook.title.trim()}" saved`, "success");
@@ -126,8 +132,8 @@ export default function AddBookForm({ setShowAddForm }) {
         <input
           type="text"
           placeholder="ISBN (optional)"
-          value={newBook.isbn}
-          onChange={(e) => setNewBook({ ...newBook, isbn: e.target.value })}
+          value={newBook.isbn13}
+          onChange={(e) => setNewBook({ ...newBook, isbn13: e.target.value })}
           className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2"
         />
       </div>
@@ -143,10 +149,10 @@ export default function AddBookForm({ setShowAddForm }) {
             setShowAddForm(false);
             setNewBook({
               title: "",
-              author: "",
-              series: "",
-              totalPages: "",
-              isbn: "",
+              authorName: "",
+              seriesName: "",
+              pages: "",
+              isbn13: "",
             });
           }}
           className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"

@@ -128,3 +128,40 @@ export async function updateBook({
 
   return "Success";
 }
+
+export async function updateBookRating({ id, rating }) {
+  const normalizedRating =
+    rating === null || rating === undefined ? 0 : Number(rating);
+
+  const response = await fetch(`${API_URL}/api/library/books/${id}/rating`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(normalizedRating),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to update book rating (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return "Success";
+}
+
+export async function deleteBook(id) {
+  const bookId = typeof id === "object" && id !== null ? id.id : id;
+
+  const response = await fetch(`${API_URL}/api/library/books/${bookId}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to delete book (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return "Success";
+}
