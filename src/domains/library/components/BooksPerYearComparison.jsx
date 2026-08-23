@@ -87,7 +87,7 @@ export const BooksPerYearComparison = ({
                       {yd.booksPercentChange !== null &&
                         trendMetric(
                           yd.booksPercentChange,
-                          (value) => `${value > 0 ? "+" : ""}${value}%`,
+                          (value) => `${value > 0 ? "+" : ""}${value}`,
                           "%",
                         )}
                     </div>
