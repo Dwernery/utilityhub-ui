@@ -23,34 +23,6 @@ export const BooksPerYearComparison = ({
           .map((yd) => {
             const isSel = selectedReadingYear === yd.year;
             const hasDiff = yd.booksDiff !== null;
-
-            const trendMetric = (value, formatter, label) => {
-              const isPositive = value > 0;
-              const isNegative = value < 0;
-              const Icon = isPositive
-                ? ArrowUpRight
-                : isNegative
-                  ? ArrowDownRight
-                  : ArrowRight;
-              const tone = isPositive
-                ? "text-green-600"
-                : isNegative
-                  ? "text-red-500"
-                  : "text-slate-400";
-
-              return (
-                <div className="flex min-w-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5">
-                  <Icon className={`w-3 h-3 flex-shrink-0 ${tone}`} />
-                  <span className={`text-[10px] font-semibold ${tone}`}>
-                    {formatter(value)}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-[0.12em] text-slate-400">
-                    {label}
-                  </span>
-                </div>
-              );
-            };
-
             const pairedTrendMetric = (diff, percent, label) => {
               if (diff === null || percent === null) return null;
 

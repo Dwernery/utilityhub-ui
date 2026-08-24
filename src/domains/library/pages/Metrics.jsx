@@ -8,6 +8,7 @@ import { BooksPerYearDetails } from "../components/metrics/BooksPerYearDetails";
 export default function Metrics() {
   const { data: books = [] } = useBooks();
   const [selectedReadingYear, setSelectedReadingYear] = useState(null);
+  const [graphMetric, setGraphMetric] = useState("books");
 
   const metrics = useMemo(() => {
     const readBooks = books.filter((b) => b.status === "READ" && b.endDate);
@@ -92,6 +93,8 @@ export default function Metrics() {
         metrics={metrics}
         selectedReadingYear={selectedReadingYear}
         setSelectedReadingYear={setSelectedReadingYear}
+        graphMetric={graphMetric}
+        setGraphMetric={setGraphMetric}
       />
       <BooksPerYearComparison
         metrics={metrics}
