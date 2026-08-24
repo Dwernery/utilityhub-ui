@@ -36,7 +36,7 @@ export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
               </div>
             ))
           : seriesGroups[category].map(
-              ({ series, nextBook, totalInSeries }) => {
+              ({ series, representativeBook, totalInSeries }) => {
                 const isSelected = pick?.seriesName === series;
                 return (
                   <div
@@ -44,7 +44,10 @@ export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
                     className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors ${isSelected ? "bg-blue-50" : ""}`}
                   >
                     <div className="w-7 h-10 rounded flex-shrink-0 overflow-hidden">
-                      <BookCover book={nextBook} className="w-full h-full" />
+                      <BookCover
+                        book={representativeBook}
+                        className="w-full h-full"
+                      />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div
@@ -53,7 +56,8 @@ export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
                         {series}
                       </div>
                       <div className="text-xs text-slate-400 truncate">
-                        {nextBook.authorName} · Book 1 of {totalInSeries}
+                        {representativeBook.authorName} · {totalInSeries} books
+                        in the series
                       </div>
                     </div>
                     {isSelected && (

@@ -46,7 +46,7 @@ export const RandomSelector = ({
                     {pick.seriesName}
                   </span>
                   <span className="text-xs text-slate-400">
-                    Book 1 of {seriesSizes[pick.seriesName]}
+                    {seriesSizes[pick.seriesName]} books in the series
                   </span>
                 </div>
               )}
@@ -58,15 +58,9 @@ export const RandomSelector = ({
           </div>
           <div className="flex gap-2 px-4 pb-4">
             <button
-              //   onClick={() => onStartReading(pick.id)}
-              className="flex-1 bg-blue-600 text-white py-2.5 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors flex items-center justify-center gap-1.5"
-            >
-              <Play className="w-3.5 h-3.5 fill-white" /> Start reading
-            </button>
-            <button
               onClick={roll}
               disabled={isSpinning}
-              className="bg-slate-100 text-slate-600 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center gap-1.5 disabled:opacity-50"
+              className="flex-1 bg-slate-100 text-slate-600 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
             >
               <RotateCcw
                 className={`w-4 h-4 ${isSpinning ? "animate-spin" : ""}`}

@@ -42,26 +42,26 @@ export default function Randomize() {
   const seriesGroups = useMemo(() => {
     const make = (cat) => {
       const bySeries = {};
-      // collect ALL books in the series (not just unread) to get book 1
       pools[cat].forEach((b) => {
         if (!bySeries[b.seriesName]) bySeries[b.seriesName] = [];
         bySeries[b.seriesName].push(b);
       });
+
       return Object.entries(bySeries)
         .map(([series]) => {
-          // Always show the first book in the series by id, which is book 1
-          const allSeriesBooks = books
+          const firstBook = books
             .filter((b) => b.seriesName === series)
-            .sort((a, b) => a.id - b.id);
-          const firstBook = allSeriesBooks[0];
+            .sort((a, b) => a.id - b.id)[0];
+
           return {
             series,
-            nextBook: firstBook,
+            representativeBook: firstBook,
             totalInSeries: seriesSizes[series],
           };
         })
         .sort((a, b) => a.series.localeCompare(b.series));
     };
+
     return { short: make("short"), long: make("long") };
   }, [pools, books, seriesSizes]);
 
@@ -122,7 +122,7 @@ export default function Randomize() {
       );
 
       lastPickRef.current = next;
-      setPick(next.nextBook);
+      setPick(next.representativeBook);
       setIsSpinning(false);
       spinTimeoutRef.current = null;
     }, 300);
