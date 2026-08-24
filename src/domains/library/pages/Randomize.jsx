@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useBooks } from "../hooks/useGetBooks.js";
+import { useUpdateBook } from "../hooks/useUpdateBook.js";
 import { Book } from "lucide-react";
+import { useToast } from "../../../context/ToastContext.jsx";
 import { RandomCategories } from "../components/randomize/RandomCategories.jsx";
 import { RandomSelector } from "../components/randomize/RandomSelector.jsx";
 import { EligibleBooks } from "../components/randomize/EligibleBooks.jsx";
@@ -12,6 +14,8 @@ export default function Randomize() {
   const lastPickRef = useRef(null);
   const spinTimeoutRef = useRef(null);
   const { data: books = [] } = useBooks();
+  const updateBookMutation = useUpdateBook();
+  const addToast = useToast();
 
   const seriesSizes = useMemo(() => {
     const map = {};
@@ -29,15 +33,34 @@ export default function Randomize() {
     [seriesSizes],
   );
 
+  const eligibleSeries = useMemo(() => {
+    const bySeries = {};
+
+    books.forEach((book) => {
+      if (!book.seriesName) return;
+      if (!bySeries[book.seriesName]) bySeries[book.seriesName] = [];
+      bySeries[book.seriesName].push(book);
+    });
+
+    return Object.fromEntries(
+      Object.entries(bySeries)
+        .filter(([, seriesBooks]) =>
+          seriesBooks.every((book) => book.status === "UNREAD"),
+        )
+        .map(([seriesName]) => [seriesName, true]),
+    );
+  }, [books]);
+
   const pools = useMemo(() => {
     const p = { standalone: [], short: [], long: [] };
     books
       .filter((b) => b.status === "UNREAD")
       .forEach((b) => {
+        if (b.seriesName && !eligibleSeries[b.seriesName]) return;
         p[categorize(b)].push(b);
       });
     return p;
-  }, [books, categorize]);
+  }, [books, categorize, eligibleSeries]);
 
   const seriesGroups = useMemo(() => {
     const make = (cat) => {
@@ -49,12 +72,15 @@ export default function Randomize() {
 
       return Object.entries(bySeries)
         .map(([series]) => {
-          const firstBook = books
+          const booksInSeries = books
             .filter((b) => b.seriesName === series)
-            .sort((a, b) => a.id - b.id)[0];
+            .sort((a, b) => a.id - b.id);
+          const firstBook = booksInSeries[0];
 
           return {
             series,
+            firstBook,
+            books: booksInSeries,
             representativeBook: firstBook,
             totalInSeries: seriesSizes[series],
           };
@@ -122,7 +148,16 @@ export default function Randomize() {
       );
 
       lastPickRef.current = next;
-      setPick(next.representativeBook);
+      setPick({
+        type: "series",
+        seriesName: next.series,
+        title: next.series,
+        authorName: next.firstBook.authorName,
+        pages: next.firstBook.pages,
+        firstBook: next.firstBook,
+        books: next.books,
+        id: next.firstBook.id,
+      });
       setIsSpinning(false);
       spinTimeoutRef.current = null;
     }, 300);
@@ -159,6 +194,36 @@ export default function Randomize() {
       ? pools.standalone.length
       : (seriesGroups[category]?.length ?? 0);
 
+  const handleStartReading = useCallback(() => {
+    if (!pick) return;
+
+    const startBook = pick.type === "series" ? pick.firstBook : pick;
+    const startDate = new Date().toISOString().slice(0, 10);
+
+    updateBookMutation.mutate(
+      {
+        id: startBook.id,
+        status: "IN_PROGRESS",
+        startDate,
+        endDate: null,
+        currentPage: 0,
+      },
+      {
+        onSuccess: () => {
+          addToast(`Started reading "${startBook.title}"`, "success");
+          setPick(null);
+          lastPickRef.current = null;
+        },
+        onError: (err) => {
+          addToast(
+            `Failed to start reading: ${err?.message || "Unknown error"}`,
+            "error",
+          );
+        },
+      },
+    );
+  }, [addToast, pick, updateBookMutation]);
+
   return (
     <div className="space-y-4">
       <RandomCategories
@@ -182,6 +247,7 @@ export default function Randomize() {
             roll={roll}
             seriesSizes={seriesSizes}
             isSpinning={isSpinning}
+            onStartReading={handleStartReading}
           />
           <EligibleBooks
             category={category}
