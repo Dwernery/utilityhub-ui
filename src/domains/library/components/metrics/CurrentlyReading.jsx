@@ -1,8 +1,8 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { StartReadingModal } from "./StartReadingModal";
-import { useUpdateBook } from "../hooks/useUpdateBook";
-import { useToast } from "../../../context/ToastContext";
+import { useUpdateBook } from "../../hooks/useUpdateBook";
+import { useToast } from "../../../../context/ToastContext";
 
 export const CurrentlyReading = ({ books }) => {
   const [showAddCurrentlyReading, setShowAddCurrentlyReading] = useState(false);

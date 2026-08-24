@@ -10,7 +10,7 @@ export default function Header() {
   const tabMapping = {
     "/library/inventory": "Inventory",
     "/library/metrics": "Metrics",
-    "/library/select": "Select",
+    "/library/randomize": "Randomize",
   };
   const activeTab = tabMapping[location.pathname] || "Inventory";
   const totalBooks = books.length;
@@ -44,7 +44,7 @@ export default function Header() {
           </div>
         </div>
         <div className="flex gap-1 border-b border-slate-200">
-          {["Inventory", "Metrics", "Select"].map((label) => (
+          {["Inventory", "Metrics", "Randomize"].map((label) => (
             <button
               key={label}
               onClick={() => navigate(`/library/${label.toLowerCase()}`)}

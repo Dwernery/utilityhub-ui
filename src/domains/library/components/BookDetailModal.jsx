@@ -6,7 +6,7 @@ import EditBookForm from "./EditBookForm";
 import { useUpdateBook } from "../hooks/useUpdateBook";
 import { useDeleteBook } from "../hooks/useDeleteBook";
 import { useToast } from "../../../context/ToastContext";
-import { parseLocalDate, formatDate } from "../utils/dateUtils";
+import { formatDate } from "../utils/dateUtils";
 
 export default function BookDetailModal() {
   const {

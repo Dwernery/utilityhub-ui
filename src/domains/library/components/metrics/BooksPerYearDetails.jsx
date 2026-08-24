@@ -1,6 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
-import StarRating from "./StarRating";
-import { formatDate } from "../utils/dateUtils";
+import StarRating from "../StarRating";
+import { formatDate } from "../../utils/dateUtils";
 
 export const BooksPerYearDetails = ({
   metrics,

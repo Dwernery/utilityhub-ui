@@ -1,8 +1,8 @@
 import { Search, X } from "lucide-react";
-import BookCover from "./BookCover";
+import BookCover from "../BookCover";
 import { useState } from "react";
-import { useUpdateBook } from "../hooks/useUpdateBook";
-import { useToast } from "../../../context/ToastContext";
+import { useUpdateBook } from "../../hooks/useUpdateBook";
+import { useToast } from "../../../../context/ToastContext";
 
 export const StartReadingModal = ({ setShowAddCurrentlyReading, books }) => {
   const [currentlyReadingSearch, setCurrentlyReadingSearch] = useState("");

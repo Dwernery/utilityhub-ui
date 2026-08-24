@@ -1,9 +1,9 @@
-import { BooksPerYearComparison } from "../components/BooksPerYearComparison";
-import { BooksPerYearGraph } from "../components/BooksPerYearGraph";
-import { CurrentlyReading } from "../components/CurrentlyReading";
+import { BooksPerYearComparison } from "../components/metrics/BooksPerYearComparison";
+import { BooksPerYearGraph } from "../components/metrics/BooksPerYearGraph";
+import { CurrentlyReading } from "../components/metrics/CurrentlyReading";
 import { useBooks } from "../hooks/useGetBooks";
 import { useMemo, useState } from "react";
-import { BooksPerYearDetails } from "../components/BooksPerYearDetails";
+import { BooksPerYearDetails } from "../components/metrics/BooksPerYearDetails";
 
 export default function Metrics() {
   const { data: books = [] } = useBooks();
