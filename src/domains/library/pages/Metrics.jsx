@@ -28,16 +28,16 @@ export default function Metrics() {
       const prev = availableYears[i + 1] ? byYear[availableYears[i + 1]] : null;
       const booksDiff = prev !== null ? curr.books - prev.books : null;
       const pagesDiff = prev !== null ? curr.pages - prev.pages : null;
+      const percentChange =
+        prev && prev.books > 0 ? (booksDiff / prev.books) * 100 : null;
+
       return {
         year,
         books: curr.books,
         pages: curr.pages,
         booksDiff,
         pagesDiff,
-        booksPercentChange:
-          prev && prev.books > 0
-            ? Math.round((booksDiff / prev.books) * 100)
-            : null,
+        booksPercentChange: percentChange,
       };
     });
     const byMonth = {};

@@ -25,13 +25,21 @@ export const CurrentlyReading = ({ books }) => {
       </div>
       {books.filter((b) => b.status === "IN_PROGRESS").length > 0 ? (
         <div className="divide-y divide-slate-100">
-              {books
+          {books
             .filter((b) => b.status === "IN_PROGRESS")
             .map((book) => {
-              const pctRaw = book.pages ? (book.currentPage / book.pages) * 100 : 0;
+              const pctRaw = book.pages
+                ? (book.currentPage / book.pages) * 100
+                : 0;
               const pct = Math.min(100, Math.max(0, Math.round(pctRaw || 0)));
               const days = book.startDate
-                ? Math.ceil((new Date() - new Date(book.startDate)) / 86400000)
+                ? Math.max(
+                    0,
+                    Math.floor(
+                      (new Date() - new Date(`${book.startDate}T00:00:00`)) /
+                        86400000,
+                    ),
+                  )
                 : null;
               return (
                 <div key={book.id} className="px-4 py-3">
@@ -58,7 +66,10 @@ export const CurrentlyReading = ({ books }) => {
                             },
                             {
                               onSuccess: () =>
-                                addToast(`Marked ${book.title} as read`, "success"),
+                                addToast(
+                                  `Marked ${book.title} as read`,
+                                  "success",
+                                ),
                               onError: (err) =>
                                 addToast(
                                   `Failed to mark book read: ${err?.message || "Unknown error"}`,
@@ -83,7 +94,10 @@ export const CurrentlyReading = ({ books }) => {
                             },
                             {
                               onSuccess: () =>
-                                addToast(`Removed ${book.title} from progress`, "success"),
+                                addToast(
+                                  `Removed ${book.title} from progress`,
+                                  "success",
+                                ),
                               onError: (err) =>
                                 addToast(
                                   `Failed to remove book from progress: ${err?.message || "Unknown error"}`,
@@ -117,7 +131,10 @@ export const CurrentlyReading = ({ books }) => {
                           { id: book.id, currentPage: next },
                           {
                             onSuccess: () =>
-                              addToast(`Updated progress for ${book.title}`, "success"),
+                              addToast(
+                                `Updated progress for ${book.title}`,
+                                "success",
+                              ),
                             onError: (err) =>
                               addToast(
                                 `Failed to update progress: ${err?.message || "Unknown error"}`,

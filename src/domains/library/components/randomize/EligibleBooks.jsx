@@ -57,7 +57,6 @@ export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
                       </div>
                       <div className="text-xs text-slate-400 truncate">
                         {representativeBook.authorName} · {totalInSeries} books
-                        in the series
                       </div>
                     </div>
                     {isSelected && (
