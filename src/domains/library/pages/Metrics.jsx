@@ -28,8 +28,10 @@ export default function Metrics() {
       const prev = availableYears[i + 1] ? byYear[availableYears[i + 1]] : null;
       const booksDiff = prev !== null ? curr.books - prev.books : null;
       const pagesDiff = prev !== null ? curr.pages - prev.pages : null;
-      const percentChange =
+      const booksPercentChange =
         prev && prev.books > 0 ? (booksDiff / prev.books) * 100 : null;
+      const pagesPercentChange =
+        prev && prev.pages > 0 ? (pagesDiff / prev.pages) * 100 : null;
 
       return {
         year,
@@ -37,7 +39,8 @@ export default function Metrics() {
         pages: curr.pages,
         booksDiff,
         pagesDiff,
-        booksPercentChange: percentChange,
+        booksPercentChange,
+        pagesPercentChange,
       };
     });
     const byMonth = {};

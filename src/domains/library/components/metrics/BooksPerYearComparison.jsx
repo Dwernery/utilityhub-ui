@@ -51,6 +51,43 @@ export const BooksPerYearComparison = ({
               );
             };
 
+            const pairedTrendMetric = (diff, percent, label) => {
+              if (diff === null || percent === null) return null;
+
+              const isPositive = diff > 0;
+              const isNegative = diff < 0;
+              const Icon = isPositive
+                ? ArrowUpRight
+                : isNegative
+                  ? ArrowDownRight
+                  : ArrowRight;
+              const tone = isPositive
+                ? "text-green-600"
+                : isNegative
+                  ? "text-red-500"
+                  : "text-slate-400";
+              const formattedDiff = `${diff > 0 ? "+" : ""}${Math.round(diff)}`;
+              const formattedPercent = `${percent > 0 ? "+" : ""}${Math.round(percent)}`;
+
+              return (
+                <div className="flex min-w-0 items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-1.5 py-0.5">
+                  <Icon className={`w-3 h-3 flex-shrink-0 ${tone}`} />
+                  <span className={`text-[10px] font-semibold ${tone}`}>
+                    {formattedDiff}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-slate-400">
+                    {label}
+                  </span>
+                  <span className={`text-[10px] font-semibold ${tone}`}>
+                    {formattedPercent}
+                  </span>
+                  <span className="text-[9px] uppercase tracking-[0.12em] text-slate-400">
+                    %
+                  </span>
+                </div>
+              );
+            };
+
             return (
               <button
                 key={yd.year}
@@ -73,26 +110,16 @@ export const BooksPerYearComparison = ({
                   </div>
                   {hasDiff ? (
                     <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
-                      {trendMetric(
+                      {pairedTrendMetric(
                         yd.booksDiff,
-                        (value) => `${value > 0 ? "+" : ""}${value}`,
+                        yd.booksPercentChange,
                         "bk",
                       )}
-                      {trendMetric(
+                      {pairedTrendMetric(
                         yd.pagesDiff,
-                        (value) =>
-                          `${value > 0 ? "+" : ""}${value.toLocaleString()}`,
+                        yd.pagesPercentChange,
                         "pg",
                       )}
-                      {yd.booksPercentChange !== null &&
-                        trendMetric(
-                          yd.booksPercentChange,
-                          (value) => {
-                            const formatted = Math.round(value).toString();
-                            return `${value > 0 ? "+" : ""}${formatted}`;
-                          },
-                          "%",
-                        )}
                     </div>
                   ) : (
                     <div className="text-xs mt-1 text-slate-300">
