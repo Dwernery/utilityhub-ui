@@ -50,7 +50,7 @@ export default function SearchableDropdown({
   return (
     <div ref={ref} className="relative">
       <div
-        className={`w-full flex items-center px-4 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
+        className={`w-full flex items-center px-4 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 h-10 ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
         onClick={() => !disabled && setOpen(true)}
       >
         {open && !disabled ? (
@@ -65,7 +65,7 @@ export default function SearchableDropdown({
           />
         ) : (
           <span
-            className={`flex-1 text-sm truncate ${value ? "text-slate-800" : "text-slate-400"}`}
+            className={`flex-1 text-base truncate ${value ? "text-slate-800" : "text-slate-400"}`}
           >
             {value || placeholder}
           </span>

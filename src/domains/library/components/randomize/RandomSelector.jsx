@@ -63,19 +63,27 @@ export const RandomSelector = ({
             </div>
           </div>
 
-          {booksInSeries.length > 0 && (
+          {booksInSeries.length > 1 && (
             <div className="px-4 pb-3">
-              <div className="space-y-1.5">
-                {booksInSeries.map((book, index) => (
-                  <div
-                    key={book.id}
-                    className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-1.5 text-sm"
-                  >
-                    <span className="min-w-0 truncate text-slate-700">
-                      {index + 1}. {book.title}
-                    </span>
-                  </div>
-                ))}
+              <p className="text-xs font-medium text-slate-500 mb-2">
+                Series books
+              </p>
+              <div className="overflow-x-auto scrollbar-hide">
+                <div className="flex gap-3 pb-2">
+                  {booksInSeries.map((book, index) => (
+                    <div key={book.id} className="flex-shrink-0 text-center">
+                      <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md border border-slate-200 mb-2 hover:shadow-lg transition-shadow">
+                        <BookCover book={book} className="w-full h-full" />
+                      </div>
+                      <p className="text-xs text-slate-600 font-medium">
+                        {index + 1}
+                      </p>
+                      <p className="text-xs text-slate-500 truncate max-w-20 leading-tight">
+                        {book.title}
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}
