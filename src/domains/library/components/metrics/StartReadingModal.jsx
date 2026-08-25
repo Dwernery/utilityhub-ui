@@ -42,7 +42,7 @@ export const StartReadingModal = ({ setShowAddCurrentlyReading, books }) => {
             placeholder="Search title, author…"
             value={currentlyReadingSearch}
             onChange={(e) => setCurrentlyReadingSearch(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
         <div className="space-y-2">

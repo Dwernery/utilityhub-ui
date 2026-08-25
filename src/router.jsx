@@ -1,5 +1,7 @@
-import { createBrowserRouter, Navigate, useRouteError } from "react-router-dom";
+import { createBrowserRouter, useRouteError } from "react-router-dom";
+import RootLayout from "./RootLayout";
 import AppLayout from "./domains/library/AppLayout";
+import Home from "./pages/Home";
 import { Inventory } from "./domains/library/pages/Inventory";
 import Metrics from "./domains/library/pages/Metrics";
 import Randomize from "./domains/library/pages/Randomize";
@@ -13,10 +15,10 @@ function NotFound() {
         The page you're looking for doesn't exist.
       </p>
       <a
-        href="/library/inventory"
+        href="/"
         className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
       >
-        Go to Inventory
+        Go to Home
       </a>
     </div>
   );
@@ -36,10 +38,10 @@ function RouteError() {
         {error?.statusText || error?.message || "An unexpected error occurred."}
       </p>
       <a
-        href="/library/inventory"
+        href="/"
         className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
       >
-        Go to Inventory
+        Go to Home
       </a>
     </div>
   );
@@ -47,24 +49,30 @@ function RouteError() {
 
 export const router = createBrowserRouter([
   {
-    element: <AppLayout />,
+    element: <RootLayout />,
     errorElement: <RouteError />,
     children: [
       {
         index: true,
-        element: <Navigate to="/library/inventory" replace />,
+        element: <Home />,
       },
       {
-        path: "/library/inventory",
-        element: <Inventory />,
-      },
-      {
-        path: "/library/metrics",
-        element: <Metrics />,
-      },
-      {
-        path: "/library/randomize",
-        element: <Randomize />,
+        path: "library",
+        element: <AppLayout />,
+        children: [
+          {
+            path: "inventory",
+            element: <Inventory />,
+          },
+          {
+            path: "metrics",
+            element: <Metrics />,
+          },
+          {
+            path: "randomize",
+            element: <Randomize />,
+          },
+        ],
       },
       {
         path: "*",

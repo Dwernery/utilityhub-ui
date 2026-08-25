@@ -1,5 +1,5 @@
-import { Book } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { Book, Home } from "lucide-react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useBooks } from "../hooks/useBooks";
 
 export default function Header() {
@@ -21,6 +21,13 @@ export default function Header() {
   return (
     <div className="mb-4 bg-white rounded-xl shadow-sm p-4 border border-slate-200">
       <div className="flex flex-col gap-3">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-600 transition-colors w-fit"
+        >
+          <Home className="w-3 h-3" />
+          Home
+        </Link>
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-slate-800 flex items-center gap-2">
             <Book className="w-6 h-6 text-blue-600" />

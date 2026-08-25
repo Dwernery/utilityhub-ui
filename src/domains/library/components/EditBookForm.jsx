@@ -136,7 +136,7 @@ export default function EditBookForm() {
               value={draft[field] ?? ""}
               disabled={isBusy}
               onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         ))}
@@ -224,7 +224,7 @@ export default function EditBookForm() {
                 return updated;
               });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
           >
             <option value="UNREAD">Unread</option>
             <option value="READ">Read</option>
@@ -246,7 +246,7 @@ export default function EditBookForm() {
                   startDate: e.target.value,
                 })
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         )}
@@ -265,7 +265,7 @@ export default function EditBookForm() {
                   endDate: e.target.value,
                 })
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         )}

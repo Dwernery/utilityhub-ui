@@ -71,7 +71,7 @@ export default function AddBookForm({ setShowAddForm }) {
           value={newBook.title}
           disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
         />
         <input
           type="number"
@@ -79,7 +79,7 @@ export default function AddBookForm({ setShowAddForm }) {
           value={newBook.pages}
           disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, pages: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
         />
         <SearchableDropdown
           value={newBook.authorName}
@@ -136,7 +136,7 @@ export default function AddBookForm({ setShowAddForm }) {
           value={newBook.isbn13}
           disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, isbn13: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2 disabled:bg-slate-50 disabled:opacity-60"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2 disabled:bg-slate-50 disabled:opacity-60"
         />
       </div>
       <div className="flex gap-2">

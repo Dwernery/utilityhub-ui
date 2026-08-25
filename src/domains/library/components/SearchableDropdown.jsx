@@ -60,7 +60,7 @@ export default function SearchableDropdown({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={placeholder}
-            className="flex-1 outline-none text-slate-800 bg-transparent text-sm"
+            className="flex-1 outline-none text-slate-800 bg-transparent text-base"
             onClick={(e) => e.stopPropagation()}
           />
         ) : (
@@ -81,7 +81,7 @@ export default function SearchableDropdown({
             <button
               key={opt}
               onMouseDown={() => handleSelect(opt)}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-blue-50 text-slate-800 transition-colors"
+              className="w-full text-left px-4 py-2 text-base hover:bg-blue-50 text-slate-800 transition-colors"
             >
               {opt}
             </button>
@@ -90,7 +90,7 @@ export default function SearchableDropdown({
             <button
               onMouseDown={handleAddNew}
               disabled={isAddingNew}
-              className="w-full text-left px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors flex items-center gap-2 disabled:opacity-60"
+              className="w-full text-left px-4 py-2 text-base font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors flex items-center gap-2 disabled:opacity-60"
             >
               <Plus className="w-3.5 h-3.5" />
               {isAddingNew
