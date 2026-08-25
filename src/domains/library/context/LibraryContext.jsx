@@ -1,63 +1,65 @@
 import { createContext, useContext, useState, useMemo } from "react";
-import { useSeries } from "../hooks/useGetSeries";
-import { useAuthors } from "../hooks/useGetAuthors";
+import { useSeries } from "../hooks/useSeries";
+import { useAuthors } from "../hooks/useAuthors";
+import { useBooks } from "../hooks/useBooks";
 const LibraryContext = createContext();
 
 export function LibraryProvider({ children }) {
   const { data: authors = [] } = useAuthors();
   const { data: series = [] } = useSeries();
-  const [selectedBook, setSelectedBook] = useState(null);
-  const [selectedBookOriginal, setSelectedBookOriginal] = useState(null);
+  const { data: books = [] } = useBooks();
+  const [selectedBookId, setSelectedBookId] = useState(null);
   const [author, setAuthor] = useState(null);
   const [isEditingInDialog, setIsEditingInDialog] = useState(false);
-  const [customAuthors, setCustomAuthors] = useState([]);
-  const [customSeries, setCustomSeries] = useState([]);
+
+  // Always derive the selected book from the books query cache so the
+  // dialog reflects the latest server state instead of a stale, manually
+  // managed copy that can drift out of sync (or get corrupted on a
+  // rollback race after the modal has been closed).
+  const selectedBook = useMemo(
+    () =>
+      selectedBookId == null
+        ? null
+        : (books.find((b) => b.id === selectedBookId) ?? null),
+    [books, selectedBookId],
+  );
 
   const authorOptions = useMemo(
-    () =>
-      [
-        ...new Set([...authors.map((a) => a.fullName), ...customAuthors]),
-      ].sort(),
-    [authors, customAuthors],
+    () => [...new Set(authors.map((a) => a.fullName))].sort(),
+    [authors],
   );
 
   const seriesOptions = useMemo(
-    () => [...new Set([...series.map((s) => s.name), ...customSeries])].sort(),
-    [series, customSeries],
+    () => [...new Set(series.map((s) => s.name))].sort(),
+    [series],
   );
 
   const openBookDialog = (book) => {
-    setSelectedBook({ ...book });
-    setSelectedBookOriginal({ ...book });
+    setSelectedBookId(book.id);
     setIsEditingInDialog(false);
   };
   const closeBookDialog = () => {
-    setSelectedBook(null);
+    setSelectedBookId(null);
     setIsEditingInDialog(false);
-    setSelectedBookOriginal(null);
   };
 
+  const value = useMemo(
+    () => ({
+      selectedBook,
+      author,
+      setAuthor,
+      isEditingInDialog,
+      setIsEditingInDialog,
+      openBookDialog,
+      closeBookDialog,
+      seriesOptions,
+      authorOptions,
+    }),
+    [selectedBook, author, isEditingInDialog, seriesOptions, authorOptions],
+  );
+
   return (
-    <LibraryContext.Provider
-      value={{
-        selectedBook,
-        selectedBookOriginal,
-        setSelectedBook,
-        author,
-        setAuthor,
-        isEditingInDialog,
-        setIsEditingInDialog,
-        openBookDialog,
-        closeBookDialog,
-        setSelectedBookOriginal,
-        setCustomAuthors,
-        setCustomSeries,
-        seriesOptions,
-        authorOptions,
-      }}
-    >
-      {children}
-    </LibraryContext.Provider>
+    <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>
   );
 }
 

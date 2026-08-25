@@ -5,10 +5,10 @@ import { useCreateAuthor } from "../hooks/useCreateAuthor";
 import { useCreateSeries } from "../hooks/useCreateSeries";
 import { useAddBook } from "../hooks/useAddBook";
 import { useToast } from "../../../context/ToastContext";
+import { isBookValid, BOOK_VALIDATION_MESSAGE } from "../utils/bookValidation";
 
 export default function AddBookForm({ setShowAddForm }) {
-  const { setCustomAuthors, setCustomSeries, authorOptions, seriesOptions } =
-    useLibrary();
+  const { authorOptions, seriesOptions } = useLibrary();
 
   const [newBook, setNewBook] = useState({
     title: "",
@@ -18,15 +18,17 @@ export default function AddBookForm({ setShowAddForm }) {
     isbn13: "",
   });
 
+  const createAuthor = useCreateAuthor();
+  const createSeries = useCreateSeries();
+  const addBookMutation = useAddBook();
+  const addToast = useToast();
+
+  const isSaving = addBookMutation.isPending;
+  const isBusy = isSaving || createAuthor.isPending || createSeries.isPending;
+
   const handleAddBook = () => {
-    if (
-      !newBook.title.trim() ||
-      !newBook.authorName.trim() ||
-      !newBook.pages ||
-      newBook.pages <= 0 ||
-      !newBook.isbn13.trim()
-    ) {
-      addToast("Title, author, pages, and ISBN are required", "error");
+    if (!isBookValid(newBook)) {
+      addToast(BOOK_VALIDATION_MESSAGE, "error");
       return;
     }
 
@@ -60,11 +62,6 @@ export default function AddBookForm({ setShowAddForm }) {
     );
   };
 
-  const createAuthor = useCreateAuthor();
-  const createSeries = useCreateSeries();
-  const addBookMutation = useAddBook();
-  const addToast = useToast();
-
   return (
     <div className="mt-4 pt-4 border-t border-slate-100 space-y-3">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -72,26 +69,29 @@ export default function AddBookForm({ setShowAddForm }) {
           type="text"
           placeholder="Title *"
           value={newBook.title}
+          disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
         />
         <input
           type="number"
           placeholder="Pages *"
           value={newBook.pages}
+          disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, pages: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
         />
         <SearchableDropdown
           value={newBook.authorName}
           onChange={(v) => setNewBook({ ...newBook, authorName: v })}
           options={authorOptions}
           placeholder="Author *"
+          disabled={isBusy}
+          isAddingNew={createAuthor.isPending}
           onAddNew={(v) =>
             createAuthor.mutate(v, {
               onSuccess: (data) => {
                 const name = data?.name || v;
-                setCustomAuthors((p) => [name, ...p]);
                 setNewBook((b) => ({ ...b, authorName: name }));
                 addToast(`Author "${name}" created`, "success");
               },
@@ -110,11 +110,12 @@ export default function AddBookForm({ setShowAddForm }) {
           onChange={(v) => setNewBook({ ...newBook, seriesName: v })}
           options={seriesOptions}
           placeholder="Series (optional)"
+          disabled={isBusy}
+          isAddingNew={createSeries.isPending}
           onAddNew={(v) =>
             createSeries.mutate(v, {
               onSuccess: (data) => {
                 const name = data?.name || v;
-                setCustomSeries((p) => [name, ...p]);
                 setNewBook((b) => ({ ...b, seriesName: name }));
                 addToast(`Series "${name}" created`, "success");
               },
@@ -131,18 +132,20 @@ export default function AddBookForm({ setShowAddForm }) {
 
         <input
           type="text"
-          placeholder="ISBN (optional)"
+          placeholder="ISBN *"
           value={newBook.isbn13}
+          disabled={isBusy}
           onChange={(e) => setNewBook({ ...newBook, isbn13: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2"
+          className="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2 disabled:bg-slate-50 disabled:opacity-60"
         />
       </div>
       <div className="flex gap-2">
         <button
           onClick={handleAddBook}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
+          disabled={isBusy}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-green-700 transition-colors disabled:opacity-60"
         >
-          Save
+          {isSaving ? "Saving..." : "Save"}
         </button>
         <button
           onClick={() => {
@@ -155,7 +158,8 @@ export default function AddBookForm({ setShowAddForm }) {
               isbn13: "",
             });
           }}
-          className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors"
+          disabled={isBusy}
+          className="bg-slate-100 text-slate-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 transition-colors disabled:opacity-60"
         >
           Cancel
         </button>

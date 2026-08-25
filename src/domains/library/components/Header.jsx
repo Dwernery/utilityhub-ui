@@ -1,6 +1,6 @@
 import { Book } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { useBooks } from "../hooks/useGetBooks";
+import { useBooks } from "../hooks/useBooks";
 
 export default function Header() {
   const location = useLocation();
@@ -15,7 +15,8 @@ export default function Header() {
   const activeTab = tabMapping[location.pathname] || "Inventory";
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.status === "READ").length;
-  const percentageComplete = totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
+  const percentageComplete =
+    totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
 
   return (
     <div className="mb-4 bg-white rounded-xl shadow-sm p-4 border border-slate-200">

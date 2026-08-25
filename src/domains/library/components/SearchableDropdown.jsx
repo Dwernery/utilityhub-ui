@@ -7,6 +7,8 @@ export default function SearchableDropdown({
   placeholder,
   onAddNew,
   addNewLabel,
+  disabled = false,
+  isAddingNew = false,
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -35,6 +37,7 @@ export default function SearchableDropdown({
   };
 
   const handleAddNew = () => {
+    if (isAddingNew) return;
     const t = search.trim();
     if (t) {
       onAddNew(t);
@@ -47,10 +50,10 @@ export default function SearchableDropdown({
   return (
     <div ref={ref} className="relative">
       <div
-        className="w-full flex items-center px-4 py-2 border border-slate-300 rounded-lg bg-white cursor-pointer focus-within:ring-2 focus-within:ring-blue-500"
-        onClick={() => setOpen(true)}
+        className={`w-full flex items-center px-4 py-2 border border-slate-300 rounded-lg bg-white focus-within:ring-2 focus-within:ring-blue-500 ${disabled ? "opacity-60 cursor-not-allowed bg-slate-50" : "cursor-pointer"}`}
+        onClick={() => !disabled && setOpen(true)}
       >
-        {open ? (
+        {open && !disabled ? (
           <input
             autoFocus
             type="text"
@@ -69,7 +72,7 @@ export default function SearchableDropdown({
         )}
         <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
       </div>
-      {open && (
+      {open && !disabled && (
         <div className="absolute z-50 top-full left-0 right-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-48 overflow-y-auto">
           {filtered.length === 0 && !showAddNew && (
             <div className="px-4 py-3 text-sm text-slate-400">No matches</div>
@@ -86,10 +89,13 @@ export default function SearchableDropdown({
           {showAddNew && (
             <button
               onMouseDown={handleAddNew}
-              className="w-full text-left px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors flex items-center gap-2"
+              disabled={isAddingNew}
+              className="w-full text-left px-4 py-2 text-sm font-medium text-blue-600 hover:bg-blue-50 border-t border-slate-100 transition-colors flex items-center gap-2 disabled:opacity-60"
             >
               <Plus className="w-3.5 h-3.5" />
-              {addNewLabel} "{search.trim()}"
+              {isAddingNew
+                ? `Adding "${search.trim()}"...`
+                : `${addNewLabel} "${search.trim()}"`}
             </button>
           )}
         </div>

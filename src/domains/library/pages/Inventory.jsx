@@ -10,43 +10,60 @@ import { useState, useMemo } from "react";
 import StarRating from "../components/StarRating";
 import { useLibrary } from "../context/LibraryContext";
 import AddBookForm from "../components/AddBookForm";
-import { useBooks } from "../hooks/useGetBooks";
+import { useBooks } from "../hooks/useBooks";
 import BookDetailModal from "../components/BookDetailModal";
 import AuthorDetailModal from "../components/AuthorDetailModal";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
-  const { data: books = [] } = useBooks();
+  const { data: books = [], isPending, isError, error } = useBooks();
   const { openBookDialog, selectedBook, author, setAuthor } = useLibrary();
   const normalizedSearch = searchTerm.trim().toLowerCase();
 
-  let filteredBooks = books?.filter((book) => {
+  const filteredBooks = books.filter((book) => {
     const title = String(book?.title ?? "").toLowerCase();
-    const author = String(book?.authorName ?? "").toLowerCase();
+    const authorName = String(book?.authorName ?? "").toLowerCase();
     const series = String(book?.seriesName ?? "").toLowerCase();
 
     return (
       !normalizedSearch ||
       title.includes(normalizedSearch) ||
-      author.includes(normalizedSearch) ||
+      authorName.includes(normalizedSearch) ||
       series.includes(normalizedSearch)
     );
   });
 
   const bookGroups = useMemo(() => {
     const groups = {};
-    filteredBooks &&
-      filteredBooks.forEach((book) => {
-        const author = book.authorName || "Unknown";
-        groups[author] ??= [];
-        groups[author].push(book);
-      });
+    filteredBooks.forEach((book) => {
+      const authorName = book.authorName || "Unknown";
+      groups[authorName] ??= [];
+      groups[authorName].push(book);
+    });
 
     return Object.fromEntries(
       Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)),
     );
   }, [filteredBooks]);
+
+  if (isPending) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-14 text-center">
+        <p className="text-sm text-slate-400">Loading books…</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-white rounded-xl shadow-sm border border-red-200 py-14 text-center">
+        <p className="text-sm text-red-500">
+          Failed to load books: {error?.message || "Unknown error"}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -77,71 +94,70 @@ export function Inventory() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        {filteredBooks &&
-          Object.entries(bookGroups).map(([author, books]) => (
-            <div key={author}>
-              <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-                <button
-                  onClick={() => setAuthor(author)}
-                  className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors"
-                >
-                  <User className="w-3.5 h-3.5 text-slate-400" />
-                  {author}
-                </button>
-                <span className="text-xs text-slate-400">
-                  {books.filter((book) => book.status === "READ").length}/
-                  {books.length}
-                </span>
-              </div>
-              {books.map((book, i) => (
-                <div
-                  key={book.id}
-                  role="button"
-                  tabIndex={0}
-                  onClick={() => openBookDialog(book)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter" || event.key === " ") {
-                      event.preventDefault();
-                      openBookDialog(book);
-                    }
-                  }}
-                  className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${i < books.length - 1 ? "border-b border-slate-100" : ""}`}
-                >
-                  <div className="flex-shrink-0">
-                    {book.status === "READ" ? (
-                      <CheckCircle2 className="w-4 h-4 text-green-500" />
-                    ) : book.status === "IN_PROGRESS" ? (
-                      <div className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center">
-                        <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
-                      </div>
-                    ) : (
-                      <Circle className="w-4 h-4 text-slate-300" />
+        {Object.entries(bookGroups).map(([authorName, groupBooks]) => (
+          <div key={authorName}>
+            <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
+              <button
+                onClick={() => setAuthor(authorName)}
+                className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors"
+              >
+                <User className="w-3.5 h-3.5 text-slate-400" />
+                {authorName}
+              </button>
+              <span className="text-xs text-slate-400">
+                {groupBooks.filter((book) => book.status === "READ").length}/
+                {groupBooks.length}
+              </span>
+            </div>
+            {groupBooks.map((book, i) => (
+              <div
+                key={book.id}
+                role="button"
+                tabIndex={0}
+                onClick={() => openBookDialog(book)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    openBookDialog(book);
+                  }
+                }}
+                className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${i < groupBooks.length - 1 ? "border-b border-slate-100" : ""}`}
+              >
+                <div className="flex-shrink-0">
+                  {book.status === "READ" ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-500" />
+                  ) : book.status === "IN_PROGRESS" ? (
+                    <div className="w-4 h-4 rounded-full border-2 border-blue-400 flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 rounded-full bg-blue-400" />
+                    </div>
+                  ) : (
+                    <Circle className="w-4 h-4 text-slate-300" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium text-slate-800 truncate">
+                    {book.title}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {book.seriesName && (
+                      <span className="text-xs text-blue-500 truncate">
+                        {book.seriesName}
+                      </span>
+                    )}
+                    {book.rating > 0 && (
+                      <StarRating value={book.rating} readonly size="sm" />
                     )}
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium text-slate-800 truncate">
-                      {book.title}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {book.seriesName && (
-                        <span className="text-xs text-blue-500 truncate">
-                          {book.seriesName}
-                        </span>
-                      )}
-                      {book.rating > 0 && (
-                        <StarRating value={book.rating} readonly size="sm" />
-                      )}
-                    </div>
-                  </div>
-                  <span className="text-xs text-slate-400 flex-shrink-0">
-                    {book.pages}p
-                  </span>
-                  <ChevronDown className="w-4 h-4 text-slate-300 flex-shrink-0 -rotate-90" />
                 </div>
-              ))}
-            </div>
-          ))}
-        {filteredBooks?.length === 0 && (
+                <span className="text-xs text-slate-400 flex-shrink-0">
+                  {book.pages} pages
+                </span>
+                <ChevronDown className="w-4 h-4 text-slate-300 flex-shrink-0 -rotate-90" />
+              </div>
+            ))}
+          </div>
+        ))}
+        {filteredBooks.length === 0 && (
           <div className="text-center py-10 text-slate-400 text-sm">
             {searchTerm ? "No books found" : "Add your first book!"}
           </div>

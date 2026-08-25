@@ -1,8 +1,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useBooks } from "../hooks/useGetBooks.js";
-import { useUpdateBook } from "../hooks/useUpdateBook.js";
+import { useBooks } from "../hooks/useBooks.js";
+import { useStartReading } from "../hooks/useStartReading.js";
 import { Book } from "lucide-react";
-import { useToast } from "../../../context/ToastContext.jsx";
 import { RandomCategories } from "../components/randomize/RandomCategories.jsx";
 import { RandomSelector } from "../components/randomize/RandomSelector.jsx";
 import { EligibleBooks } from "../components/randomize/EligibleBooks.jsx";
@@ -14,8 +13,7 @@ export default function Randomize() {
   const lastPickRef = useRef(null);
   const spinTimeoutRef = useRef(null);
   const { data: books = [] } = useBooks();
-  const updateBookMutation = useUpdateBook();
-  const addToast = useToast();
+  const { startReading, isPending: isStartingReading } = useStartReading();
 
   const seriesSizes = useMemo(() => {
     const map = {};
@@ -170,14 +168,13 @@ export default function Randomize() {
       spinTimeoutRef.current = null;
     }
 
-    const id = setTimeout(() => setPick(null), 0);
-    return () => {
-      clearTimeout(id);
-      if (spinTimeoutRef.current) {
-        clearTimeout(spinTimeoutRef.current);
-        spinTimeoutRef.current = null;
-      }
-    };
+    // Refs are cleared synchronously above; the setState calls are deferred
+    // to a microtask so this effect doesn't call setState directly in its
+    // body (which triggers cascading renders per the react-hooks lint rule).
+    queueMicrotask(() => {
+      setPick(null);
+      setIsSpinning(false);
+    });
   }, [category]);
 
   useEffect(() => {
@@ -198,31 +195,14 @@ export default function Randomize() {
     if (!pick) return;
 
     const startBook = pick.type === "series" ? pick.firstBook : pick;
-    const startDate = new Date().toISOString().slice(0, 10);
 
-    updateBookMutation.mutate(
-      {
-        id: startBook.id,
-        status: "IN_PROGRESS",
-        startDate,
-        endDate: null,
-        currentPage: 0,
+    startReading(startBook, {
+      onSuccess: () => {
+        setPick(null);
+        lastPickRef.current = null;
       },
-      {
-        onSuccess: () => {
-          addToast(`Started reading "${startBook.title}"`, "success");
-          setPick(null);
-          lastPickRef.current = null;
-        },
-        onError: (err) => {
-          addToast(
-            `Failed to start reading: ${err?.message || "Unknown error"}`,
-            "error",
-          );
-        },
-      },
-    );
-  }, [addToast, pick, updateBookMutation]);
+    });
+  }, [pick, startReading]);
 
   return (
     <div className="space-y-4">
@@ -231,7 +211,7 @@ export default function Randomize() {
         setCategory={setCategory}
         counts={counts}
       />
-      {!eligibleCount > 0 ? (
+      {eligibleCount === 0 ? (
         <div className="bg-white rounded-xl border border-slate-200 py-14 text-center">
           <Book className="w-10 h-10 text-slate-200 mx-auto mb-3" />
           <p className="text-sm text-slate-400">
@@ -246,7 +226,7 @@ export default function Randomize() {
             category={category}
             roll={roll}
             seriesSizes={seriesSizes}
-            isSpinning={isSpinning}
+            isSpinning={isSpinning || isStartingReading}
             onStartReading={handleStartReading}
           />
           <EligibleBooks

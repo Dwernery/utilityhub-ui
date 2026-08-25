@@ -1,87 +1,78 @@
+import { useState } from "react";
 import { useLibrary } from "../context/LibraryContext";
 import SearchableDropdown from "./SearchableDropdown";
 import { X } from "lucide-react";
 import { useUpdateBook } from "../hooks/useUpdateBook";
+import { useCreateAuthor } from "../hooks/useCreateAuthor";
+import { useCreateSeries } from "../hooks/useCreateSeries";
 import { useToast } from "../../../context/ToastContext";
+import { isBookValid, BOOK_VALIDATION_MESSAGE } from "../utils/bookValidation";
 
 export default function EditBookForm() {
   const {
     closeBookDialog,
     selectedBook,
-    selectedBookOriginal,
-    setSelectedBookOriginal,
-    setSelectedBook,
-    setCustomAuthors,
-    setCustomSeries,
     authorOptions,
     seriesOptions,
     setIsEditingInDialog,
   } = useLibrary();
 
+  // Local editable draft, independent of the (cache-derived) selectedBook so
+  // in-progress edits never leak into other consumers of the books cache.
+  // The form only mounts while editing, so this initializer always reflects
+  // the book as it was when "Edit" was clicked.
+  const [draft, setDraft] = useState(() => ({ ...selectedBook }));
+
   const updateBookMutation = useUpdateBook();
+  const createAuthor = useCreateAuthor();
+  const createSeries = useCreateSeries();
   const addToast = useToast();
 
+  const isSaving = updateBookMutation.isPending;
+  const isBusy = isSaving || createAuthor.isPending || createSeries.isPending;
+
   const handleSaveBook = () => {
-    if (!selectedBook?.title?.trim() || !selectedBook?.authorName?.trim()) {
-      addToast("Title and author are required", "error");
+    if (!isBookValid(draft)) {
+      addToast(BOOK_VALIDATION_MESSAGE, "error");
       return;
     }
 
-    if (selectedBook.status === "IN_PROGRESS" && !selectedBook.startDate) {
+    if (draft.status === "IN_PROGRESS" && !draft.startDate) {
       addToast("Start date is required when status is In-Progress", "error");
       return;
     }
 
-    if (selectedBook.status === "READ") {
-      if (!selectedBook.startDate) {
+    if (draft.status === "READ") {
+      if (!draft.startDate) {
         addToast("Start date is required when status is Read", "error");
         return;
       }
 
-      if (!selectedBook.endDate) {
+      if (!draft.endDate) {
         addToast("End date is required when status is Read", "error");
         return;
       }
     }
-
-    // Build a minimal patch payload by diffing against the original opened book
-    const payload = { id: selectedBook.id };
+    const payload = { id: draft.id };
 
     const norm = (v) => (v === "" ? null : v);
 
-    const current = {
-      title: selectedBook.title?.trim(),
+    const normalize = (book) => ({
+      title: book.title?.trim(),
       pages:
-        selectedBook.pages === "" ||
-        selectedBook.pages === null ||
-        selectedBook.pages === undefined
+        book.pages === "" || book.pages === null || book.pages === undefined
           ? null
-          : Number(selectedBook.pages),
-      authorName: selectedBook.authorName?.trim(),
-      seriesName: norm(selectedBook.seriesName?.trim() || null),
-      isbn13: norm(selectedBook.isbn13 || null),
-      status: selectedBook.status,
-      startDate: selectedBook.startDate || null,
-      endDate: selectedBook.endDate || null,
-    };
+          : Number(book.pages),
+      authorName: book.authorName?.trim(),
+      seriesName: norm(book.seriesName?.trim() || null),
+      isbn13: norm(book.isbn13 || null),
+      status: book.status,
+      startDate: book.startDate || null,
+      endDate: book.endDate || null,
+    });
 
-    const original = selectedBookOriginal
-      ? {
-          title: selectedBookOriginal.title?.trim(),
-          pages:
-            selectedBookOriginal.pages === "" ||
-            selectedBookOriginal.pages === null ||
-            selectedBookOriginal.pages === undefined
-              ? null
-              : Number(selectedBookOriginal.pages),
-          authorName: selectedBookOriginal.authorName?.trim(),
-          seriesName: norm(selectedBookOriginal.seriesName || null),
-          isbn13: norm(selectedBookOriginal.isbn13 || null),
-          status: selectedBookOriginal.status,
-          startDate: selectedBookOriginal.startDate || null,
-          endDate: selectedBookOriginal.endDate || null,
-        }
-      : null;
+    const current = normalize(draft);
+    const original = selectedBook ? normalize(selectedBook) : null;
 
     const fields = [
       "title",
@@ -110,9 +101,7 @@ export default function EditBookForm() {
 
     updateBookMutation.mutate(payload, {
       onSuccess: () => {
-        addToast(`Book "${selectedBook.title.trim()}" updated`, "success");
-        // Update the original snapshot so subsequent diffs are correct
-        setSelectedBookOriginal({ ...selectedBook });
+        addToast(`Book "${draft.title.trim()}" updated`, "success");
         setIsEditingInDialog(false);
       },
       onError: (err) => {
@@ -144,17 +133,10 @@ export default function EditBookForm() {
             </label>
             <input
               type={type}
-              value={selectedBook[field] ?? ""}
-              onChange={(e) =>
-                setSelectedBook({
-                  ...selectedBook,
-                  [field]:
-                    type === "number"
-                      ? Number(e.target.value) || 0
-                      : e.target.value,
-                })
-              }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={draft[field] ?? ""}
+              disabled={isBusy}
+              onChange={(e) => setDraft({ ...draft, [field]: e.target.value })}
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         ))}
@@ -163,17 +145,28 @@ export default function EditBookForm() {
             Author
           </label>
           <SearchableDropdown
-            value={selectedBook.authorName}
-            onChange={(v) =>
-              setSelectedBook({ ...selectedBook, authorName: v })
-            }
+            value={draft.authorName}
+            onChange={(v) => setDraft({ ...draft, authorName: v })}
             options={authorOptions}
             placeholder="Author"
+            disabled={isBusy}
+            isAddingNew={createAuthor.isPending}
             onAddNew={(v) => {
               const name = v.trim();
               if (!name) return;
-              setCustomAuthors((p) => [name, ...p]);
-              setSelectedBook((b) => ({ ...b, authorName: name }));
+              createAuthor.mutate(name, {
+                onSuccess: (data) => {
+                  const created = data?.name || name;
+                  setDraft((b) => ({ ...b, authorName: created }));
+                  addToast(`Author "${created}" created`, "success");
+                },
+                onError: (err) => {
+                  addToast(
+                    `Failed to create author: ${err?.message || "Unknown error"}`,
+                    "error",
+                  );
+                },
+              });
             }}
             addNewLabel="Add author"
           />
@@ -183,17 +176,28 @@ export default function EditBookForm() {
             Series
           </label>
           <SearchableDropdown
-            value={selectedBook.seriesName || ""}
-            onChange={(v) =>
-              setSelectedBook({ ...selectedBook, seriesName: v })
-            }
+            value={draft.seriesName || ""}
+            onChange={(v) => setDraft({ ...draft, seriesName: v })}
             options={seriesOptions}
             placeholder="Series"
+            disabled={isBusy}
+            isAddingNew={createSeries.isPending}
             onAddNew={(v) => {
               const name = v.trim();
               if (!name) return;
-              setCustomSeries((p) => [name, ...p]);
-              setSelectedBook((b) => ({ ...b, seriesName: name }));
+              createSeries.mutate(name, {
+                onSuccess: (data) => {
+                  const created = data?.name || name;
+                  setDraft((b) => ({ ...b, seriesName: created }));
+                  addToast(`Series "${created}" created`, "success");
+                },
+                onError: (err) => {
+                  addToast(
+                    `Failed to create series: ${err?.message || "Unknown error"}`,
+                    "error",
+                  );
+                },
+              });
             }}
             addNewLabel="Add series"
           />
@@ -203,10 +207,11 @@ export default function EditBookForm() {
             Status
           </label>
           <select
-            value={selectedBook.status}
+            value={draft.status}
+            disabled={isBusy}
             onChange={(e) => {
               const nextStatus = e.target.value;
-              setSelectedBook((current) => {
+              setDraft((current) => {
                 const updated = { ...current, status: nextStatus };
 
                 if (nextStatus === "UNREAD") {
@@ -219,59 +224,63 @@ export default function EditBookForm() {
                 return updated;
               });
             }}
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
           >
             <option value="UNREAD">Unread</option>
             <option value="READ">Read</option>
             <option value="IN_PROGRESS">In-Progress</option>
           </select>
         </div>
-        {selectedBook.status !== "UNREAD" && (
+        {draft.status !== "UNREAD" && (
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
               Start Date
             </label>
             <input
               type="date"
-              value={selectedBook.startDate || ""}
+              value={draft.startDate || ""}
+              disabled={isBusy}
               onChange={(e) =>
-                setSelectedBook({
-                  ...selectedBook,
+                setDraft({
+                  ...draft,
                   startDate: e.target.value,
                 })
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         )}
-        {selectedBook.status === "READ" && (
+        {draft.status === "READ" && (
           <div>
             <label className="block text-xs font-medium text-slate-600 mb-1">
               End Date
             </label>
             <input
               type="date"
-              value={selectedBook.endDate || ""}
+              value={draft.endDate || ""}
+              disabled={isBusy}
               onChange={(e) =>
-                setSelectedBook({
-                  ...selectedBook,
+                setDraft({
+                  ...draft,
                   endDate: e.target.value,
                 })
               }
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
             />
           </div>
         )}
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleSaveBook}
-            className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+            disabled={isBusy}
+            className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
           >
-            Save
+            {isSaving ? "Saving..." : "Save"}
           </button>
           <button
             onClick={() => setIsEditingInDialog(false)}
-            className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg text-sm font-medium hover:bg-slate-200"
+            disabled={isBusy}
+            className="flex-1 bg-slate-100 text-slate-700 py-2 rounded-lg text-sm font-medium hover:bg-slate-200 disabled:opacity-60"
           >
             Cancel
           </button>

@@ -149,9 +149,7 @@ export async function updateBook(data = {}) {
 // NOTE: rating updates are handled via `updateBook({ id, rating })` (PATCH).
 
 export async function deleteBook(id) {
-  const bookId = typeof id === "object" && id !== null ? id.id : id;
-
-  const response = await fetch(`${API_URL}/api/library/books/${bookId}`, {
+  const response = await fetch(`${API_URL}/api/library/books/${id}`, {
     method: "DELETE",
   });
 

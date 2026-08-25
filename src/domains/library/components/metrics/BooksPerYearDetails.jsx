@@ -1,6 +1,6 @@
 import { CheckCircle2 } from "lucide-react";
 import StarRating from "../StarRating";
-import { formatDate } from "../../utils/dateUtils";
+import { formatDate, parseLocalDate } from "../../utils/dateUtils";
 
 export const BooksPerYearDetails = ({
   metrics,
@@ -12,7 +12,7 @@ export const BooksPerYearDetails = ({
     (b) =>
       b.status === "READ" &&
       b.endDate &&
-      new Date(b.endDate).getFullYear() === selectedReadingYear,
+      parseLocalDate(b.endDate).getFullYear() === selectedReadingYear,
   );
   const monthNames = [
     "Jan",
@@ -84,12 +84,15 @@ export const BooksPerYearDetails = ({
         </div>
         <div className="divide-y divide-slate-100">
           {[...filteredBooks]
-            .sort((a, b) => new Date(b.endDate) - new Date(a.endDate))
+            .sort(
+              (a, b) => parseLocalDate(b.endDate) - parseLocalDate(a.endDate),
+            )
             .map((book) => {
               const days =
                 book.startDate && book.endDate
                   ? Math.ceil(
-                      (new Date(book.endDate) - new Date(book.startDate)) /
+                      (parseLocalDate(book.endDate) -
+                        parseLocalDate(book.startDate)) /
                         86400000,
                     )
                   : null;

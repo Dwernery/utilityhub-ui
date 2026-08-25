@@ -41,6 +41,8 @@ export const CurrentlyReading = ({ books }) => {
                     ),
                   )
                 : null;
+              const isRowPending =
+                updateBook.isPending && updateBook.variables?.id === book.id;
               return (
                 <div key={book.id} className="px-4 py-3">
                   <div className="flex justify-between items-start gap-2 mb-2">
@@ -78,7 +80,8 @@ export const CurrentlyReading = ({ books }) => {
                             },
                           );
                         }}
-                        className="px-2.5 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-md text-xs font-medium transition-colors"
+                        disabled={isRowPending}
+                        className="px-2.5 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-md text-xs font-medium transition-colors disabled:opacity-60"
                       >
                         Done
                       </button>
@@ -106,7 +109,8 @@ export const CurrentlyReading = ({ books }) => {
                             },
                           );
                         }}
-                        className="px-2.5 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-md text-xs font-medium transition-colors"
+                        disabled={isRowPending}
+                        className="px-2.5 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-md text-xs font-medium transition-colors disabled:opacity-60"
                       >
                         Remove
                       </button>
@@ -123,6 +127,7 @@ export const CurrentlyReading = ({ books }) => {
                       key={book.currentPage}
                       type="number"
                       defaultValue={book.currentPage}
+                      disabled={isRowPending}
                       onBlur={(e) => {
                         const next = Number(e.target.value) || 0;
                         if (next === book.currentPage) return;
@@ -143,7 +148,7 @@ export const CurrentlyReading = ({ books }) => {
                           },
                         );
                       }}
-                      className="w-14 px-2 py-0.5 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-400"
+                      className="w-14 px-2 py-0.5 border border-slate-200 rounded text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-400 disabled:opacity-60"
                     />
                     <span className="text-xs text-slate-400">
                       /{book.pages}

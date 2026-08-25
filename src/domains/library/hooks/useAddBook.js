@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { addBook } from "../api.js";
+import { BOOKS_KEY } from "./queryKeys.js";
 
 export function useAddBook() {
   const queryClient = useQueryClient();
@@ -7,7 +8,7 @@ export function useAddBook() {
   return useMutation({
     mutationFn: addBook,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["books"] });
+      queryClient.invalidateQueries({ queryKey: BOOKS_KEY });
     },
   });
 }

@@ -3,29 +3,6 @@ import { useState } from "react";
 
 export default function BookCover({ book, className = "" }) {
   const [src, setSrc] = useState(null);
-  //   useEffect(() => {
-  //     setSrc(null);
-  //     let cancelled = false;
-  //     async function fetchCover() {
-  //       try {
-  //         const q = book.isbn
-  //           ? `isbn:${book.isbn}`
-  //           : `intitle:${encodeURIComponent(book.title)}+inauthor:${encodeURIComponent(book.author)}`;
-  //         const res = await fetch(
-  //           `https://www.googleapis.com/books/v1/volumes?q=${q}&maxResults=1&fields=items(volumeInfo/imageLinks)`,
-  //         );
-  //         const data = await res.json();
-  //         const img = data?.items?.[0]?.volumeInfo?.imageLinks;
-  //         if (!cancelled) setSrc(img?.thumbnail || img?.smallThumbnail || null);
-  //       } catch {
-  //         /* silent */
-  //       }
-  //     }
-  //     fetchCover();
-  //     return () => {
-  //       cancelled = true;
-  //     };
-  //   }, [book.isbn, book.title, book.author]);
 
   if (src)
     return (

@@ -12,6 +12,10 @@ export const RandomSelector = ({
 }) => {
   const selectedBook = pick?.type === "series" ? pick.firstBook : pick;
   const booksInSeries = pick?.type === "series" ? (pick.books ?? []) : [];
+  const totalPages =
+    pick?.type === "series"
+      ? (pick.books ?? []).reduce((sum, book) => sum + (book.pages || 0), 0)
+      : Number(selectedBook?.pages ?? pick?.pages ?? 0);
 
   return (
     <>
@@ -54,9 +58,7 @@ export const RandomSelector = ({
               )}
               <div className="mt-2 text-xs text-slate-400 flex items-center gap-1">
                 <Book className="w-3.5 h-3.5" />
-                {pick.books
-                  .reduce((sum, book) => sum + (book.pages || 0), 0)
-                  .toLocaleString()}p
+                {totalPages.toLocaleString()} pages
               </div>
             </div>
           </div>

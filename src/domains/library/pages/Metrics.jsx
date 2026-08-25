@@ -1,12 +1,13 @@
 import { BooksPerYearComparison } from "../components/metrics/BooksPerYearComparison";
 import { BooksPerYearGraph } from "../components/metrics/BooksPerYearGraph";
 import { CurrentlyReading } from "../components/metrics/CurrentlyReading";
-import { useBooks } from "../hooks/useGetBooks";
+import { useBooks } from "../hooks/useBooks";
 import { useMemo, useState } from "react";
 import { BooksPerYearDetails } from "../components/metrics/BooksPerYearDetails";
+import { parseLocalDate } from "../utils/dateUtils";
 
 export default function Metrics() {
-  const { data: books = [] } = useBooks();
+  const { data: books = [], isPending, isError, error } = useBooks();
   const [selectedReadingYear, setSelectedReadingYear] = useState(null);
   const [graphMetric, setGraphMetric] = useState("books");
 
@@ -14,13 +15,13 @@ export default function Metrics() {
     const readBooks = books.filter((b) => b.status === "READ" && b.endDate);
     const byYear = {};
     readBooks.forEach((b) => {
-      const y = new Date(b.endDate).getFullYear();
+      const y = parseLocalDate(b.endDate).getFullYear();
       if (!byYear[y]) byYear[y] = { books: 0, pages: 0 };
       byYear[y].books++;
-      byYear[y].pages += b.pages;
+      byYear[y].pages += b.pages || 0;
     });
     const allTimeBooks = readBooks.length;
-    const allTimePages = readBooks.reduce((s, b) => s + b.pages, 0);
+    const allTimePages = readBooks.reduce((s, b) => s + (b.pages || 0), 0);
     const availableYears = Object.keys(byYear)
       .map(Number)
       .sort((a, b) => b - a);
@@ -47,14 +48,15 @@ export default function Metrics() {
     const byMonth = {};
     const src = selectedReadingYear
       ? readBooks.filter(
-          (b) => new Date(b.endDate).getFullYear() === selectedReadingYear,
+          (b) =>
+            parseLocalDate(b.endDate).getFullYear() === selectedReadingYear,
         )
       : readBooks;
     src.forEach((b) => {
-      const m = new Date(b.endDate).getMonth();
+      const m = parseLocalDate(b.endDate).getMonth();
       if (!byMonth[m]) byMonth[m] = { books: 0, pages: 0 };
       byMonth[m].books++;
-      byMonth[m].pages += b.pages;
+      byMonth[m].pages += b.pages || 0;
     });
     return {
       byYear,
@@ -65,6 +67,24 @@ export default function Metrics() {
       yearComparisons,
     };
   }, [books, selectedReadingYear]);
+
+  if (isPending) {
+    return (
+      <div className="bg-white rounded-xl border border-slate-200 py-14 text-center">
+        <p className="text-sm text-slate-400">Loading metrics…</p>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-white rounded-xl border border-red-200 py-14 text-center">
+        <p className="text-sm text-red-500">
+          Failed to load books: {error?.message || "Unknown error"}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
