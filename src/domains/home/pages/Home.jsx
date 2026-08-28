@@ -1,5 +1,6 @@
-import { Wallet, Clapperboard, Sparkles } from "lucide-react";
-import { LibraryHomeCard } from "../domains/library/components/LibraryHomeCard";
+import { Wallet, Sparkles } from "lucide-react";
+import { LibraryHomeCard } from "../components/LibraryHomeCard";
+import { McuHomeCard } from "../components/McuHomeCard";
 import { UtilityCard } from "../components/UtilityCard";
 
 function ComingSoonFeatures({ features }) {
@@ -34,20 +35,8 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         <LibraryHomeCard />
 
-        <UtilityCard
-          icon={Clapperboard}
-          title="MCU"
-          description="Track Marvel watch order and progress"
-          badgeLabel="Phase 2"
-        >
-          <ComingSoonFeatures
-            features={[
-              "Timeline order by release date",
-              "Watched progress tracker",
-              "Details per film/show",
-            ]}
-          />
-        </UtilityCard>
+        <McuHomeCard />
+
         <UtilityCard
           icon={Wallet}
           title="Finances"

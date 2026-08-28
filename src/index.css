@@ -1,1 +1,55 @@
 @import "tailwindcss";
+
+/* MCU tracker: poster hover/press feedback, episode-sheet slide-in, and a
+   themed horizontal scrollbar for the poster rows. */
+.mcu-poster-card {
+  transition:
+    transform 0.12s ease,
+    filter 0.12s ease;
+}
+.mcu-poster-card:active {
+  transform: scale(0.96);
+}
+@media (hover: hover) {
+  .mcu-poster-card:hover {
+    filter: brightness(1.15);
+    transform: translateY(-2px);
+  }
+  .mcu-episode-row:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcu-poster-card,
+  .animate-\[mcu-sheet-up_0\.22s_ease-out\] {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+@keyframes mcu-sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0.4;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.mcu-scroll-row::-webkit-scrollbar {
+  height: 6px;
+}
+.mcu-scroll-row::-webkit-scrollbar-track {
+  background: transparent;
+}
+.mcu-scroll-row::-webkit-scrollbar-thumb {
+  background: #363b4c;
+  border-radius: 999px;
+}
+.mcu-scroll-row::-webkit-scrollbar-thumb:hover {
+  background: #4a5066;
+}
+.mcu-scroll-row {
+  scrollbar-width: thin;
+  scrollbar-color: #363b4c transparent;
+}

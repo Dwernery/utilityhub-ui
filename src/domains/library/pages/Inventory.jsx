@@ -9,10 +9,10 @@ import {
 import { useState, useMemo } from "react";
 import StarRating from "../components/StarRating";
 import { useLibrary } from "../context/LibraryContext";
-import AddBookForm from "../components/AddBookForm";
+import AddBookForm from "../components/inventory/AddBookForm";
 import { useBooks } from "../hooks/useBooks";
-import BookDetailModal from "../components/BookDetailModal";
-import AuthorDetailModal from "../components/AuthorDetailModal";
+import BookDetailModal from "../components/inventory/BookDetailModal";
+import AuthorDetailModal from "../components/inventory/AuthorDetailModal";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");

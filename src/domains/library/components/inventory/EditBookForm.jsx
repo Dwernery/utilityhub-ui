@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { useLibrary } from "../context/LibraryContext";
-import SearchableDropdown from "./SearchableDropdown";
+import { useLibrary } from "../../context/LibraryContext";
+import SearchableDropdown from "../SearchableDropdown";
 import { X } from "lucide-react";
-import { useUpdateBook } from "../hooks/useUpdateBook";
-import { useCreateAuthor } from "../hooks/useCreateAuthor";
-import { useCreateSeries } from "../hooks/useCreateSeries";
-import { useToast } from "../../../context/ToastContext";
-import { isBookValid, BOOK_VALIDATION_MESSAGE } from "../utils/bookValidation";
+import { useUpdateBook } from "../../hooks/useUpdateBook";
+import { useCreateAuthor } from "../../hooks/useCreateAuthor";
+import { useCreateSeries } from "../../hooks/useCreateSeries";
+import { useToast } from "../../../../context/ToastContext";
+import { isBookValid, BOOK_VALIDATION_MESSAGE } from "../../utils/bookValidation";
 
 export default function EditBookForm() {
   const {

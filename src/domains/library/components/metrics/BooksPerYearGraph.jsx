@@ -18,6 +18,13 @@ export const BooksPerYearGraph = ({
       value: (yd) => yd.pages,
       format: (n) => n.toLocaleString(),
     },
+    rating: {
+      label: "Avg rating per year",
+      shortLabel: "Rating",
+      value: (yd) =>
+        yd.ratingCount > 0 ? (yd.rating / yd.ratingCount).toFixed(1) : 0,
+      format: (n) => n,
+    },
   };
 
   const activeMetric = metricConfig[graphMetric] ?? metricConfig.books;

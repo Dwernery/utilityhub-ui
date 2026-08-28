@@ -13,7 +13,7 @@ function LayoutContent() {
   );
 }
 
-export default function AppLayout() {
+export function AppLayout() {
   return (
     <LibraryProvider>
       <LayoutContent />

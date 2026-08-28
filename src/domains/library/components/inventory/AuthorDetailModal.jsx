@@ -1,8 +1,8 @@
 import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
-import BookCover from "./BookCover";
-import StarRating from "./StarRating";
-import Modal from "./Modal";
-import { useBooks } from "../hooks/useBooks";
+import BookCover from "../BookCover";
+import StarRating from "../StarRating";
+import Modal from "../Modal";
+import { useBooks } from "../../hooks/useBooks";
 
 export default function AuthorDetailModal({ author, onClose, onBookClick }) {
   const { data: books = [] } = useBooks();

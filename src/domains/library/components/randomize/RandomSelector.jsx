@@ -78,7 +78,7 @@ export const RandomSelector = ({
                       <p className="text-xs text-slate-600 font-medium">
                         {index + 1}
                       </p>
-                      <p className="text-xs text-slate-500 truncate max-w-20 leading-tight">
+                      <p className="text-xs text-slate-500  max-w-20 leading-tight">
                         {book.title}
                       </p>
                     </div>

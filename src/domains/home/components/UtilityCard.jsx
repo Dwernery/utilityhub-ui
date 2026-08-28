@@ -18,7 +18,7 @@ export function UtilityCard({
 
   const content = (
     <>
-      <div className="flex items-center justify-between mb-3">
+      <div className="flex items-center mb-3">
         <div
           className={`w-10 h-10 rounded-lg flex items-center justify-center ${
             isLive ? "bg-blue-50" : "bg-slate-100"
@@ -28,9 +28,14 @@ export function UtilityCard({
             className={`w-5 h-5 ${isLive ? "text-blue-600" : "text-slate-400"}`}
           />
         </div>
+        <h3
+          className={`ml-3 text-base font-bold ${isLive ? "text-slate-800" : "text-slate-500"}`}
+        >
+          {title}
+        </h3>
         {badgeLabel && (
           <span
-            className={`text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full ${
+            className={`text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full ml-auto ${
               isLive
                 ? "text-green-600 bg-green-50"
                 : "text-slate-400 bg-slate-100"
@@ -40,16 +45,15 @@ export function UtilityCard({
           </span>
         )}
       </div>
-      <h3
-        className={`text-base font-bold ${isLive ? "text-slate-800" : "text-slate-500"}`}
-      >
-        {title}
-      </h3>
-      <p
-        className={`text-sm mt-1 ${isLive ? "text-slate-500" : "text-slate-400"}`}
-      >
-        {description}
-      </p>
+
+      {description && (
+        <p
+          className={`text-xs ${isLive ? "text-slate-500" : "text-slate-400"}`}
+        >
+          {description}
+        </p>
+      )}
+
       {children}
     </>
   );

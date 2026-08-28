@@ -16,12 +16,23 @@ export default function Metrics() {
     const byYear = {};
     readBooks.forEach((b) => {
       const y = parseLocalDate(b.endDate).getFullYear();
-      if (!byYear[y]) byYear[y] = { books: 0, pages: 0 };
+      if (!byYear[y])
+        byYear[y] = { books: 0, pages: 0, rating: 0, ratingCount: 0 };
       byYear[y].books++;
       byYear[y].pages += b.pages || 0;
+      if (b.rating) {
+        byYear[y].rating += b.rating;
+        byYear[y].ratingCount++;
+      }
     });
     const allTimeBooks = readBooks.length;
     const allTimePages = readBooks.reduce((s, b) => s + (b.pages || 0), 0);
+    const allTimeRatingSum = readBooks.reduce((s, b) => s + (b.rating || 0), 0);
+    const allTimeRatingCount = readBooks.filter((b) => b.rating).length;
+    const allTimeRating =
+      allTimeRatingCount > 0
+        ? (allTimeRatingSum / allTimeRatingCount).toFixed(1)
+        : 0;
     const availableYears = Object.keys(byYear)
       .map(Number)
       .sort((a, b) => b - a);
@@ -39,6 +50,8 @@ export default function Metrics() {
         year,
         books: curr.books,
         pages: curr.pages,
+        rating: curr.rating,
+        ratingCount: curr.ratingCount,
         booksDiff,
         pagesDiff,
         booksPercentChange,
@@ -63,6 +76,7 @@ export default function Metrics() {
       byMonth,
       allTimeBooks,
       allTimePages,
+      allTimeRating,
       availableYears,
       yearComparisons,
     };
@@ -89,7 +103,7 @@ export default function Metrics() {
   return (
     <div className="space-y-4">
       <CurrentlyReading books={books} />
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-4 gap-3">
         {[
           ["Books read", metrics.allTimeBooks],
           ["Pages", metrics.allTimePages.toLocaleString()],
@@ -99,6 +113,7 @@ export default function Metrics() {
               ? Math.round(metrics.allTimePages / metrics.allTimeBooks)
               : 0,
           ],
+          ["Avg rating", metrics.allTimeRating],
         ].map(([label, val]) => (
           <div
             key={label}

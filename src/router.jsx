@@ -1,7 +1,9 @@
 import { createBrowserRouter, useRouteError } from "react-router-dom";
 import RootLayout from "./RootLayout";
-import AppLayout from "./domains/library/AppLayout";
-import Home from "./pages/Home";
+import { AppLayout as LibraryAppLayout } from "./domains/library/AppLayout";
+import { AppLayout as McuAppLayout } from "./domains/mcu/AppLayout";
+import Home from "./domains/home/pages/Home";
+import { Tracker } from "./domains/mcu/pages/Tracker";
 import { Inventory } from "./domains/library/pages/Inventory";
 import Metrics from "./domains/library/pages/Metrics";
 import Randomize from "./domains/library/pages/Randomize";
@@ -58,7 +60,7 @@ export const router = createBrowserRouter([
       },
       {
         path: "library",
-        element: <AppLayout />,
+        element: <LibraryAppLayout />,
         children: [
           {
             path: "inventory",
@@ -71,6 +73,16 @@ export const router = createBrowserRouter([
           {
             path: "randomize",
             element: <Randomize />,
+          },
+        ],
+      },
+      {
+        path: "mcu",
+        element: <McuAppLayout />,
+        children: [
+          {
+            path: "tracker",
+            element: <Tracker />,
           },
         ],
       },
