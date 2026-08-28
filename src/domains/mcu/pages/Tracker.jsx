@@ -25,7 +25,7 @@ export const Tracker = () => {
   const openEpisodes = (item, color) => setActiveShow({ item, color });
 
   return (
-    <div className="max-w-7xl mx-auto pb-4">
+    <div className="max-w-7xl mx-auto pb-4 px-4">
       {view === "phases" ? (
         <>
           {SAGAS.map((saga) => {
