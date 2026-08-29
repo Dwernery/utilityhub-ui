@@ -25,7 +25,7 @@ export default function Home() {
       <div className="mb-6 text-center sm:text-left">
         <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-2">
           <Sparkles className="w-6 h-6 text-blue-600" />
-          Project Nova
+          Project SHIELD
         </h1>
         <p className="text-sm text-slate-500 mt-1">
           A growing collection of personal tools, all in one place.

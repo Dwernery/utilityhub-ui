@@ -1,4 +1,4 @@
-import { Book, BookOpen, CalendarDays, ArrowRight } from "lucide-react";
+import { Book, BookOpen, CalendarDays, ArrowRight, Star } from "lucide-react";
 import { useBooks } from "../../library/hooks/useBooks";
 import { parseLocalDate } from "../../library/utils/dateUtils";
 import { UtilityCard } from "./UtilityCard";
@@ -11,7 +11,6 @@ export function LibraryHomeCard() {
       <UtilityCard
         icon={Book}
         title="Library"
-        description="Track books, reading metrics, and what to read next"
         badgeLabel="Live"
         to="/library/inventory"
         className="lg:col-span-2"
@@ -31,7 +30,6 @@ export function LibraryHomeCard() {
       <UtilityCard
         icon={Book}
         title="Library"
-        description="Track books, reading metrics, and what to read next"
         badgeLabel="Live"
         to="/library/inventory"
         className="lg:col-span-2"
@@ -44,75 +42,106 @@ export function LibraryHomeCard() {
     );
   }
 
-  const totalBooks = books.length;
-  const booksRead = books.filter((b) => b.status === "READ").length;
   const currentlyReadingBooks = books.filter((b) => b.status === "IN_PROGRESS");
-  const percentageComplete =
-    totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
 
-  const currentYear = new Date().getFullYear();
+  // All-Time metrics
   const finishedBooks = books.filter((b) => b.status === "READ" && b.endDate);
+  const allTimeBooksRead = finishedBooks.length;
+  const allTimePages = finishedBooks.reduce((s, b) => s + (b.pages || 0), 0);
+  const allTimeRatingSum = finishedBooks.reduce(
+    (s, b) => s + (b.rating || 0),
+    0,
+  );
+  const allTimeRatingCount = finishedBooks.filter((b) => b.rating).length;
+  const allTimeAvgRating =
+    allTimeRatingCount > 0
+      ? (allTimeRatingSum / allTimeRatingCount).toFixed(1)
+      : 0;
+
+  // Current Year metrics
+  const currentYear = new Date().getFullYear();
   const booksThisYear = finishedBooks.filter(
     (b) => parseLocalDate(b.endDate).getFullYear() === currentYear,
   );
   const pagesThisYear = booksThisYear.reduce((s, b) => s + (b.pages || 0), 0);
-  const avgPagesThisYear =
-    booksThisYear.length > 0
-      ? Math.round(pagesThisYear / booksThisYear.length)
+  const thisYearRatingSum = booksThisYear.reduce(
+    (s, b) => s + (b.rating || 0),
+    0,
+  );
+  const thisYearRatingCount = booksThisYear.filter((b) => b.rating).length;
+  const thisYearAvgRating =
+    thisYearRatingCount > 0
+      ? (thisYearRatingSum / thisYearRatingCount).toFixed(1)
       : 0;
+
+
 
   return (
     <UtilityCard
       icon={Book}
       title="Library"
-      description="Track books, reading metrics, and what to read next"
       badgeLabel="Live"
       to="/library/inventory"
     >
-      <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mt-4">
-        <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-        All-Time
+      <div className="flex items-center justify-between text-xs text-slate-500 mt-4">
+        <span className="flex items-center gap-1 font-semibold">
+          <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+          All-Time
+        </span>
+        <span className="text-xs text-slate-400">
+          {finishedBooks.length}/{books.length} · <span className="font-semibold ">{books.length > 0 ? Math.round((finishedBooks.length / books.length) * 100) : 0}%</span>
+        </span>
       </div>
       <div className="grid grid-cols-3 mt-4 text-center">
         <div>
-          <div className="text-lg font-bold text-slate-800">{booksRead}</div>
-          <div className="text-[11px] text-slate-400">Books Read</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-slate-800">{totalBooks}</div>
-          <div className="text-[11px] text-slate-400">Total Books</div>
-        </div>
-        <div>
-          <div className="text-lg font-bold text-slate-800">
-            {percentageComplete}%
+          <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+            <Book className="w-3.5 h-3.5 text-slate-400" />
+            {allTimeBooksRead}
           </div>
-          <div className="text-[11px] text-slate-400">Read</div>
+          <div className="text-[11px] text-slate-400">Books</div>
+        </div>
+        <div>
+          <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+            <BookOpen className="w-3.5 h-3.5 text-slate-400" />
+            {allTimePages.toLocaleString()}
+          </div>
+          <div className="text-[11px] text-slate-400">Pages</div>
+        </div>
+        <div>
+          <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+            <Star className="w-3.5 h-3.5 text-slate-400" />
+            {allTimeAvgRating}
+          </div>
+          <div className="text-[11px] text-slate-400">Avg Rating</div>
         </div>
       </div>
 
       <div className="border-t border-slate-100 pt-4 mt-4">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-4">
           <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
-          {currentYear} so far
+          {currentYear}
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
           <div>
-            <div className="text-lg font-bold text-slate-800">
+            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+              <Book className="w-3.5 h-3.5 text-slate-400" />
               {booksThisYear.length}
             </div>
-            <div className="text-[11px] text-slate-400">Books read</div>
+            <div className="text-[11px] text-slate-400">Books</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-slate-800">
+            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+              <BookOpen className="w-3.5 h-3.5 text-slate-400" />
               {pagesThisYear.toLocaleString()}
             </div>
-            <div className="text-[11px] text-slate-400">Pages read</div>
+            <div className="text-[11px] text-slate-400">Pages</div>
           </div>
           <div>
-            <div className="text-lg font-bold text-slate-800">
-              {avgPagesThisYear}
+            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+              <Star className="w-3.5 h-3.5 text-slate-400" />
+              {thisYearAvgRating}
             </div>
-            <div className="text-[11px] text-slate-400">Avg pages/book</div>
+            <div className="text-[11px] text-slate-400">Avg Rating</div>
           </div>
         </div>
       </div>

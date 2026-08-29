@@ -20,7 +20,7 @@ export const BooksPerYearGraph = ({
     },
     rating: {
       label: "Avg rating per year",
-      shortLabel: "Rating",
+      shortLabel: "Ratings",
       value: (yd) =>
         yd.ratingCount > 0 ? (yd.rating / yd.ratingCount).toFixed(1) : 0,
       format: (n) => n,

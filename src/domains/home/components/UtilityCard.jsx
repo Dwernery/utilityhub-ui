@@ -8,7 +8,6 @@ import { Link } from "react-router-dom";
 export function UtilityCard({
   icon: Icon,
   title,
-  description,
   badgeLabel,
   to,
   className = "",
@@ -45,15 +44,6 @@ export function UtilityCard({
           </span>
         )}
       </div>
-
-      {description && (
-        <p
-          className={`text-xs ${isLive ? "text-slate-500" : "text-slate-400"}`}
-        >
-          {description}
-        </p>
-      )}
-
       {children}
     </>
   );

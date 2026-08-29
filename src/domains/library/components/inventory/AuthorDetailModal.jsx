@@ -20,8 +20,7 @@ export default function AuthorDetailModal({ author, onClose, onBookClick }) {
   return (
     <Modal
       onClose={onClose}
-      overlayClassName="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
-      panelClassName="bg-white w-full sm:rounded-xl sm:max-w-3xl max-h-[90vh] overflow-y-auto"
+      panelClassName="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 shadow-2xl"
     >
       <div className="sticky top-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center gap-3">
         <button
@@ -49,7 +48,7 @@ export default function AuthorDetailModal({ author, onClose, onBookClick }) {
           </div>
         ))}
       </div>
-      <div className="divide-y divide-slate-100">
+      <div className="divide-y divide-slate-100 mb-1">
         {authorBooks.map((book) => (
           <button
             key={book.id}

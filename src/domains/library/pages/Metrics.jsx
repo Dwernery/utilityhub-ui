@@ -105,7 +105,7 @@ export default function Metrics() {
       <CurrentlyReading books={books} />
       <div className="grid grid-cols-4 gap-3">
         {[
-          ["Books read", metrics.allTimeBooks],
+          ["Books", metrics.allTimeBooks],
           ["Pages", metrics.allTimePages.toLocaleString()],
           [
             "Avg pages",

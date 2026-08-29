@@ -1,4 +1,11 @@
-import { ArrowRight, Clapperboard, Film, Sparkles, Tv } from "lucide-react";
+import {
+  ArrowRight,
+  Clapperboard,
+  Film,
+  Sparkles,
+  Tv,
+  Galaxy
+} from "lucide-react";
 import { EXPANDED, PHASES } from "../../mcu/data";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
 import { combineStats, computeStats, percentage } from "../../mcu/utils/stats";
@@ -20,7 +27,10 @@ function ProgressSection({ label, stats }) {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold text-slate-500">{label}</span>
+        <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+          <Galaxy className="w-3.5 h-3.5 text-slate-400" /> 
+          {label}
+        </span>
         <span className="text-xs text-slate-400">
           {stats.done}/{stats.total} ·{" "}
           <span className="font-semibold ">{pct}%</span>
@@ -59,7 +69,6 @@ export function McuHomeCard() {
     <UtilityCard
       icon={Clapperboard}
       title="MCU"
-      description="Track Marvel and expanded universe progress"
       badgeLabel="Live"
       to="/mcu/tracker"
     >

@@ -77,7 +77,7 @@ export default function BookDetailModal() {
   return (
     <Modal
       onClose={closeBookDialog}
-      panelClassName="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl"
+      panelClassName="bg-white w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-200 shadow-2xl"
     >
       {isEditingInDialog && <EditBookForm />}
       {!isEditingInDialog && (
