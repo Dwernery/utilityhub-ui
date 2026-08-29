@@ -1,10 +1,15 @@
 import { Outlet, useLocation } from "react-router-dom";
-
+import { useEffect } from "react";
 export default function RootLayout() {
   const { pathname } = useLocation();
   // The MCU tracker is a full-bleed, edge-to-edge dark experience — it
   // manages its own background/spacing, so skip the shared light shell.
   const isFullBleed = pathname.startsWith("/mcu");
+  
+  // Scroll to top when route changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [pathname]);
 
   if (isFullBleed) {
     return <Outlet />;
