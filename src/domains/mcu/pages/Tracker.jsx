@@ -9,12 +9,54 @@ import { computeStats, nextStatus } from "../utils/stats";
 import { SagaSection } from "../components/tracking/SagaSection";
 import { McuDetailModal } from "../components/tracking/McuDetailModal";
 
-const getDefaultExpandedSections = (phases, expandedCategories) => {
+const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
   return Object.fromEntries([
-    ...SAGAS.map((s) => [`saga-${s.id}`, true]),
-    ...phases.map((p) => [`phase-${p.num}`, true]),
-    ...expandedCategories.map((c) => [c.id, true]),
+    // Sagas: open if any phase within it has unwatched content
+    ...SAGAS.map((saga) => {
+      const sagaPhases = saga.phaseNums
+        .map((num) => phases.find((p) => p.num === num))
+        .filter(Boolean);
+      const sagaStats = combineStats(
+        sagaPhases.map((phase) => computeStats(phase.items, watched)),
+      );
+      const sagaFullyWatched = sagaStats.done === sagaStats.total;
+      return [`saga-${saga.id}`, !sagaFullyWatched];
+    }),
+    // Phases: open if they have unwatched content
+    ...phases.map((p) => {
+      const stats = computeStats(p.items, watched);
+      const fullyWatched = stats.done === stats.total;
+      return [`phase-${p.num}`, !fullyWatched];
+    }),
+    // Categories: open if they have unwatched content
+    ...expandedCategories.map((c) => {
+      const stats = computeStats(c.items, watched);
+      const fullyWatched = stats.done === stats.total;
+      return [c.id, !fullyWatched];
+    }),
   ]);
+};
+
+// Helper function to combine stats from multiple stat objects
+const combineStats = (statsList) => {
+  const EMPTY_STATS = {
+    total: 0,
+    done: 0,
+    movies: 0,
+    moviesDone: 0,
+    episodes: 0,
+    episodesDone: 0,
+    specials: 0,
+    specialsDone: 0,
+  };
+  return statsList.reduce(
+    (acc, stats) => {
+      const next = { ...acc };
+      for (const key of Object.keys(EMPTY_STATS)) next[key] += stats[key];
+      return next;
+    },
+    { ...EMPTY_STATS },
+  );
 };
 
 export const Tracker = () => {
@@ -77,11 +119,12 @@ export const Tracker = () => {
       const defaultExpandedSections = getDefaultExpandedSections(
         phases,
         expandedCategories,
+        watched,
       );
       setExpandedSections(defaultExpandedSections);
       hasInitializedRef.current = true;
     }
-  }, [phases, expandedCategories]);
+  }, [phases, expandedCategories, watched]);
 
   useEffect(() => {
     if (data) hydrateWatched(data);
