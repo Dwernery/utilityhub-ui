@@ -87,7 +87,7 @@ export function Header() {
                 </div>
               );
             })}
-            <div className="flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 lg:min-h-[72px]">
+            <div className="col-span-2 sm:col-span-3 lg:col-span-1 flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 lg:min-h-[72px]">
               <div className="flex items-center justify-between">
                 <div className="text-[11px] text-slate-400 truncate">
                   Overall
