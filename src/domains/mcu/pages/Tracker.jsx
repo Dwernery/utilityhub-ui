@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SAGAS } from "../utils/statConstants";
 import { useMcuTracker } from "../context/McuTrackerContext";
 import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
@@ -89,18 +89,16 @@ export const Tracker = () => {
 
   // Initialize expandedSections as empty - effect will populate it on first data load
   const [expandedSections, setExpandedSections] = useState({});
-  const hasInitializedRef = useRef(false);
 
-  // Populate expanded sections only on first data load
+  // Update expanded sections when phases or watched status changes
   useEffect(() => {
-    if (!hasInitializedRef.current && phases.length > 0) {
+    if (phases.length > 0) {
       const defaultExpandedSections = getDefaultExpandedSections(
         phases,
         expandedCategories,
         watched,
       );
       setExpandedSections(defaultExpandedSections);
-      hasInitializedRef.current = true;
     }
   }, [phases, expandedCategories, watched]);
 
