@@ -1,66 +1,102 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { createContext, useCallback, useContext, useState } from "react";
+import { getStatus, nextStatus } from "../utils/stats";
 
-// TODO: replace with API-backed watched state once the MCU API exists.
 const McuTrackerContext = createContext(null);
+
+function normalizeStatus(status) {
+  return status === "WATCHED" || status === "IN_PROGRESS"
+    ? status
+    : "UNWATCHED";
+}
+
+function extractStatusFromDomains(domains) {
+  const status = {};
+
+  if (!Array.isArray(domains)) {
+    console.warn("Invalid domains format: expected array, got", typeof domains);
+    return { status };
+  }
+
+  for (const domain of domains) {
+    if (!domain) continue;
+
+    // Movies and specials use globalId as key
+    if (Array.isArray(domain.movies)) {
+      for (const movie of domain.movies) {
+        if (movie?.globalId) {
+          status[movie.globalId] = normalizeStatus(movie.status);
+        }
+      }
+    }
+
+    // TV episodes use their globalId as key (no need for composite keys)
+    if (Array.isArray(domain.shows)) {
+      for (const show of domain.shows) {
+        if (!show || !Array.isArray(show.seasons)) continue;
+        for (const season of show.seasons) {
+          if (!season || !Array.isArray(season.episodes)) continue;
+          for (const episode of season.episodes) {
+            if (episode?.globalId) {
+              status[episode.globalId] = normalizeStatus(episode.status);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return { status };
+}
 
 export function McuTrackerProvider({ children }) {
   const [view, setView] = useState("phases");
   const [watched, setWatched] = useState({});
 
-  const toggleItem = useCallback(
-    (item) => {
-      setWatched((prev) => {
-        const next = { ...prev };
+  // Builds and seeds status from raw API domains without clobbering local edits
+  const hydrateWatched = useCallback((apiData) => {
+    const { status: initialStatus } = extractStatusFromDomains(
+      apiData?.domains ?? [],
+    );
+    setWatched((prev) => ({ ...initialStatus, ...prev }));
+  }, []);
 
-        if (item.type === "tv") {
-          const allWatched = item.episodes.every(
-            (_, i) => prev[`${item.id}::e${i}`],
-          );
-          for (let i = 0; i < item.episodes.length; i++) {
-            const key = `${item.id}::e${i}`;
-            if (allWatched) delete next[key];
-            else next[key] = true;
-          }
-          return next;
+  const toggleItem = useCallback((item) => {
+    setWatched((prev) => {
+      const next = { ...prev };
+
+      if (item.type === "tv") {
+        // For TV shows, toggle all episodes using their globalIds
+        const allWatched = item.episodes.every(
+          (episode) => getStatus(prev, episode.globalId) === "WATCHED",
+        );
+        const target = allWatched ? "UNWATCHED" : "WATCHED";
+        for (const episode of item.episodes) {
+          next[episode.globalId] = target;
         }
-
-        if (next[item.id]) delete next[item.id];
-        else next[item.id] = true;
         return next;
-      });
-    },
-    [setWatched],
-  );
+      }
 
-  const toggleEpisode = useCallback(
-    (itemId, episodeIndex) => {
-      setWatched((prev) => {
-        const key = `${itemId}::e${episodeIndex}`;
-        const next = { ...prev };
-        if (next[key]) delete next[key];
-        else next[key] = true;
-        return next;
-      });
-    },
-    [setWatched],
-  );
+      // For movies/specials, cycle through statuses
+      next[item.id] = nextStatus(prev[item.id]);
+      return next;
+    });
+  }, []);
 
-  const value = useMemo(
-    () => ({
-      view,
-      setView,
-      watched,
-      toggleItem,
-      toggleEpisode,
-    }),
-    [view, watched, toggleItem, toggleEpisode],
-  );
+  const toggleEpisode = useCallback((episodeGlobalId) => {
+    setWatched((prev) => {
+      return { ...prev, [episodeGlobalId]: nextStatus(prev[episodeGlobalId]) };
+    });
+  }, []);
+
+  const value = {
+    view,
+    setView,
+    watched,
+    setWatched,
+    hydrateWatched,
+    toggleItem,
+    toggleEpisode,
+  };
 
   return (
     <McuTrackerContext.Provider value={value}>

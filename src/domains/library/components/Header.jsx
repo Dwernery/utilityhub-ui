@@ -1,10 +1,9 @@
 import { Book, Home } from "lucide-react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { useBooks } from "../hooks/useBooks";
 
 export default function Header() {
   const location = useLocation();
-  const navigate = useNavigate();
   const { data: books = [] } = useBooks();
 
   const tabMapping = {
@@ -15,8 +14,7 @@ export default function Header() {
   const activeTab = tabMapping[location.pathname] || "Inventory";
   const totalBooks = books.length;
   const booksRead = books.filter((b) => b.status === "READ").length;
-  const percentageComplete =
-    totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
+  const percentageComplete = totalBooks > 0 ? Math.round((booksRead / totalBooks) * 100) : 0;
 
   return (
     <div className="mb-4 bg-white rounded-xl shadow-sm p-4 border border-slate-200">
@@ -53,13 +51,13 @@ export default function Header() {
         </div>
         <div className="flex gap-1 border-b border-slate-200">
           {["Inventory", "Metrics", "Randomize"].map((label) => (
-            <button
+            <Link
               key={label}
-              onClick={() => navigate(`/library/${label.toLowerCase()}`)}
+              to={`/library/${label.toLowerCase()}`}
               className={`px-4 py-2 text-sm font-medium transition-colors flex items-center gap-1.5 ${activeTab === label ? "text-blue-600 border-b-2 border-blue-600" : "text-slate-500 hover:text-slate-700"}`}
             >
               {label}
-            </button>
+            </Link>
           ))}
         </div>
       </div>

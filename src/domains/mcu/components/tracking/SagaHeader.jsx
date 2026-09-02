@@ -1,3 +1,4 @@
+import PropTypes from "prop-types";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 export function SagaHeader({
@@ -58,3 +59,12 @@ export function SagaHeader({
     </div>
   );
 }
+
+SagaHeader.propTypes = {
+  title: PropTypes.string.isRequired,
+  subtitle: PropTypes.string,
+  color: PropTypes.string,
+  percentage: PropTypes.number,
+  expanded: PropTypes.bool,
+  onToggle: PropTypes.func,
+};

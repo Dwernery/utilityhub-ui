@@ -1,26 +1,11 @@
-import {
-  ArrowRight,
-  Clapperboard,
-  Film,
-  Sparkles,
-  Tv,
-  Galaxy
-} from "lucide-react";
-import { EXPANDED, PHASES } from "../../mcu/data";
+import { ArrowRight, Clapperboard, Galaxy } from "lucide-react";
+import { useMemo } from "react";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
+import { useMcuTrackerData } from "../../mcu/hooks/useMcuTrackerData";
+import { normalizeTrackerData } from "../../mcu/utils/normalizeTrackerData";
 import { combineStats, computeStats, percentage } from "../../mcu/utils/stats";
+import { BREAKDOWN } from "../../mcu/utils/statConstants";
 import { UtilityCard } from "./UtilityCard";
-
-const BREAKDOWN = [
-  { key: "movies", doneKey: "moviesDone", label: "Movies", icon: Film },
-  {
-    key: "specials",
-    doneKey: "specialsDone",
-    label: "Specials",
-    icon: Sparkles,
-  },
-  { key: "episodes", doneKey: "episodesDone", label: "Episodes", icon: Tv },
-];
 
 function ProgressSection({ label, stats }) {
   const pct = percentage(stats.done, stats.total);
@@ -28,7 +13,7 @@ function ProgressSection({ label, stats }) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
-          <Galaxy className="w-3.5 h-3.5 text-slate-400" /> 
+          <Galaxy className="w-3.5 h-3.5 text-slate-400" />
           {label}
         </span>
         <span className="text-xs text-slate-400">
@@ -56,14 +41,30 @@ function ProgressSection({ label, stats }) {
 
 export function McuHomeCard() {
   const { watched } = useMcuTracker();
+  const { data } = useMcuTrackerData();
+  const { phases, expandedCategories } = useMemo(
+    () => normalizeTrackerData(data),
+    [data],
+  );
 
-  const mcuStats = combineStats(
-    PHASES.map((phase) => computeStats(phase.items, watched)),
+  const mcuStats = useMemo(
+    () =>
+      combineStats(phases.map((phase) => computeStats(phase.items, watched))),
+    [phases, watched],
   );
-  const expandedStats = combineStats(
-    EXPANDED.map((category) => computeStats(category.items, watched)),
+  const expandedStats = useMemo(
+    () =>
+      combineStats(
+        expandedCategories.map((category) =>
+          computeStats(category.items, watched),
+        ),
+      ),
+    [expandedCategories, watched],
   );
-  const overallStats = combineStats([mcuStats, expandedStats]);
+  const overallStats = useMemo(
+    () => combineStats([mcuStats, expandedStats]),
+    [mcuStats, expandedStats],
+  );
 
   return (
     <UtilityCard
