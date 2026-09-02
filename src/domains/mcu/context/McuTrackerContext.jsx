@@ -4,6 +4,7 @@ import {
   useContext,
   useState,
   useEffect,
+  useRef,
 } from "react";
 import { getStatus, nextStatus } from "../utils/stats";
 import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
@@ -59,6 +60,7 @@ export function McuTrackerProvider({ children }) {
   const [view, setView] = useState("phases");
   const [watched, setWatched] = useState({});
   const { data } = useMcuTrackerData();
+  const hasHydrated = useRef(false);
 
   // Builds and seeds status from raw API domains without clobbering local edits
   const hydrateWatched = useCallback((apiData) => {
@@ -68,12 +70,13 @@ export function McuTrackerProvider({ children }) {
     setWatched((prev) => ({ ...initialStatus, ...prev }));
   }, []);
 
-  // Auto-hydrate when MCU data is fetched
+  // Auto-hydrate when MCU data is fetched (only once)
   useEffect(() => {
-    if (data) {
+    if (data && !hasHydrated.current) {
+      hasHydrated.current = true;
       hydrateWatched(data);
     }
-  }, [data]);
+  }, [data, hydrateWatched]);
 
   const toggleItem = useCallback((item) => {
     setWatched((prev) => {
