@@ -55,22 +55,10 @@ function extractStatusFromDomains(domains) {
   return { status };
 }
 
-function McuTrackerInitializer({ children }) {
-  const { data } = useMcuTrackerData();
-  const ctx = useContext(McuTrackerContext);
-
-  useEffect(() => {
-    if (data && ctx) {
-      ctx.hydrateWatched(data);
-    }
-  }, [data, ctx]);
-
-  return children;
-}
-
 export function McuTrackerProvider({ children }) {
   const [view, setView] = useState("phases");
   const [watched, setWatched] = useState({});
+  const { data } = useMcuTrackerData();
 
   // Builds and seeds status from raw API domains without clobbering local edits
   const hydrateWatched = useCallback((apiData) => {
@@ -79,6 +67,13 @@ export function McuTrackerProvider({ children }) {
     );
     setWatched((prev) => ({ ...initialStatus, ...prev }));
   }, []);
+
+  // Auto-hydrate when MCU data is fetched
+  useEffect(() => {
+    if (data) {
+      hydrateWatched(data);
+    }
+  }, [data]);
 
   const toggleItem = useCallback((item) => {
     setWatched((prev) => {
@@ -120,7 +115,7 @@ export function McuTrackerProvider({ children }) {
 
   return (
     <McuTrackerContext.Provider value={value}>
-      <McuTrackerInitializer children={children} />
+      {children}
     </McuTrackerContext.Provider>
   );
 }
