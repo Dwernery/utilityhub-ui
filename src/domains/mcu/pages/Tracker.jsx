@@ -38,8 +38,7 @@ const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
 };
 
 export const Tracker = () => {
-  const { view, watched, hydrateWatched, toggleItem, toggleEpisode } =
-    useMcuTracker();
+  const { view, watched, toggleItem, toggleEpisode } = useMcuTracker();
   const { data, isPending, isError } = useMcuTrackerData();
   const { mutate: updateContentStatus } = useUpdateContentStatus();
   const addToast = useToast();
@@ -101,10 +100,6 @@ export const Tracker = () => {
       setExpandedSections(defaultExpandedSections);
     }
   }, [phases, expandedCategories, watched]);
-
-  useEffect(() => {
-    if (data) hydrateWatched(data);
-  }, [data, hydrateWatched]);
 
   // Wrapper for toggling movie/special status - API call then state update
   // Note: TV episodes are toggled individually from the modal only

@@ -1,5 +1,12 @@
-import { createContext, useCallback, useContext, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useState,
+  useEffect,
+} from "react";
 import { getStatus, nextStatus } from "../utils/stats";
+import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
 
 const McuTrackerContext = createContext(null);
 
@@ -46,6 +53,19 @@ function extractStatusFromDomains(domains) {
   }
 
   return { status };
+}
+
+function McuTrackerInitializer({ children }) {
+  const { data } = useMcuTrackerData();
+  const ctx = useContext(McuTrackerContext);
+
+  useEffect(() => {
+    if (data && ctx) {
+      ctx.hydrateWatched(data);
+    }
+  }, [data, ctx]);
+
+  return children;
 }
 
 export function McuTrackerProvider({ children }) {
@@ -100,7 +120,7 @@ export function McuTrackerProvider({ children }) {
 
   return (
     <McuTrackerContext.Provider value={value}>
-      {children}
+      <McuTrackerInitializer children={children} />
     </McuTrackerContext.Provider>
   );
 }
