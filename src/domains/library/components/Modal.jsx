@@ -54,7 +54,7 @@ export default function Modal({
         aria-modal="true"
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className={panelClassName}
+        className={`modal-scroll ${panelClassName}`}
       >
         {children}
       </div>

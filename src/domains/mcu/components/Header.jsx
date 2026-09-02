@@ -48,8 +48,8 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-5 gap-2 mt-3.5">
-            <div className="flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 mt-3.5">
+            <div className="flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2 sm:col-span-2 lg:col-span-1">
               <div className="flex gap-0.5 bg-slate-900 rounded p-1">
                 {VIEWS.map(({ key, label }) => (
                   <button

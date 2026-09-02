@@ -12,7 +12,7 @@
 }
 @media (hover: hover) {
   .mcu-poster-card:hover {
-   filter: brightness(1.15);
+    filter: brightness(1.15);
     transform: translateY(-2px);
   }
   .mcu-episode-row:hover {
@@ -52,4 +52,26 @@
 .mcu-scroll-row {
   scrollbar-width: thin;
   scrollbar-color: #363b4c transparent;
+}
+
+/* Modal scrollbar styling with rounded corners */
+.modal-scroll {
+  scrollbar-gutter: stable;
+}
+.modal-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+.modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.modal-scroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+.modal-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
