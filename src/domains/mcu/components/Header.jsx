@@ -48,29 +48,45 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="flex flex-col gap-2 mt-3.5">
-            {/* Row 1: MCU / Expanded Universe Toggle */}
-            <div className="flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2">
-              <div className="flex gap-0.5 bg-slate-900 rounded p-1">
-                {VIEWS.map(({ key, label }) => (
-                  <button
-                    key={key}
-                    type="button"
-                    onClick={() => setView(key)}
-                    className={`text-[10px] font-semibold py-1.5 px-3 rounded transition-all  ${
-                      view === key
-                        ? "bg-slate-700 text-slate-50 shadow-sm"
-                        : "text-slate-400 hover:text-slate-300 cursor-pointer"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2 mt-3.5">
+            {/* Row 1 on mobile: Toggle + Overall Percentage */}
+            <div className="flex gap-2 lg:flex-[1.5]">
+              <div className="flex-1 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2">
+                <div className="flex gap-0.5 bg-slate-900 rounded p-1">
+                  {VIEWS.map(({ key, label }) => (
+                    <button
+                      key={key}
+                      type="button"
+                      onClick={() => setView(key)}
+                      className={`text-[10px] font-semibold py-1.5 px-3 rounded transition-all  ${
+                        view === key
+                          ? "bg-slate-700 text-slate-50 shadow-sm"
+                          : "text-slate-400 hover:text-slate-300 cursor-pointer"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex-1 flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] text-slate-400 truncate">
+                    Overall
+                  </div>
+                  <div className="text-sm font-bold text-slate-50">{pct}%</div>
+                </div>
+                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-500 shadow-[0_0_10px_rgba(139,124,246,0.35)] transition-[width] duration-300"
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
               </div>
             </div>
 
-            {/* Row 2: All Metrics */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {/* Row 2 on mobile / right side on desktop: All Metrics */}
+            <div className="flex-1 lg:flex-[1.5] grid grid-cols-3 gap-2">
               {BREAKDOWN.map(({ key, doneKey, label, icon: Icon }) => {
                 const total = stats[key];
                 const done = stats[doneKey];
@@ -91,22 +107,6 @@ export function Header() {
                   </div>
                 );
               })}
-            </div>
-
-            {/* Row 3: Overall Percentage */}
-            <div className="flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
-              <div className="flex items-center justify-between">
-                <div className="text-[11px] text-slate-400 truncate">
-                  Overall
-                </div>
-                <div className="text-sm font-bold text-slate-50">{pct}%</div>
-              </div>
-              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-500 shadow-[0_0_10px_rgba(139,124,246,0.35)] transition-[width] duration-300"
-                  style={{ width: `${pct}%` }}
-                />
-              </div>
             </div>
           </div>
         </div>
