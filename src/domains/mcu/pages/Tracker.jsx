@@ -5,7 +5,7 @@ import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
 import { useUpdateContentStatus } from "../hooks/useUpdateContentStatus";
 import { useToast } from "../../../context/ToastContext";
 import { normalizeTrackerData } from "../utils/normalizeTrackerData";
-import { computeStats, nextStatus } from "../utils/stats";
+import { computeStats, nextStatus, combineStats } from "../utils/stats";
 import { SagaSection } from "../components/tracking/SagaSection";
 import { McuDetailModal } from "../components/tracking/McuDetailModal";
 
@@ -35,28 +35,6 @@ const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
       return [c.id, !fullyWatched];
     }),
   ]);
-};
-
-// Helper function to combine stats from multiple stat objects
-const combineStats = (statsList) => {
-  const EMPTY_STATS = {
-    total: 0,
-    done: 0,
-    movies: 0,
-    moviesDone: 0,
-    episodes: 0,
-    episodesDone: 0,
-    specials: 0,
-    specialsDone: 0,
-  };
-  return statsList.reduce(
-    (acc, stats) => {
-      const next = { ...acc };
-      for (const key of Object.keys(EMPTY_STATS)) next[key] += stats[key];
-      return next;
-    },
-    { ...EMPTY_STATS },
-  );
 };
 
 export const Tracker = () => {
