@@ -48,7 +48,8 @@ export function Header() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 mt-3.5">
+          <div className="flex flex-col gap-2 mt-3.5">
+            {/* Row 1: MCU / Expanded Universe Toggle */}
             <div className="flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2">
               <div className="flex gap-0.5 bg-slate-900 rounded p-1">
                 {VIEWS.map(({ key, label }) => (
@@ -67,27 +68,33 @@ export function Header() {
                 ))}
               </div>
             </div>
-            {BREAKDOWN.map(({ key, doneKey, label, icon: Icon }) => {
-              const total = stats[key];
-              const done = stats[doneKey];
-              return (
-                <div
-                  key={key}
-                  className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"
-                >
-                  <Icon className="w-4 h-4 text-slate-400 shrink-0" />
-                  <div className="min-w-0">
-                    <div className="text-[11px] text-slate-400 truncate">
-                      {label}
-                    </div>
-                    <div className="text-sm font-bold text-slate-50">
-                      {total > 0 ? `${done}/${total}` : "—"}
+
+            {/* Row 2: All Metrics */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {BREAKDOWN.map(({ key, doneKey, label, icon: Icon }) => {
+                const total = stats[key];
+                const done = stats[doneKey];
+                return (
+                  <div
+                    key={key}
+                    className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"
+                  >
+                    <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="text-[11px] text-slate-400 truncate">
+                        {label}
+                      </div>
+                      <div className="text-sm font-bold text-slate-50">
+                        {total > 0 ? `${done}/${total}` : "—"}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-            <div className="col-span-2 sm:col-span-3 lg:col-span-1 flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 lg:min-h-[72px]">
+                );
+              })}
+            </div>
+
+            {/* Row 3: Overall Percentage */}
+            <div className="flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
               <div className="flex items-center justify-between">
                 <div className="text-[11px] text-slate-400 truncate">
                   Overall
