@@ -1,7 +1,6 @@
 import PropTypes from "prop-types";
 import { useState } from "react";
 import { Check } from "lucide-react";
-import { TYPE_META } from "../../utils/constants";
 import { posterBackground } from "../../utils/posterArt";
 import {
   getStatus,
@@ -19,7 +18,6 @@ export function PosterCard({
   onSelectItem,
 }) {
   const [imageLoaded, setImageLoaded] = useState(!!item.s3Url);
-  const Icon = TYPE_META[item.type].icon;
   const isTv = item.type === "tv";
   const episodeCount = isTv ? item.episodes.length : 0;
   // Count completed episodes for TV shows by checking globalId status
@@ -67,49 +65,47 @@ export function PosterCard({
           backgroundImage: posterBackground(item.id, color),
         }}
       />
-
-      <Icon
-        size={30}
-        className={`absolute top-3.5 left-2.5 text-white z-10 transition-opacity duration-200 ${
-          imageLoaded ? "invisible" : "visible opacity-20"
-        }`}
-      />
-      {!isTv && (
-        <button
-          type="button"
-          disabled={watched === undefined}
-          className="absolute top-1.5 right-1.5 w-[22px] h-[22px] rounded-full border-[1.5px] border-white/75 bg-slate-950/40 flex items-center justify-center cursor-pointer z-[2] disabled:opacity-50 disabled:cursor-not-allowed"
-          style={{
-            ...(complete
-              ? {
-                  background: color,
-                  borderColor: color,
-                  boxShadow: `0 0 10px ${color}`,
-                }
-              : null),
-            ...(partial
-              ? {
-                  borderColor: color,
-                  background: `conic-gradient(${color} ${ringFraction * 360}deg, rgba(0,0,0,0.35) ${ringFraction * 360}deg)`,
-                }
-              : null),
-          }}
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleItem?.();
-          }}
-          aria-label={
-            complete ? MODAL_LABELS.MARK_UNWATCHED : MODAL_LABELS.MARK_WATCHED
-          }
-        >
-          {complete && <Check size={12} color="#12141B" strokeWidth={3} />}
-        </button>
-      )}
       {isTv && (
-        <span className="text-[8.5px] text-slate-300 absolute top-8.5 right-1.5">
+        <span className="text-[8.5px] font-medium text-white absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-sm">
           {episodesDone}/{episodeCount} {MODAL_LABELS.EPS}
         </span>
       )}
+      <button
+        type="button"
+        disabled={watched === undefined}
+        className="absolute top-1.5 right-1.5 w-[22px] h-[22px] rounded-full border-[1.5px] border-white/75 bg-slate-950/40 flex items-center justify-center cursor-pointer z-[2] disabled:opacity-50 disabled:cursor-not-allowed"
+        style={{
+          ...(complete
+            ? {
+                background: color,
+                borderColor: color,
+                boxShadow: `0 0 10px ${color}`,
+              }
+            : null),
+          ...(partial
+            ? {
+                borderColor: color,
+                background: `conic-gradient(${color} ${ringFraction * 360}deg, rgba(0,0,0,0.35) ${ringFraction * 360}deg)`,
+              }
+            : null),
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (isTv) {
+            onSelectItem?.(item, color);
+          } else {
+            onToggleItem?.();
+          }
+        }}
+        aria-label={
+          complete ? MODAL_LABELS.MARK_UNWATCHED : MODAL_LABELS.MARK_WATCHED
+        }
+      >
+        {!isTv && complete && (
+          <Check size={12} color="#12141B" strokeWidth={3} />
+        )}
+      </button>
+
       <div
         className={`absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5 transition-opacity duration-200 ${
           imageLoaded ? "invisible group-hover:visible" : "visible"
