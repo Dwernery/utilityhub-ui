@@ -116,17 +116,29 @@ export function McuDetailModal({
         // TV Show Season Details
         <div className="px-4 py-4">
           <div className="flex gap-4 mb-5">
-            <div
-              className="w-24 h-36 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-700"
-              style={{
-                backgroundImage: posterBackground(
-                  selectedItem.id,
-                  selectedItemColor,
-                ),
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
+            <div className="relative w-24 h-36 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-700">
+              {/* Background image */}
+              {selectedItem.s3Url && (
+                <img
+                  src={selectedItem.s3Url}
+                  alt={selectedItem.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover z-0"
+                />
+              )}
+              {/* Gradient overlay */}
+              <div
+                className="absolute inset-0 z-10 pointer-events-none"
+                style={{
+                  backgroundImage: posterBackground(
+                    selectedItem.id,
+                    selectedItemColor,
+                  ),
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+            </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-start gap-2 mb-2">
                 <Icon
@@ -251,17 +263,29 @@ export function McuDetailModal({
         // Movie/Special Details
         <div className="px-4 py-4">
           <div className="flex gap-4 mb-4">
-            <div
-              className="w-24 h-36 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-700"
-              style={{
-                backgroundImage: posterBackground(
-                  selectedItem.id,
-                  selectedItemColor,
-                ),
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
+            <div className="relative w-24 h-36 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-700">
+              {/* Background image */}
+              {selectedItem.s3Url && (
+                <img
+                  src={selectedItem.s3Url}
+                  alt={selectedItem.title}
+                  loading="lazy"
+                  className="absolute inset-0 w-full h-full object-cover z-0"
+                />
+              )}
+              {/* Gradient overlay */}
+              <div
+                className="absolute inset-0 z-10 pointer-events-none"
+                style={{
+                  backgroundImage: posterBackground(
+                    selectedItem.id,
+                    selectedItemColor,
+                  ),
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+            </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
               <div className="flex items-start gap-2 mb-2">
                 <Icon

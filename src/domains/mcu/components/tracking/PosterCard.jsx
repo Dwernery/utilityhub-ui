@@ -1,4 +1,5 @@
 import PropTypes from "prop-types";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { TYPE_META } from "../../utils/constants";
 import { posterBackground } from "../../utils/posterArt";
@@ -17,6 +18,7 @@ export function PosterCard({
   onToggleItem,
   onSelectItem,
 }) {
+  const [imageLoaded, setImageLoaded] = useState(!!item.s3Url);
   const Icon = TYPE_META[item.type].icon;
   const isTv = item.type === "tv";
   const episodeCount = isTv ? item.episodes.length : 0;
@@ -38,18 +40,39 @@ export function PosterCard({
 
   return (
     <div
-      className="mcu-poster-card relative w-28 flex-shrink-0 rounded-[10px] border border-white/10 cursor-pointer overflow-hidden"
+      className="mcu-poster-card group relative w-28 flex-shrink-0 rounded-[10px] border border-white/10 cursor-pointer overflow-hidden"
       style={{
         aspectRatio: "2 / 3",
         scrollSnapAlign: "start",
-        backgroundImage: posterBackground(item.id, color),
         boxShadow: complete ? `0 0 0 2px ${color}, 0 6px 18px ${color}55` : ``,
       }}
       onClick={handleCardClick}
     >
+      {/* Background image */}
+      {item.s3Url && (
+        <img
+          src={item.s3Url}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageLoaded(false)}
+        />
+      )}
+
+      {/* Gradient overlay */}
+      <div
+        className="absolute inset-0 z-10 pointer-events-none"
+        style={{
+          backgroundImage: posterBackground(item.id, color),
+        }}
+      />
+
       <Icon
         size={30}
-        className="absolute top-3.5 left-2.5 text-white opacity-20"
+        className={`absolute top-3.5 left-2.5 text-white z-10 transition-opacity duration-200 ${
+          imageLoaded ? "invisible" : "visible opacity-20"
+        }`}
       />
       {!isTv && (
         <button
@@ -88,7 +111,9 @@ export function PosterCard({
         </span>
       )}
       <div
-        className="absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5"
+        className={`absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5 transition-opacity duration-200 ${
+          imageLoaded ? "invisible group-hover:visible" : "visible"
+        }`}
         style={{
           background:
             "linear-gradient(180deg, transparent 0%, rgba(8,9,13,0.55) 35%, rgba(8,9,13,0.95) 100%)",
@@ -111,6 +136,7 @@ export function PosterCard({
 PosterCard.propTypes = {
   item: PropTypes.shape({
     id: PropTypes.string.isRequired,
+    s3Url: PropTypes.string,
     type: PropTypes.oneOf(["movie", "tv"]).isRequired,
     title: PropTypes.string.isRequired,
     episodes: PropTypes.array,
