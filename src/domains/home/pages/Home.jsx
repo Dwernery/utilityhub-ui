@@ -22,14 +22,14 @@ function ComingSoonFeatures({ features }) {
 export default function Home() {
   return (
     <div>
-      <div className="mb-6 text-center sm:text-left flex gap-3 items-center">
+      <div className="mb-4 text-left flex gap-3 items-center">
         <img src="/logo.png" alt="Logo" className="w-16 h-16" />
-        <div className="flex-col">
-          <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-3">
+        <div className="flex flex-col">
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center gap-3">
             Project SHIELD
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            A growing collection of personal tools, all in one place.
+            A collection of personal utility tools
           </p>
         </div>
       </div>
