@@ -3,9 +3,9 @@ import { Header } from "./components/Header";
 
 export function AppLayout() {
   return (
-    <div className="fixed inset-0 flex flex-col text-slate-50 bg-slate-900 overflow-y-auto">
+    <div className="min-h-screen text-slate-50 bg-slate-900">
       <Header />
-      <main className="flex-1">
+      <main>
         <Outlet />
       </main>
     </div>

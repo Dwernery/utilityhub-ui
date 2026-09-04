@@ -2,3 +2,7 @@ html {
   scrollbar-gutter: stable;
   background: #f8fafc;
 }
+
+html.mcu-page {
+  background: #0f172a;
+}
