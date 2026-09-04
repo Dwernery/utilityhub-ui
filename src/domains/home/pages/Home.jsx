@@ -1,4 +1,4 @@
-import { Wallet, Sparkles } from "lucide-react";
+import { Wallet } from "lucide-react";
 import { LibraryHomeCard } from "../components/LibraryHomeCard";
 import { McuHomeCard } from "../components/McuHomeCard";
 import { UtilityCard } from "../components/UtilityCard";
@@ -22,14 +22,16 @@ function ComingSoonFeatures({ features }) {
 export default function Home() {
   return (
     <div>
-      <div className="mb-6 text-center sm:text-left">
-        <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-2">
-          <Sparkles className="w-6 h-6 text-blue-600" />
-          Project SHIELD
-        </h1>
-        <p className="text-sm text-slate-500 mt-1">
-          A growing collection of personal tools, all in one place.
-        </p>
+      <div className="mb-6 text-center sm:text-left flex gap-3 items-center">
+        <img src="/logo.png" alt="Logo" className="w-16 h-16" />
+        <div className="flex-col">
+          <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center sm:justify-start gap-3">
+            Project SHIELD
+          </h1>
+          <p className="text-sm text-slate-500 mt-1">
+            A growing collection of personal tools, all in one place.
+          </p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
