@@ -32,7 +32,7 @@ const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
     ...expandedCategories.map((c) => {
       const stats = computeStats(c.items, watched);
       const fullyWatched = stats.done === stats.total;
-      return [c.id, !fullyWatched];
+      return [`saga-${c.id}`, !fullyWatched];
     }),
   ]);
 };
@@ -189,6 +189,7 @@ export const Tracker = () => {
               watched={watched}
               onToggleItem={handleToggleItem}
               onSelectItem={handleSelectItem}
+              isCategory={true}
             />
           ))}
         </>

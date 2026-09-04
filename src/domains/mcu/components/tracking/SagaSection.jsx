@@ -14,6 +14,7 @@ export function SagaSection({
   watched,
   onToggleItem,
   onSelectItem,
+  isCategory = false,
 }) {
   // Determine if this saga section should be expanded by checking sagaKey in expandedSections
   const expanded = !!expandedSections[sagaKey];
@@ -45,6 +46,7 @@ export function SagaSection({
             onToggleExpand={() => onToggleSection(card.key)}
             onToggleItem={onToggleItem}
             onSelectItem={onSelectItem}
+            hideLabel={isCategory}
           />
         ))}
     </div>
@@ -69,4 +71,5 @@ SagaSection.propTypes = {
   watched: PropTypes.object,
   onToggleItem: PropTypes.func,
   onSelectItem: PropTypes.func,
+  isCategory: PropTypes.bool,
 };
