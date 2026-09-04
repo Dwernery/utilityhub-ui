@@ -38,7 +38,7 @@ export function PosterCard({
 
   return (
     <div
-      className="mcu-poster-card group relative w-28 flex-shrink-0 rounded-[10px] border border-white/10 cursor-pointer overflow-hidden"
+      className="mcu-poster-card group relative w-28 flex-shrink-0 rounded-[10px] border border-white/10 cursor-pointer"
       style={{
         aspectRatio: "2 / 3",
         scrollSnapAlign: "start",
@@ -52,7 +52,7 @@ export function PosterCard({
           src={item.s3Url}
           alt={item.title}
           loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover z-0"
+          className="absolute inset-0 w-full h-full object-cover z-0 rounded-[10px]"
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageLoaded(false)}
         />
@@ -60,7 +60,7 @@ export function PosterCard({
 
       {/* Gradient overlay */}
       <div
-        className="absolute inset-0 z-10 pointer-events-none"
+        className="absolute inset-0 z-10 pointer-events-none rounded-[10px]"
         style={{
           backgroundImage: posterBackground(item.id, color),
         }}
