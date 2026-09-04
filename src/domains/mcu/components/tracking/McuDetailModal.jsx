@@ -154,6 +154,25 @@ export function McuDetailModal({
                   </p>
                 </div>
               </div>
+
+              {selectedItem.episodes &&
+                selectedItem.episodes.length > 0 &&
+                (() => {
+                  const totalRuntime = selectedItem.episodes.reduce(
+                    (sum, episode) => sum + (episode.runtime || 0),
+                    0,
+                  );
+                  return totalRuntime > 0 ? (
+                    <div className="mt-3 p-2 bg-slate-800/50 rounded">
+                      <div className="text-xs text-slate-400 mb-1">
+                        Total Runtime
+                      </div>
+                      <div className="text-sm font-semibold text-white">
+                        {totalRuntime} min
+                      </div>
+                    </div>
+                  ) : null;
+                })()}
             </div>
           </div>
 
@@ -201,25 +220,6 @@ export function McuDetailModal({
               </p>
             </div>
           )}
-
-          {selectedItem.episodes &&
-            selectedItem.episodes.length > 0 &&
-            (() => {
-              const totalRuntime = selectedItem.episodes.reduce(
-                (sum, episode) => sum + (episode.runtime || 0),
-                0,
-              );
-              return totalRuntime > 0 ? (
-                <div className="mb-5 p-3 bg-slate-800/50 rounded-lg">
-                  <div className="text-xs text-slate-400 mb-1">
-                    Total Runtime
-                  </div>
-                  <div className="text-sm font-semibold text-white">
-                    {totalRuntime} min
-                  </div>
-                </div>
-              ) : null;
-            })()}
 
           {selectedItem.episodes && selectedItem.episodes.length > 0 && (
             <div>

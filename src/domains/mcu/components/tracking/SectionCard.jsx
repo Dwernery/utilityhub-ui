@@ -12,10 +12,8 @@ export function SectionCard({
   onToggleExpand,
   onToggleItem,
   onSelectItem,
-  hideLabel = false,
 }) {
-  // Build summary text from stats: "X/Y movies · A/B episodes · C/D specials"
-  const summary = `${stats.moviesDone}/${stats.movies} movies · ${stats.episodesDone}/${stats.episodes} episodes · ${stats.specialsDone}/${stats.specials} specials`;
+  const summary = `${stats.movies} movies · ${stats.episodes} episodes · ${stats.specials} specials`;
 
   return (
     <section className="bg-slate-800 border border-slate-700 rounded-xl mb-2">
@@ -30,17 +28,15 @@ export function SectionCard({
           ) : (
             <ChevronRight size={18} color={color} />
           )}
-          {!hideLabel && (
-            <div>
-              <div
-                className="text-[11px] font-extrabold tracking-wide mb-0.5"
-                style={{ color }}
-              >
-                {label}
-              </div>
-              <div className=""></div>
+          <div>
+            <div
+              className="text-[11px] font-extrabold tracking-wide mb-0.5"
+              style={{ color }}
+            >
+              {label}
             </div>
-          )}
+            <div className=""></div>
+          </div>
         </div>
         <div className="text-xs text-slate-400">{summary}</div>
       </button>
@@ -88,5 +84,4 @@ SectionCard.propTypes = {
   onToggleExpand: PropTypes.func,
   onToggleItem: PropTypes.func,
   onSelectItem: PropTypes.func,
-  hideLabel: PropTypes.bool,
 };

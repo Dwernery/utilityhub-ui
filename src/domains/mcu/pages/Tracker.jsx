@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { SAGAS } from "../utils/statConstants";
 import { useMcuTracker } from "../context/McuTrackerContext";
 import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
@@ -38,13 +39,27 @@ const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
 };
 
 export const Tracker = () => {
-  const { view, watched, toggleItem, toggleEpisode } = useMcuTracker();
+  const { view, watched, toggleItem, toggleEpisode, setView } = useMcuTracker();
   const { data, isPending, isError } = useMcuTrackerData();
   const { mutate: updateContentStatus } = useUpdateContentStatus();
   const addToast = useToast();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState(null);
   const [selectedItemColor, setSelectedItemColor] = useState("#3b82f6");
+
+  // Sync view with URL on mount
+  useEffect(() => {
+    const urlView = searchParams.get("view");
+    if (urlView && (urlView === "phases" || urlView === "categories")) {
+      setView(urlView);
+    }
+  }, []); // Only on mount
+
+  // Update URL when view changes
+  useEffect(() => {
+    setSearchParams({ view }, { replace: true });
+  }, [view, setSearchParams]);
 
   const { phases, expandedCategories } = useMemo(
     () => normalizeTrackerData(data),
@@ -72,18 +87,26 @@ export const Tracker = () => {
 
   // Memoize category section building
   const categorySections = useMemo(() => {
-    return expandedCategories.map((category) => ({
-      category,
-      cards: [
-        {
-          key: category.id,
-          label: category.title.toUpperCase(),
-          color: category.color,
-          items: category.items,
-          stats: computeStats(category.items, watched),
-        },
-      ],
-    }));
+    return expandedCategories.map((category) => {
+      const categoryStats = computeStats(category.items, watched);
+      const metricsSubtitle = `${categoryStats.movies} movies · ${categoryStats.episodes} episodes · ${categoryStats.specials} specials`;
+      const fullSubtitle = category.blurb
+        ? `${category.blurb} · ${metricsSubtitle}`
+        : metricsSubtitle;
+
+      return {
+        category: { ...category, enhancedSubtitle: fullSubtitle },
+        cards: [
+          {
+            key: category.id,
+            label: category.title.toUpperCase(),
+            color: category.color,
+            items: category.items,
+            stats: categoryStats,
+          },
+        ],
+      };
+    });
   }, [expandedCategories, watched]);
 
   // Initialize expandedSections as empty - effect will populate it on first data load
@@ -181,7 +204,7 @@ export const Tracker = () => {
               key={category.id}
               sagaKey={`saga-${category.id}`}
               title={category.title}
-              subtitle={category.blurb}
+              subtitle={category.enhancedSubtitle}
               color={category.color}
               cards={cards}
               expandedSections={expandedSections}
