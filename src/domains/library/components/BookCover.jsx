@@ -1,16 +1,13 @@
 import { Book } from "lucide-react";
-import { useState } from "react";
 
 export default function BookCover({ book, className = "" }) {
-  const [src, setSrc] = useState(null);
-
-  if (src)
+  if (book.s3Url)
     return (
       <img
-        src={src}
+        src={book.s3Url}
         alt={book.title}
-        className={`object-cover ${className}`}
-        onError={() => setSrc(null)}
+        //className={`object-cover ${className}`}
+        className="w-full h-full object-cover"
       />
     );
   return (

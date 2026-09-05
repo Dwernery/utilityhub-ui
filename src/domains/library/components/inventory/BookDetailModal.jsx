@@ -95,7 +95,7 @@ export default function BookDetailModal() {
           </div>
 
           <div className="flex gap-4 px-4 pt-4 pb-3">
-            <div className="w-20 h-28 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-100">
+            <div className="w-20 h-30 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-100">
               <BookCover book={selectedBook} className="w-full h-full" />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
