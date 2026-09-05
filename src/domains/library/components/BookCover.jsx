@@ -8,6 +8,7 @@ export default function BookCover({ book, className = "" }) {
         alt={book.title}
         //className={`object-cover ${className}`}
         className="w-full h-full object-cover"
+        loading="lazy"
       />
     );
   return (

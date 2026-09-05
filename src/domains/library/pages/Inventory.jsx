@@ -13,6 +13,7 @@ import AddBookForm from "../components/inventory/AddBookForm";
 import { useBooks } from "../hooks/useBooks";
 import BookDetailModal from "../components/inventory/BookDetailModal";
 import AuthorDetailModal from "../components/inventory/AuthorDetailModal";
+import BookCover from "../components/BookCover";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -99,7 +100,7 @@ export function Inventory() {
             <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
               <button
                 onClick={() => setAuthor(authorName)}
-                className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors"
+                className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors  hover:cursor-pointer"
               >
                 <User className="w-3.5 h-3.5 text-slate-400" />
                 {authorName}
@@ -123,6 +124,9 @@ export function Inventory() {
                 }}
                 className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${i < groupBooks.length - 1 ? "border-b border-slate-100" : ""}`}
               >
+                <div className="w-12 h-18 rounded flex-shrink-0 overflow-hidden">
+                  <BookCover book={book} className="w-full h-full" />
+                </div>
                 <div className="flex-shrink-0">
                   {book.status === "READ" ? (
                     <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -138,17 +142,19 @@ export function Inventory() {
                   <div className="text-sm font-medium text-slate-800 truncate">
                     {book.title}
                   </div>
-                  <div className="flex items-center gap-2 mt-0.5">
+
+                  <div className="flex items-center gap-2 mt-0.5 mb-0.5">
                     {book.seriesName && (
                       <span className="text-xs text-blue-500 truncate">
                         {book.seriesName}
                       </span>
                     )}
-                    {book.rating > 0 && (
-                      <StarRating value={book.rating} readonly size="sm" />
-                    )}
                   </div>
+                  {book.rating > 0 && (
+                    <StarRating value={book.rating} readonly size="sm" />
+                  )}
                 </div>
+
                 <span className="text-xs text-slate-400 flex-shrink-0">
                   {book.pages} pages
                 </span>

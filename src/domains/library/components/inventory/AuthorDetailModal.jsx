@@ -55,7 +55,7 @@ export default function AuthorDetailModal({ author, onClose, onBookClick }) {
             onClick={() => onBookClick(book)}
             className="w-full text-left flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors"
           >
-            <div className="w-10 h-14 rounded flex-shrink-0 overflow-hidden">
+            <div className="w-10 h-16 rounded flex-shrink-0 overflow-hidden">
               <BookCover book={book} className="w-full h-full" />
             </div>
             <div className="flex-1 min-w-0">
