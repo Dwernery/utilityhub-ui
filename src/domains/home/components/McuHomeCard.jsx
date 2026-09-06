@@ -73,17 +73,17 @@ export function McuHomeCard() {
       badgeLabel="Live"
       to="/mcu/tracker"
     >
-      <div className="mt-4 space-y-4">
+      <div className="mt-4 space-y-4 mb-0 lg:mb-auto">
         <ProgressSection label="Overall" stats={overallStats} />
         <div className="border-t border-slate-100 pt-4">
           <ProgressSection label="MCU Phases" stats={mcuStats} />
         </div>
-        <div className="border-t border-slate-100 pt-4 pb-4">
+        <div className="border-t border-slate-100 pt-4">
           <ProgressSection label="Expanded Universe" stats={expandedStats} />
         </div>
       </div>
 
-      <div className="flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-100">
+      <div className="hidden lg:flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-100">
         Open Tracker
         <ArrowRight className="w-4 h-4" />
       </div>

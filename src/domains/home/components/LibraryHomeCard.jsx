@@ -2,6 +2,7 @@ import { Book, BookOpen, CalendarDays, ArrowRight, Star } from "lucide-react";
 import { useBooks } from "../../library/hooks/useBooks";
 import { parseLocalDate } from "../../library/utils/dateUtils";
 import { UtilityCard } from "./UtilityCard";
+import BookCover from "../../library/components/BookCover";
 
 export function LibraryHomeCard() {
   const { data: books = [], isPending, isError, error } = useBooks();
@@ -74,8 +75,6 @@ export function LibraryHomeCard() {
       ? (thisYearRatingSum / thisYearRatingCount).toFixed(1)
       : 0;
 
-
-
   return (
     <UtilityCard
       icon={Book}
@@ -89,7 +88,13 @@ export function LibraryHomeCard() {
           All-Time
         </span>
         <span className="text-xs text-slate-400">
-          {finishedBooks.length}/{books.length} · <span className="font-semibold ">{books.length > 0 ? Math.round((finishedBooks.length / books.length) * 100) : 0}%</span>
+          {finishedBooks.length}/{books.length} ·{" "}
+          <span className="font-semibold ">
+            {books.length > 0
+              ? Math.round((finishedBooks.length / books.length) * 100)
+              : 0}
+            %
+          </span>
         </span>
       </div>
       <div className="grid grid-cols-3 mt-4 text-center">
@@ -146,7 +151,7 @@ export function LibraryHomeCard() {
         </div>
       </div>
 
-      <div className="border-t border-slate-100 pt-4 mt-4 pb-4">
+      <div className="border-t border-slate-100 pt-4 mt-4 mb-0 lg:pb-4">
         <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 mb-2.5">
           <BookOpen className="w-3.5 h-3.5 text-slate-400" />
           Currently reading
@@ -168,29 +173,34 @@ export function LibraryHomeCard() {
                   )
                 : null;
               return (
-                <div key={book.id}>
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-sm font-medium text-slate-700 truncate">
-                      {book.title}
-                    </span>
-                    <span className="text-xs text-slate-400 flex-shrink-0">
-                      {book.currentPage || 0}/{book.pages ?? "?"} pages
-                    </span>
+                <div key={book.id} className="flex gap-4 items-center">
+                  <div className="w-10 h-15 rounded flex-shrink-0 overflow-hidden">
+                    <BookCover book={book} className="w-full h-full" />
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-1.5">
-                    <div
-                      className="bg-blue-500 h-full rounded-full"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between gap-2 mt-1">
-                    <span className="text-xs text-slate-400 truncate">
-                      {book.authorName}
-                      {days !== null ? ` · ${days}d` : ""}
-                    </span>
-                    <span className="text-xs font-medium text-blue-600 flex-shrink-0">
-                      {pct}%
-                    </span>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="text-sm font-medium text-slate-700 truncate">
+                        {book.title}
+                      </span>
+                      <span className="text-xs text-slate-400 flex-shrink-0">
+                        {book.currentPage || 0}/{book.pages ?? "?"} pages
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-1.5">
+                      <div
+                        className="bg-blue-500 h-full rounded-full"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between gap-2 mt-1">
+                      <span className="text-xs text-slate-400 truncate">
+                        {book.authorName}
+                        {days !== null ? ` · ${days}d` : ""}
+                      </span>
+                      <span className="text-xs font-medium text-blue-600 flex-shrink-0">
+                        {pct}%
+                      </span>
+                    </div>
                   </div>
                 </div>
               );
@@ -208,7 +218,7 @@ export function LibraryHomeCard() {
         )}
       </div>
 
-      <div className="flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-100">
+      <div className="hidden lg:flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-100">
         Open Library
         <ArrowRight className="w-4 h-4" />
       </div>
