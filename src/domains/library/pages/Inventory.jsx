@@ -4,7 +4,7 @@ import {
   User,
   CheckCircle2,
   Circle,
-  ChevronDown,
+  ChevronRight,
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import StarRating from "../components/StarRating";
@@ -18,6 +18,7 @@ import BookCover from "../components/BookCover";
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [statusFilter, setStatusFilter] = useState("ALL");
   const { data: books = [], isPending, isError, error } = useBooks();
   const { openBookDialog, selectedBook, author, setAuthor } = useLibrary();
   const normalizedSearch = searchTerm.trim().toLowerCase();
@@ -27,12 +28,16 @@ export function Inventory() {
     const authorName = String(book?.authorName ?? "").toLowerCase();
     const series = String(book?.seriesName ?? "").toLowerCase();
 
-    return (
+    const matchesSearch =
       !normalizedSearch ||
       title.includes(normalizedSearch) ||
       authorName.includes(normalizedSearch) ||
-      series.includes(normalizedSearch)
-    );
+      series.includes(normalizedSearch);
+
+    const matchesStatus =
+      statusFilter === "ALL" || book.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
 
   const bookGroups = useMemo(() => {
@@ -77,19 +82,54 @@ export function Inventory() {
               placeholder="Search title, author, series…"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-9 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {searchTerm && (
+              <button
+                type="button"
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
+              >
+                ×
+              </button>
+            )}
           </div>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-1.5 text-sm font-medium"
           >
             <Plus className="w-4 h-4" />
-            Add
+            <span className="hidden sm:inline">Add Book</span>
+            <span className="sm:hidden">Add</span>
           </button>
         </div>
-        <div className="text-xs text-slate-400">
-          {filteredBooks?.length} books
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-xs text-slate-400">
+            {filteredBooks.length}{" "}
+            {filteredBooks.length === 1 ? "book" : "books"}
+          </div>
+
+          <div className="flex items-center gap-1 overflow-x-auto">
+            {[
+              ["ALL", "All"],
+              ["IN_PROGRESS", "Reading"],
+              ["UNREAD", "Unread"],
+              ["READ", "Read"],
+            ].map(([value, label]) => (
+              <button
+                key={value}
+                onClick={() => setStatusFilter(value)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
+                  statusFilter === value
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
         </div>
         {showAddForm && <AddBookForm setShowAddForm={setShowAddForm} />}
       </div>
@@ -100,14 +140,14 @@ export function Inventory() {
             <div className="flex items-center justify-between px-4 py-2.5 bg-slate-50 border-b border-slate-200">
               <button
                 onClick={() => setAuthor(authorName)}
-                className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors  hover:cursor-pointer"
+                className="flex items-center gap-1.5 font-semibold text-slate-800 text-sm hover:text-blue-600 transition-colors cursor-pointer"
               >
                 <User className="w-3.5 h-3.5 text-slate-400" />
                 {authorName}
               </button>
               <span className="text-xs text-slate-400">
-                {groupBooks.filter((book) => book.status === "READ").length}/
-                {groupBooks.length}
+                {groupBooks.filter((book) => book.status === "READ").length} /{" "}
+                {groupBooks.length} read
               </span>
             </div>
             {groupBooks.map((book, i) => (
@@ -122,9 +162,11 @@ export function Inventory() {
                     openBookDialog(book);
                   }
                 }}
-                className={`w-full text-left px-4 py-3 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${i < groupBooks.length - 1 ? "border-b border-slate-100" : ""}`}
+                className={`w-full text-left px-4 py-2.5 flex items-center gap-3 hover:bg-blue-50 active:bg-blue-100 transition-colors cursor-pointer ${
+                  i < groupBooks.length - 1 ? "border-b border-slate-100" : ""
+                }`}
               >
-                <div className="w-12 h-18 rounded flex-shrink-0 overflow-hidden">
+                <div className="w-12 h-18 rounded-md flex-shrink-0 overflow-hidden shadow-sm ring-1 ring-slate-200">
                   <BookCover book={book} className="w-full h-full" />
                 </div>
                 <div className="flex-shrink-0">
@@ -154,18 +196,32 @@ export function Inventory() {
                     <StarRating value={book.rating} readonly size="sm" />
                   )}
                 </div>
-
-                <span className="text-xs text-slate-400 flex-shrink-0">
+                <span className="text-xs font-medium text-slate-400 flex-shrink-0">
                   {book.pages} pages
                 </span>
-                <ChevronDown className="w-4 h-4 text-slate-300 flex-shrink-0 -rotate-90" />
+                <ChevronRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
               </div>
             ))}
           </div>
         ))}
         {filteredBooks.length === 0 && (
-          <div className="text-center py-10 text-slate-400 text-sm">
-            {searchTerm ? "No books found" : "Add your first book!"}
+          <div className="text-center py-12">
+            <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+
+            <p className="text-sm font-medium text-slate-600">No books found</p>
+
+            <p className="text-xs text-slate-400 mt-1">
+              Try a different search or filter.
+            </p>
+
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700"
+              >
+                Clear search
+              </button>
+            )}
           </div>
         )}
       </div>

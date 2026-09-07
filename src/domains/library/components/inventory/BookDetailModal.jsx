@@ -82,24 +82,26 @@ export default function BookDetailModal() {
       {isEditingInDialog && <EditBookForm />}
       {!isEditingInDialog && (
         <div>
-          <div className="sticky top-0 bg-white border-b border-slate-100 px-4 py-3 flex items-center justify-between">
-            <div className="font-semibold text-slate-700 text-sm truncate pr-4">
+          <div className="sticky top-0 bg-white border-b border-slate-100 px-4 sm:px-5 py-3.5 flex items-center justify-between">
+            <div className="font-bold text-slate-800 text-base sm:text-lg truncate pr-4">
               Book Details
             </div>
             <button
               onClick={closeBookDialog}
-              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0"
+              className="p-1.5 hover:bg-slate-100 rounded-lg transition-colors flex-shrink-0 hover:cursor-pointer"
             >
-              <X className="w-4 h-4 text-slate-500" />
+              <X className="w-5 h-5 text-slate-500" />
             </button>
           </div>
 
-          <div className="flex gap-4 px-4 pt-4 pb-3">
-            <div className="w-20 h-30 rounded-lg flex-shrink-0 overflow-hidden shadow-md border border-slate-100">
-              <BookCover book={selectedBook} className="w-full h-full" />
+          <div className="flex gap-4 sm:gap-6 px-4 sm:px-5 pt-5 sm:pt-6 pb-4">
+            <div className="w-24 h-36 sm:w-32 sm:h-48 rounded-lg sm:rounded-xl flex-shrink-0 overflow-hidden shadow-sm ring-1 ring-slate-200">
+              {" "}
+              <BookCover book={selectedBook} className="w-full h-full " />
             </div>
             <div className="flex-1 min-w-0 flex flex-col justify-center">
-              <h3 className="text-base font-bold text-slate-800 leading-snug">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-800 leading-tight">
+                {" "}
                 {selectedBook.title}
               </h3>
               <button
@@ -107,69 +109,74 @@ export default function BookDetailModal() {
                   closeBookDialog();
                   setAuthor(selectedBook.authorName);
                 }}
-                className="text-sm text-blue-600 hover:underline mt-0.5 text-left"
+                className="text-sm sm:text-base text-blue-600 hover:underline text-left mt-0.5"
               >
                 {selectedBook.authorName}
               </button>
               {selectedBook.seriesName && (
-                <div className="mt-1.5">
-                  <span className="bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full">
-                    {selectedBook.seriesName}
-                  </span>
-                </div>
+                <span className="text-xs sm:text-sm text-blue-600 truncate">
+                  {selectedBook.seriesName}
+                </span>
               )}
+
+              <div className="flex items-center gap-2 sm:gap-3 mt-2.5">
+                <StarRating
+                  value={optimisticRating ?? selectedBook.rating ?? 0}
+                  onChange={handleRatingChange}
+                  readonly={
+                    selectedBook.status !== "READ" ||
+                    updateBookMutation.isPending
+                  }
+                />
+
+                {selectedBook.status === "READ" && (
+                  <span className="inline-flex items-center rounded-full bg-green-50 px-2 sm:px-3 py-1 text-xs sm:text-sm font-medium text-green-700 whitespace-nowrap">
+                    ✓ Finished
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
           <div className="px-4 pb-4">
-            <div className="mt-3 flex items-center gap-2">
-              <StarRating
-                value={optimisticRating ?? selectedBook.rating ?? 0}
-                onChange={handleRatingChange}
-                readonly={
-                  selectedBook.status !== "READ" || updateBookMutation.isPending
-                }
-              />
-            </div>
-
-            <div className="mt-4 grid grid-cols-3 gap-3 bg-slate-50 rounded-xl p-3">
-              <div className="text-center">
-                <div className="text-xs text-slate-400 mb-0.5">Pages</div>
-                <div className="text-base font-bold text-slate-800">
+            <div className="mt-1 grid grid-cols-3 divide-x divide-slate-200 bg-slate-50 rounded-xl sm:rounded-2xl px-1 sm:px-4 py-4 sm:py-5">
+              <div className="text-center px-1 sm:px-2">
+                <div className="text-xs sm:text-sm text-slate-500 mb-1">
+                  Pages
+                </div>
+                <div className="text-xs sm:text-lg font-bold text-slate-800 whitespace-nowrap">
                   {selectedBook.pages}
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-xs text-slate-400 mb-0.5">Started</div>
-                <div className="text-base font-bold text-slate-800">
+              <div className="text-center px-1 sm:px-2">
+                <div className="text-xs sm:text-sm text-slate-500 mb-1">
+                  Started
+                </div>
+                <div className="text-xs sm:text-lg font-bold text-slate-800 whitespace-nowrap">
                   {formatDate(selectedBook.startDate)}
                 </div>
               </div>
-              <div className="text-center">
-                <div className="text-xs text-slate-400 mb-0.5">Finished</div>
-                <div className="text-base font-bold text-slate-800">
+              <div className="text-center px-1 sm:px-2">
+                <div className="text-xs sm:text-sm text-slate-500 mb-1">
+                  Finished
+                </div>
+                <div className="text-xs sm:text-lg font-bold text-slate-800 whitespace-nowrap">
                   {formatDate(selectedBook.endDate)}
                 </div>
               </div>
             </div>
 
-            {(selectedBook.isbn13 ?? selectedBook.isbn) && (
-              <div className="mt-2 text-xs text-slate-400">
-                ISBN: {selectedBook.isbn13 ?? selectedBook.isbn}
-              </div>
-            )}
-
-            <div className="flex gap-2 mt-4 pt-4 border-t border-slate-100">
+            <div className="flex gap-2 sm:gap-3 mt-4 sm:mt-5 pt-4 sm:pt-5 border-t border-slate-100">
               <button
                 onClick={() => setIsEditingInDialog(true)}
                 disabled={deleteBookMutation.isPending}
-                className="flex-1 bg-blue-600 text-white py-2 rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-60"
+                className="flex-1 bg-blue-600 text-white py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60"
               >
-                Edit
+                Edit Book
               </button>
               <button
                 onClick={handleDeleteBook}
-                className="bg-red-50 text-red-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-60"
+                className="bg-red-50 text-red-600 px-4 sm:px-5 py-2.5 sm:py-3 rounded-lg sm:rounded-xl text-sm sm:text-base font-semibold hover:bg-red-100 transition-colors disabled:opacity-60"
                 disabled={deleteBookMutation.isPending}
               >
                 {deleteBookMutation.isPending ? "Deleting..." : "Delete"}

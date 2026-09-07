@@ -1,4 +1,4 @@
-import { ArrowRight, Clapperboard, Galaxy } from "lucide-react";
+import { Clapperboard, Galaxy } from "lucide-react";
 import { useMemo } from "react";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
 import { useMcuTrackerData } from "../../mcu/hooks/useMcuTrackerData";
@@ -11,8 +11,8 @@ function ProgressSection({ label, stats }) {
   const pct = percentage(stats.done, stats.total);
   return (
     <div>
-      <div className="flex items-center justify-between mb-4">
-        <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+      <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+        <span className="flex items-center gap-1 font-semibold">
           <Galaxy className="w-3.5 h-3.5 text-slate-400" />
           {label}
         </span>
@@ -22,7 +22,7 @@ function ProgressSection({ label, stats }) {
         </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-2 text-center">
+      <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
         {BREAKDOWN.map(
           ({ key, doneKey, label: breakdownLabel, icon: Icon }) => (
             <div key={key}>
@@ -73,19 +73,12 @@ export function McuHomeCard() {
       badgeLabel="Live"
       to="/mcu/tracker"
     >
-      <div className="mt-4 space-y-4 mb-0 lg:mb-auto">
-        <ProgressSection label="Overall" stats={overallStats} />
-        <div className="border-t border-slate-100 pt-4">
-          <ProgressSection label="MCU Phases" stats={mcuStats} />
-        </div>
-        <div className="border-t border-slate-100 pt-4">
-          <ProgressSection label="Expanded Universe" stats={expandedStats} />
-        </div>
+      <ProgressSection label="Overall" stats={overallStats} />
+      <div className="border-t border-slate-100 pt-3 mt-3">
+        <ProgressSection label="MCU Phases" stats={mcuStats} />
       </div>
-
-      <div className="hidden lg:flex items-center gap-1 text-sm font-medium text-blue-600 group-hover:gap-2 transition-all mt-auto pt-4 border-t border-slate-100">
-        Open Tracker
-        <ArrowRight className="w-4 h-4" />
+      <div className="border-t border-slate-100 pt-3 mt-3">
+        <ProgressSection label="Expanded Universe" stats={expandedStats} />
       </div>
     </UtilityCard>
   );
