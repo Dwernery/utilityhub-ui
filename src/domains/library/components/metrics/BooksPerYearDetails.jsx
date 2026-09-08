@@ -55,23 +55,18 @@ export const BooksPerYearDetails = ({
             return (
               <div key={month} className="flex items-center gap-2">
                 <div className="w-7 text-xs text-slate-400">{month}</div>
-                <div className="flex-1 bg-slate-100 rounded h-5 overflow-hidden">
+                <div className="flex-1 bg-slate-100 rounded h-5 overflow-visible flex">
                   {md && (
                     <div
-                      className="bg-blue-400 h-full rounded flex items-center px-2 transition-all duration-300"
+                      className="bg-blue-400 h-full rounded flex items-center justify-center px-2 transition-all duration-300 relative"
                       style={{ width: `${bw}%` }}
                     >
-                      {bw > 20 && (
-                        <span className="text-xs font-semibold text-white">
-                          {md.books}
-                        </span>
-                      )}
+                      <span className="text-xs font-semibold text-white whitespace-nowrap">
+                        {md.books}
+                      </span>
                     </div>
                   )}
                 </div>
-                {md && bw <= 20 && (
-                  <div className="text-xs text-slate-500 w-4">{md.books}</div>
-                )}
                 {!md && <div className="text-xs text-slate-300 w-4">—</div>}
               </div>
             );
