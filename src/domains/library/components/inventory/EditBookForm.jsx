@@ -1,12 +1,17 @@
 import { useState } from "react";
 import { useLibrary } from "../../context/LibraryContext";
 import SearchableDropdown from "../SearchableDropdown";
+import FileUploadInput from "../FileUploadInput";
 import { X } from "lucide-react";
 import { useUpdateBook } from "../../hooks/useUpdateBook";
 import { useCreateAuthor } from "../../hooks/useCreateAuthor";
 import { useCreateSeries } from "../../hooks/useCreateSeries";
+import { useS3Upload } from "../../hooks/useS3Upload";
 import { useToast } from "../../../../context/ToastContext";
-import { isBookValid, BOOK_VALIDATION_MESSAGE } from "../../utils/bookValidation";
+import {
+  isBookValid,
+  BOOK_VALIDATION_MESSAGE,
+} from "../../utils/bookValidation";
 
 export default function EditBookForm() {
   const {
@@ -22,16 +27,22 @@ export default function EditBookForm() {
   // The form only mounts while editing, so this initializer always reflects
   // the book as it was when "Edit" was clicked.
   const [draft, setDraft] = useState(() => ({ ...selectedBook }));
+  const [selectedFile, setSelectedFile] = useState(null);
 
   const updateBookMutation = useUpdateBook();
   const createAuthor = useCreateAuthor();
   const createSeries = useCreateSeries();
+  const s3Upload = useS3Upload();
   const addToast = useToast();
 
   const isSaving = updateBookMutation.isPending;
-  const isBusy = isSaving || createAuthor.isPending || createSeries.isPending;
+  const isBusy =
+    isSaving ||
+    createAuthor.isPending ||
+    createSeries.isPending ||
+    s3Upload.isUploading;
 
-  const handleSaveBook = () => {
+  const handleSaveBook = async () => {
     if (!isBookValid(draft)) {
       addToast(BOOK_VALIDATION_MESSAGE, "error");
       return;
@@ -92,25 +103,44 @@ export default function EditBookForm() {
       if (changed) payload[f] = cur;
     }
 
-    // If nothing changed, just close the dialog
-    if (Object.keys(payload).length <= 1) {
-      setIsEditingInDialog(false);
-      addToast("No changes to save", "info");
-      return;
-    }
+    try {
+      // Update book if there are changes
+      if (Object.keys(payload).length > 1) {
+        await new Promise((resolve, reject) => {
+          updateBookMutation.mutate(payload, {
+            onSuccess: () => resolve(),
+            onError: reject,
+          });
+        });
+      }
 
-    updateBookMutation.mutate(payload, {
-      onSuccess: () => {
+      // Upload file if selected
+      if (selectedFile) {
+        try {
+          await s3Upload.uploadFile(selectedFile, draft.id, "cover");
+          addToast(
+            `Book "${draft.title.trim()}" updated and file uploaded`,
+            "success",
+          );
+        } catch (uploadErr) {
+          addToast(
+            `Book updated, but file upload failed: ${uploadErr?.message || "Unknown error"}`,
+            "warning",
+          );
+        }
+      } else if (Object.keys(payload).length > 1) {
         addToast(`Book "${draft.title.trim()}" updated`, "success");
-        setIsEditingInDialog(false);
-      },
-      onError: (err) => {
-        addToast(
-          `Failed to update book: ${err?.message || "Unknown error"}`,
-          "error",
-        );
-      },
-    });
+      } else {
+        addToast("No changes to save", "info");
+      }
+
+      setIsEditingInDialog(false);
+    } catch (err) {
+      addToast(
+        `Failed to update book: ${err?.message || "Unknown error"}`,
+        "error",
+      );
+    }
   };
 
   return (
@@ -269,6 +299,18 @@ export default function EditBookForm() {
             />
           </div>
         )}
+        <FileUploadInput
+          label="Update Book Cover or Document (Optional)"
+          onFileSelected={setSelectedFile}
+          selectedFile={selectedFile}
+          isUploading={s3Upload.isUploading}
+          uploadProgress={s3Upload.uploadProgress}
+          onUploadError={(err) => {
+            addToast(`File error: ${err?.message}`, "error");
+          }}
+          disabled={isBusy}
+          maxSizeMB={10}
+        />
         <div className="flex gap-2 pt-2">
           <button
             onClick={handleSaveBook}

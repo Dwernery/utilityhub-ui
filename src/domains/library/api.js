@@ -146,6 +146,63 @@ export async function updateBook(data = {}) {
   return "Success";
 }
 
+/**
+ * Get a presigned URL for uploading a file to S3
+ * @param {string} fileName - The name of the file to upload
+ * @param {string} fileType - The MIME type of the file
+ * @returns {Promise<{presignedUrl: string, s3Key: string}>}
+ */
+export async function getPresignedUploadUrl(fileName, fileType) {
+  const queryParams = new URLSearchParams({
+    fileName,
+    fileType,
+  });
+
+  const response = await fetch(
+    `${API_URL}/api/library/books/upload-url?${queryParams}`,
+    {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to get upload URL (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return response.json();
+}
+
+/**
+ * Associate an uploaded file with a book
+ * @param {string} bookId - The ID of the book
+ * @param {string} s3Key - The S3 key of the uploaded file
+ * @param {string} fileType - The type of file (e.g., 'cover', 'document')
+ * @returns {Promise<Object>}
+ */
+export async function attachFileToBook(bookId, s3Key, fileType = "cover") {
+  const response = await fetch(
+    `${API_URL}/api/library/books/${bookId}/attach-file`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ s3Key, fileType }),
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to attach file to book (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return response.json();
+}
+
 // NOTE: rating updates are handled via `updateBook({ id, rating })` (PATCH).
 
 export async function deleteBook(id) {
