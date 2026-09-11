@@ -35,9 +35,7 @@ export async function uploadFileToS3(presignedUrl, file) {
         );
       }
       if (response.status === 400) {
-        throw new Error(
-          "Bad request: file may be corrupted or incompatible.",
-        );
+        throw new Error("Bad request: file may be corrupted or incompatible.");
       }
       if (response.status >= 500) {
         throw new Error(
