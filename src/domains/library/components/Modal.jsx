@@ -12,10 +12,12 @@ export default function Modal({
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
 
+  // Store the onClose function reference on mount
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement;
-    panelRef.current?.focus();
+  }, []);
 
+  useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === "Escape") {
         onClose();

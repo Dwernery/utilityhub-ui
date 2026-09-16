@@ -38,6 +38,7 @@ export const StartReadingModal = ({ setShowAddCurrentlyReading, books }) => {
         <div className="relative mb-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
           <input
+            autoFocus
             type="text"
             placeholder="Search title, author…"
             value={currentlyReadingSearch}
