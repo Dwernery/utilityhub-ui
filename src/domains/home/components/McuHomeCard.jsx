@@ -9,7 +9,7 @@ import { UtilityCard } from "./UtilityCard";
 import { MCUStatsSection } from "./MCUStatsSection";
 
 
-export function McuHomeCard() {
+export function MCUHomeCard() {
   const { watched } = useMcuTracker();
   const { data = { domains: [] }, isPending, isError, error } = useMcuTrackerData();
   const { phases, expandedCategories } = useMemo(() => normalizeTrackerData(data),
@@ -66,7 +66,7 @@ export function McuHomeCard() {
       </UtilityCard>
     );
   }
-  
+
   return (
     <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
       <MCUStatsSection label="MCU Phases" stats={mcuStats} />
