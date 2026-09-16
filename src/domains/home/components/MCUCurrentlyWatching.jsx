@@ -33,7 +33,7 @@ export function MCUCurrentlyWatching({ content }) {
                     </div>
                     <div className="flex items-center justify-between gap-2 mt-1">
                       <span className="text-xs text-slate-400 truncate">
-                        {item.type === "MOVIE" ? "" : item.title}
+                        {item.type === "MOVIE" ? item.domainName : item.title}
                       </span>
                     </div>
                   </div>
