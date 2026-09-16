@@ -1,5 +1,5 @@
 import { LibraryHomeCard } from "../components/LibraryHomeCard";
-import { McuHomeCard } from "../components/MCUHomeCard";
+import { MCUHomeCard } from "../components/MCUHomeCard";
 
 export default function Home() {
   return (
@@ -23,7 +23,7 @@ export default function Home() {
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         <LibraryHomeCard />
-        <McuHomeCard />
+        <MCUHomeCard />
       </div>
     </div>
   );
