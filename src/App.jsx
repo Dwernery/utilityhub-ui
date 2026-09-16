@@ -3,7 +3,7 @@ import { RouterProvider } from "react-router-dom";
 import { router } from "./router.jsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider } from "./context/ToastContext.jsx";
-import { ErrorBoundary } from "./ErrorBoundary.jsx";
+import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
 import { McuTrackerProvider } from "./domains/mcu/context/McuTrackerContext.jsx";
 
 const queryClient = new QueryClient();

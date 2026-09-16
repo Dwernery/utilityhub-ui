@@ -37,12 +37,7 @@ export const VIEWS = [
 // Breakdown categories for stats display, shared across Header and HomeCard
 export const BREAKDOWN = [
   { key: "movies", doneKey: "moviesDone", label: "Movies", icon: Film },
-  {
-    key: "specials",
-    doneKey: "specialsDone",
-    label: "Specials",
-    icon: Sparkles,
-  },
+  { key: "specials", doneKey: "specialsDone", label: "Specials", icon: Sparkles},
   { key: "episodes", doneKey: "episodesDone", label: "Episodes", icon: Tv },
 ];
 

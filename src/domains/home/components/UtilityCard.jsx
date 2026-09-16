@@ -1,69 +1,26 @@
 import { Link } from "react-router-dom";
 
-/**
- * Shared card shell for the homepage's utility tiles.
- * Pass `to` for a "live" utility (renders as a clickable Link with a
- * highlighted badge); omit it for a "coming soon" placeholder tile.
- */
-export function UtilityCard({
-  icon: Icon,
-  title,
-  badgeLabel,
-  to,
-  className = "",
-  children,
-}) {
-  const isLive = Boolean(to);
-
-  const content = (
-    <>
+export function UtilityCard({icon: Icon, title, to, className = "", children}) {
+  return (
+    <Link
+      to={to}
+      className={`group bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 h-full lg:self-start hover:border-blue-300 hover:shadow-md transition-all ${className}`}
+    >
       <div className="flex items-center mb-3">
-        <div
-          className={`w-9 h-9 rounded-lg flex items-center justify-center ${
-            isLive ? "bg-blue-50" : "bg-slate-100"
-          }`}
-        >
-          <Icon
-            className={`w-[18px] h-[18px] ${isLive ? "text-blue-600" : "text-slate-400"}`}
-          />
+        <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-blue-50`}>
+          <Icon className={`w-[18px] h-[18px] text-blue-600`}/>
         </div>
-        <h3
-          className={`ml-3 text-base font-bold ${isLive ? "text-slate-800" : "text-slate-500"}`}
-        >
+
+        <h3 className={`ml-3 text-base font-bold text-slate-800`}>
           {title}
         </h3>
-        {badgeLabel && (
-          <span
-            className={`text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full ml-auto ${
-              isLive
-                ? "text-green-600 bg-green-50"
-                : "text-slate-400 bg-slate-100"
-            }`}
-          >
-            {badgeLabel}
-          </span>
-        )}
+
+        <span className={`text-[11px] font-semibold uppercase tracking-wide px-2 py-1 rounded-full ml-auto text-green-600 bg-green-50`}>
+          Live
+        </span>
       </div>
+      
       {children}
-    </>
-  );
-
-  if (isLive) {
-    return (
-      <Link
-        to={to}
-        className={`group bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 h-full lg:self-start hover:border-blue-300 hover:shadow-md transition-all ${className}`}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return (
-    <div
-      className={`bg-white/60 rounded-xl border border-dashed border-slate-300 p-5 flex flex-col flex-1 h-full${className}`}
-    >
-      {content}
-    </div>
+    </Link>
   );
 }

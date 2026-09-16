@@ -6,8 +6,7 @@ export default function BookCover({ book, className = "" }) {
       <img
         src={book.s3Url}
         alt={book.title}
-        //className={`object-cover ${className}`}
-        className="w-full h-full object-cover"
+        className={`w-full h-full object-cover ${className}`}
         loading="lazy"
       />
     );
