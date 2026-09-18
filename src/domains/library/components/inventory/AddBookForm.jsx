@@ -188,9 +188,6 @@ export default function AddBookForm({ setShowAddForm }) {
         selectedFile={selectedFile}
         isUploading={s3Upload.isUploading}
         uploadProgress={s3Upload.uploadProgress}
-        onUploadError={(err) => {
-          addToast(`File error: ${err?.message}`, "error");
-        }}
         disabled={isBusy}
         maxSizeMB={10}
       />

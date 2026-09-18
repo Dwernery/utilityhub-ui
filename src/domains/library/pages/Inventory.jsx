@@ -7,6 +7,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useMemo } from "react";
+import { filterBooks } from "../utils/metricUtils";
 import StarRating from "../components/StarRating";
 import { useLibrary } from "../context/LibraryContext";
 import AddBookForm from "../components/inventory/AddBookForm";
@@ -14,45 +15,20 @@ import { useBooks } from "../hooks/useBooks";
 import BookDetailModal from "../components/inventory/BookDetailModal";
 import AuthorDetailModal from "../components/inventory/AuthorDetailModal";
 import BookCover from "../components/BookCover";
+import { groupBooks } from "../utils/metricUtils";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
+
   const { data: books = [], isPending, isError, error } = useBooks();
   const { openBookDialog, selectedBook, author, setAuthor } = useLibrary();
+
   const normalizedSearch = searchTerm.trim().toLowerCase();
-
-  const filteredBooks = books.filter((book) => {
-    const title = String(book?.title ?? "").toLowerCase();
-    const authorName = String(book?.authorName ?? "").toLowerCase();
-    const series = String(book?.seriesName ?? "").toLowerCase();
-
-    const matchesSearch =
-      !normalizedSearch ||
-      title.includes(normalizedSearch) ||
-      authorName.includes(normalizedSearch) ||
-      series.includes(normalizedSearch);
-
-    const matchesStatus =
-      statusFilter === "ALL" || book.status === statusFilter;
-
-    return matchesSearch && matchesStatus;
-  });
-
-  const bookGroups = useMemo(() => {
-    const groups = {};
-    filteredBooks.forEach((book) => {
-      const authorName = book.authorName || "Unknown";
-      groups[authorName] ??= [];
-      groups[authorName].push(book);
-    });
-
-    return Object.fromEntries(
-      Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)),
-    );
-  }, [filteredBooks]);
-
+  const filteredBooks = filterBooks(books, normalizedSearch, statusFilter);
+  const bookGroups = useMemo(() => groupBooks(filteredBooks), [filteredBooks]);
+  
   if (isPending) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-14 text-center">
@@ -121,10 +97,7 @@ export function Inventory() {
                 key={value}
                 onClick={() => setStatusFilter(value)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                  statusFilter === value
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-500 hover:bg-slate-100"
-                }`}
+                  statusFilter === value ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}
               >
                 {label}
               </button>
@@ -207,9 +180,7 @@ export function Inventory() {
         {filteredBooks.length === 0 && (
           <div className="text-center py-12">
             <Search className="w-8 h-8 text-slate-300 mx-auto mb-2" />
-
             <p className="text-sm font-medium text-slate-600">No books found</p>
-
             <p className="text-xs text-slate-400 mt-1">
               Try a different search or filter.
             </p>

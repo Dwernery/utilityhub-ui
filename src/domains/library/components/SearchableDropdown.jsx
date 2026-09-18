@@ -1,15 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Plus, ChevronDown } from "lucide-react";
-export default function SearchableDropdown({
-  value,
-  onChange,
-  options,
-  placeholder,
-  onAddNew,
-  addNewLabel,
-  disabled = false,
-  isAddingNew = false,
-}) {
+
+export default function SearchableDropdown({value, onChange, options, placeholder, onAddNew, addNewLabel, disabled = false, isAddingNew = false}) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
   const ref = useRef(null);
@@ -26,9 +18,7 @@ export default function SearchableDropdown({
     o.toLowerCase().includes(search.toLowerCase()),
   );
 
-  const showAddNew =
-    search.trim() &&
-    !options.some((o) => o.toLowerCase() === search.trim().toLowerCase());
+  const showAddNew = search.trim() && !options.some((o) => o.toLowerCase() === search.trim().toLowerCase());
 
   const handleSelect = (val) => {
     onChange(val);

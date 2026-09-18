@@ -1,12 +1,7 @@
 import { useState } from "react";
 import { Star } from "lucide-react";
 
-export default function StarRating({
-  value = 0,
-  onChange,
-  readonly = false,
-  size = "md",
-}) {
+export default function StarRating({value = 0, onChange, readonly = false,size = "md"}) {
   const [hover, setHover] = useState(0);
   return (
     <div className="flex items-center gap-0.5">

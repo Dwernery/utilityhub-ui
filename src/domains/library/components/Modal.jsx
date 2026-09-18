@@ -1,18 +1,9 @@
 import { useEffect, useRef } from "react";
 
-const FOCUSABLE_SELECTOR =
-  'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-
-export default function Modal({
-  onClose,
-  children,
-  overlayClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",
-  panelClassName = "",
-}) {
+export default function Modal({onClose, children, overlayClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4", panelClassName = ""}) {
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
 
-  // Store the onClose function reference on mount
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement;
   }, []);
@@ -26,7 +17,7 @@ export default function Modal({
 
       if (event.key !== "Tab") return;
 
-      const focusable = panelRef.current?.querySelectorAll(FOCUSABLE_SELECTOR);
+      const focusable = panelRef.current?.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
       if (!focusable || focusable.length === 0) return;
 
       const first = focusable[0];
