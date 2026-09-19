@@ -51,10 +51,10 @@ export function MonthlyTable({ selectedYear }) {
               <th className="text-left py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
                 Month
               </th>
-              <th className="text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
+              <th className="hidden md:table-cell text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
                 Assets
               </th>
-              <th className="text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
+              <th className="hidden md:table-cell text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
                 Liabilities
               </th>
               <th className="text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
@@ -76,10 +76,10 @@ export function MonthlyTable({ selectedYear }) {
                 <td className="py-1.5 md:py-2 px-2 md:px-3 text-slate-700 font-semibold group-hover:text-blue-700 text-xs md:text-sm">
                   {month.month}
                 </td>
-                <td className="py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-emerald-600 text-xs md:text-sm">
+                <td className="hidden md:table-cell py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-emerald-600 text-xs md:text-sm">
                   {Currencyformatter.format(month.assets)}
                 </td>
-                <td className="py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-rose-600 text-xs md:text-sm">
+                <td className="hidden md:table-cell py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-rose-600 text-xs md:text-sm">
                   {Currencyformatter.format(month.liabilities)}
                 </td>
                 <td className="py-1.5 md:py-2 px-2 md:px-3 text-right font-bold text-slate-800 text-xs md:text-sm">
