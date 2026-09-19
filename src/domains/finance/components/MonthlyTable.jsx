@@ -1,9 +1,10 @@
-import { useState, useMemo } from "react";
-import { ChevronRight } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronRight, TrendingUp, TrendingDown } from "lucide-react";
 import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
 import { Currencyformatter } from "../utils/currency";
 import { getEntryAssets, getEntryLiabilities } from "../utils/metrics";
 import { MONTH_LABELS } from "../utils/metrics";
+import { MonthlyDetailModal } from "./MonthlyDetailModal.jsx";
 
 export function MonthlyTable({ selectedYear }) {
   const { data: netWorthHistory } = useNetWorthHistory();
@@ -26,7 +27,10 @@ export function MonthlyTable({ selectedYear }) {
 
       const netWorth = entry.netWorth || totalAssets - totalLiabilities;
       const prevEntry = entries[idx - 1];
-      const change = prevEntry ? netWorth - (prevEntry.netWorth || 0) : 0;
+      const prevNetWorth = prevEntry?.netWorth || 0;
+      const change = prevEntry ? netWorth - prevNetWorth : 0;
+      const changePercent =
+        prevEntry && prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
 
       const monthIndex = parseInt((entry.date || "").split("-")[1]) - 1;
 
@@ -37,73 +41,62 @@ export function MonthlyTable({ selectedYear }) {
         liabilities: totalLiabilities,
         netWorth,
         change,
+        changePercent,
         accounts: entry.accounts || [],
       };
     });
   }, [netWorthHistory, selectedYear]);
 
   return (
-    <div className="w-full bg-white rounded-2xl p-3 md:p-5 shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300">
-      <div className="overflow-x-auto">
-        <table className="w-full">
-          <thead>
-            <tr className="border-b border-slate-200">
-              <th className="text-left py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
-                Month
-              </th>
-              <th className="hidden md:table-cell text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
-                Assets
-              </th>
-              <th className="hidden md:table-cell text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
-                Liabilities
-              </th>
-              <th className="text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
-                Net Worth
-              </th>
-              <th className="text-right py-1.5 md:py-2 px-2 md:px-3 text-slate-500 font-semibold text-xs md:text-sm">
-                Change
-              </th>
-              <th className="w-8" />
-            </tr>
-          </thead>
-          <tbody>
-            {monthlyData.map((month, idx) => (
-              <tr
-                key={idx}
-                onClick={() => setSelectedMonth(month)}
-                className="border-b border-slate-100 hover:bg-blue-50 cursor-pointer transition-all group"
-              >
-                <td className="py-1.5 md:py-2 px-2 md:px-3 text-slate-700 font-semibold group-hover:text-blue-700 text-xs md:text-sm">
+    <>
+      <div className="w-full bg-white rounded-2xl p-3 md:p-5 shadow-xl border border-slate-200 hover:shadow-2xl transition-all duration-300">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+          {monthlyData.map((month, idx) => (
+            <button
+              key={idx}
+              onClick={() => {
+                setSelectedMonth(month);
+              }}
+              className="w-full text-left rounded-xl border border-slate-100 bg-slate-50 hover:bg-blue-50 hover:border-blue-200 p-3 transition-all group hover:cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-slate-500 font-semibold text-xs uppercase tracking-wide group-hover:text-blue-700">
                   {month.month}
-                </td>
-                <td className="hidden md:table-cell py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-emerald-600 text-xs md:text-sm">
-                  {Currencyformatter.format(month.assets)}
-                </td>
-                <td className="hidden md:table-cell py-1.5 md:py-2 px-2 md:px-3 text-right font-medium text-rose-600 text-xs md:text-sm">
-                  {Currencyformatter.format(month.liabilities)}
-                </td>
-                <td className="py-1.5 md:py-2 px-2 md:px-3 text-right font-bold text-slate-800 text-xs md:text-sm">
-                  {Currencyformatter.format(month.netWorth)}
-                </td>
-                <td
-                  className={`py-1.5 md:py-2 px-2 md:px-3 text-right font-semibold text-xs md:text-sm ${month.change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-                >
-                  <div className="flex items-center justify-end gap-1">
-                    {month.change >= 0 ? "+" : "-"}
-                    {Currencyformatter.format(Math.abs(month.change))}
-                  </div>
-                </td>
-                <td className="py-1.5 md:py-2 px-2 md:px-3">
-                  <ChevronRight
-                    className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-1 transition-all"
-                    size={18}
-                  />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                </span>
+                <ChevronRight
+                  className="text-slate-300 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all"
+                  size={16}
+                />
+              </div>
+              <div className="text-slate-800 font-bold text-sm md:text-base mb-1">
+                {Currencyformatter.format(month.netWorth)}
+              </div>
+              <div
+                className={`flex items-center gap-1 text-xs md:text-sm font-semibold ${month.change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                {month.change >= 0 ? (
+                  <TrendingUp size={14} />
+                ) : (
+                  <TrendingDown size={14} />
+                )}
+                {month.change >= 0 ? "+" : "-"}
+                {Currencyformatter.format(Math.abs(month.change))}
+                <span className="text-slate-400 font-medium">
+                  ({month.change >= 0 ? "+" : "-"}
+                  {Math.abs(month.changePercent).toFixed(1)}%)
+                </span>
+              </div>
+            </button>
+          ))}
+        </div>
       </div>
-    </div>
+      {selectedMonth && (
+        <MonthlyDetailModal
+          selectedMonth={selectedMonth}
+          selectedYear={selectedYear}
+          onClose={() => setSelectedMonth(null)}
+        />
+      )}
+    </>
   );
 }

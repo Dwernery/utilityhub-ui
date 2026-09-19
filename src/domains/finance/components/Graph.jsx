@@ -11,7 +11,7 @@ import { getMonthlyChartData } from "../utils/metrics.js";
 import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
 import { Currencyformatter } from "../utils/currency.js";
 
-export function Graph({ selectedYear }) {
+export function Graph({ years, selectedYear, onSelectYear }) {
   const { data: netWorthHistory } = useNetWorthHistory();
   const fmtY = (v) => "$" + Math.floor(v / 1000) + "k";
   const isMobile = typeof window !== "undefined" && window.innerWidth < 768;
@@ -19,6 +19,17 @@ export function Graph({ selectedYear }) {
 
   return (
     <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200 hover:shadow-2xl transition-all duration-300">
+      <div className="flex gap-1 md:gap-2 mb-4 pb-3 overflow-x-auto border-b border-slate-100">
+        {years?.map((year) => (
+          <button
+            key={year}
+            onClick={() => onSelectYear(year)}
+            className={`px-3 md:px-5 py-1.5 rounded-lg font-semibold text-xs md:text-sm transition-all whitespace-nowrap border ${selectedYear === year ? "bg-blue-600 text-white border-blue-600 shadow-lg" : "bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200 hover:cursor-pointer"}`}
+          >
+            {year}
+          </button>
+        ))}
+      </div>
       <ResponsiveContainer width="100%" height={chartHeight}>
         <LineChart
           data={getMonthlyChartData(netWorthHistory, selectedYear)}

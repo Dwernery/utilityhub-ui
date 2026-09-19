@@ -12,18 +12,18 @@ export const getYears = (netWorthHistory) => {
 };
 
 export const MONTH_LABELS = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
+  "January",
+  "February",
+  "March",
+  "April",
   "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
 ];
 
 export const getMonthlyChartData = (netWorthHistory, year) => {
@@ -92,16 +92,72 @@ export const getYearMetrics = (netWorthHistory, selectedYear) => {
   const yoyPercentage =
     prevYearNetWorth !== 0 ? (yoyChange / prevYearNetWorth) * 100 : 0;
 
-  // Calculate current year assets and liabilities
-  const currentAssets = getEntryAssets(lastYearEntry);
-  const currentLiabilities = getEntryLiabilities(lastYearEntry);
-
   return {
     currentNetWorth,
     prevYearNetWorth,
     yoyChange,
     yoyPercentage,
-    currentAssets,
-    currentLiabilities,
+  };
+};
+
+export const getYearStats = (netWorthHistory, selectedYear) => {
+  const empty = {
+    bestMonth: null,
+    worstMonth: null,
+    avgChange: 0,
+    avgChangePercent: 0,
+    highest: 0,
+    lowest: 0,
+  };
+  if (!netWorthHistory || !selectedYear) {
+    return empty;
+  }
+
+  const entries = Object.values(netWorthHistory)
+    .filter(
+      (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
+    )
+    .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  if (entries.length === 0) {
+    return empty;
+  }
+
+  // Skip the first entry since it has no prior month to diff against
+  const monthlyChanges = entries.slice(1).map((entry, idx) => {
+    const monthIndex = parseInt((entry.date || "").split("-")[1]) - 1;
+    const prevNetWorth = entries[idx].netWorth || 0;
+    const change = (entry.netWorth || 0) - prevNetWorth;
+    return {
+      month: MONTH_LABELS[monthIndex],
+      change,
+      changePercent: prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0,
+    };
+  });
+
+  const bestMonth = monthlyChanges.length
+    ? monthlyChanges.reduce((a, b) => (b.change > a.change ? b : a))
+    : null;
+  const worstMonth = monthlyChanges.length
+    ? monthlyChanges.reduce((a, b) => (b.change < a.change ? b : a))
+    : null;
+  const avgChange = monthlyChanges.length
+    ? monthlyChanges.reduce((sum, m) => sum + m.change, 0) /
+      monthlyChanges.length
+    : 0;
+  const avgChangePercent = monthlyChanges.length
+    ? monthlyChanges.reduce((sum, m) => sum + m.changePercent, 0) /
+      monthlyChanges.length
+    : 0;
+
+  const netWorths = entries.map((entry) => entry.netWorth || 0);
+
+  return {
+    bestMonth,
+    worstMonth,
+    avgChange,
+    avgChangePercent,
+    highest: Math.max(...netWorths),
+    lowest: Math.min(...netWorths),
   };
 };
