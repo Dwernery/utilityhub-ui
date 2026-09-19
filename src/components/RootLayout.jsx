@@ -3,7 +3,10 @@ import { useEffect } from "react";
 
 export default function RootLayout() {
   const { pathname } = useLocation();
-  const isFullBleed = pathname.startsWith("/mcu");
+  const isFullBleed =
+    pathname.startsWith("/mcu") ||
+    pathname.startsWith("/finances") ||
+    pathname.startsWith("/library");
 
   useEffect(() => {
     window.scrollTo(0, 0);

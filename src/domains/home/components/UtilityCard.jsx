@@ -1,10 +1,10 @@
 import { Link } from "react-router-dom";
 
-export function UtilityCard({icon: Icon, title, to, className = "", children}) {
+export function UtilityCard({icon: Icon, title, to, children}) {
   return (
     <Link
       to={to}
-      className={`group bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 h-full lg:self-start hover:border-blue-300 hover:shadow-md transition-all ${className}`}
+      className={`group bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col flex-1 h-full lg:self-start hover:border-blue-300 hover:shadow-md transition-all`}
     >
       <div className="flex items-center mb-3">
         <div className={`w-9 h-9 rounded-lg flex items-center justify-center bg-blue-50`}>

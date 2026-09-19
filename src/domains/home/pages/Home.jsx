@@ -1,3 +1,4 @@
+import { FinancesHomeCard } from "../components/FinancesHomeCard";
 import { LibraryHomeCard } from "../components/LibraryHomeCard";
 import { MCUHomeCard } from "../components/MCUHomeCard";
 
@@ -24,6 +25,7 @@ export default function Home() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
         <LibraryHomeCard />
         <MCUHomeCard />
+        <FinancesHomeCard />
       </div>
     </div>
   );
