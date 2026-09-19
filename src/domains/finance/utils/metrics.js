@@ -1,56 +1,3 @@
-import { Currencyformatter } from "./currency.js";
-
-export const getCurrentNetWorth = (netWorthHistory) => {
-  return netWorthHistory?.[Object.keys(netWorthHistory).at(-1)]?.netWorth;
-};
-
-export const getCurrentAssets = (netWorthHistory) => {
-  let totalAssets = 0;
-  netWorthHistory?.[Object.keys(netWorthHistory).at(-1)]?.accounts?.map(
-    (account) => {
-      if (account.category === "ASSET") {
-        totalAssets += account.balance;
-      }
-    },
-  );
-
-  return Currencyformatter.format(totalAssets);
-};
-
-export const getCurrentLiabilities = (netWorthHistory) => {
-  let totalLiabilities = 0;
-  netWorthHistory?.[Object.keys(netWorthHistory).at(-1)]?.accounts?.map(
-    (account) => {
-      if (account.category === "LIABILITY") {
-        totalLiabilities += account.balance;
-      }
-    },
-  );
-
-  return Currencyformatter.format(totalLiabilities);
-};
-
-export const getPrevYearNetWorthChange = (netWorthHistory) => {
-  if (!netWorthHistory || Object.keys(netWorthHistory).length === 0) {
-    return Currencyformatter.format(0);
-  }
-
-  const lastEntry = netWorthHistory?.[Object.keys(netWorthHistory).at(-1)];
-  const currentYear = parseInt((lastEntry?.date || "").split("-")[0]);
-  const prevYear = currentYear - 1;
-
-  const prevYearDecEntry = Object.values(netWorthHistory).find((entry) => {
-    const [year, month] = (entry?.date || "").split("-").slice(0, 2);
-    return parseInt(year) === prevYear && parseInt(month) === 12;
-  });
-
-  const prevYearNetWorth = prevYearDecEntry?.netWorth || 0;
-  return (
-    netWorthHistory?.[Object.keys(netWorthHistory).at(-1)]?.netWorth -
-    prevYearNetWorth
-  );
-};
-
 export const getYears = (netWorthHistory) => {
   if (!netWorthHistory || netWorthHistory.length === 0) {
     return [];
@@ -113,4 +60,48 @@ export const getEntryLiabilities = (entry) => {
     }
   });
   return totalLiabilities;
+};
+
+export const getYearMetrics = (netWorthHistory, selectedYear) => {
+  if (!netWorthHistory || !selectedYear) {
+    return {
+      currentNetWorth: 0,
+      prevYearNetWorth: 0,
+      yoyChange: 0,
+      yoyPercentage: 0,
+      currentAssets: 0,
+      currentLiabilities: 0,
+    };
+  }
+
+  // Get the last entry for the selected year
+  const yearEntries = Object.values(netWorthHistory).filter(
+    (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
+  );
+  const lastYearEntry = yearEntries[yearEntries.length - 1];
+
+  // Get the last entry from previous year for YoY comparison
+  const prevYearEntries = Object.values(netWorthHistory).filter(
+    (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear - 1,
+  );
+  const lastPrevYearEntry = prevYearEntries[prevYearEntries.length - 1];
+
+  const currentNetWorth = lastYearEntry?.netWorth || 0;
+  const prevYearNetWorth = lastPrevYearEntry?.netWorth || 0;
+  const yoyChange = currentNetWorth - prevYearNetWorth;
+  const yoyPercentage =
+    prevYearNetWorth !== 0 ? (yoyChange / prevYearNetWorth) * 100 : 0;
+
+  // Calculate current year assets and liabilities
+  const currentAssets = getEntryAssets(lastYearEntry);
+  const currentLiabilities = getEntryLiabilities(lastYearEntry);
+
+  return {
+    currentNetWorth,
+    prevYearNetWorth,
+    yoyChange,
+    yoyPercentage,
+    currentAssets,
+    currentLiabilities,
+  };
 };
