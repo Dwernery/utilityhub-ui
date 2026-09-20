@@ -24,7 +24,7 @@ export const Header = () => {
     <>
       <div className="w-full px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <nav className="bg-white border border-slate-200 border-t-0 rounded-b-xl shadow-sm hidden md:block">
+          <nav className="bg-white border border-slate-200 border-t-0 rounded-xl shadow-sm hidden md:block">
             <div className="flex items-center justify-between h-16 px-4 lg:px-6">
               <div className="flex items-center gap-3 shrink-0">
                 <Link
@@ -66,7 +66,7 @@ export const Header = () => {
       {/* Mobile top bar */}
       <div className="md:hidden w-full px-4 sm:px-6">
         <div className="max-w-7xl mx-auto">
-          <div className="bg-white border border-slate-200 border-t-0 rounded-b-xl shadow-sm">
+          <div className="bg-white border border-slate-200 border-t-0 rounded-xl shadow-sm">
             <div className="flex items-center justify-between px-4 h-14">
               <div className="flex items-center gap-2">
                 <Link

@@ -63,7 +63,7 @@ export function HeroCard({ selectedYear }) {
             className={`text-xs md:text-sm lg:text-base font-semibold ${yoyChange >= 0 ? "text-emerald-300" : "text-rose-300"}`}
           >
             {currencyFormatter.format(yoyChange)} ({yoyChange >= 0 ? "+" : "-"}
-            {Math.abs(yoyPercentage).toFixed(0)} % YoY)
+            {Math.abs(yoyPercentage).toFixed(1)}%)
           </span>
         </div>
       </div>

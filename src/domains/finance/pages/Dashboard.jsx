@@ -1,5 +1,4 @@
 import { HeroCard } from "../components/HeroCard";
-import { MonthlyDetailModal } from "../components/MonthlyDetailModal.jsx";
 import { getYears } from "../utils/metrics.js";
 import { useState, useMemo } from "react";
 import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
@@ -20,10 +19,12 @@ export function Dashboard() {
   }
 
   return (
-    <div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-4 items-start">
-        <HeroCard selectedYear={activeYear} />
-        <div className="lg:col-span-2">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-full lg:min-h-0">
+      <div className="flex flex-col flex-1 min-w-0 gap-4 lg:min-h-0">
+        <div className="flex-shrink-0">
+          <HeroCard selectedYear={activeYear} />
+        </div>
+        <div className="h-64 sm:h-80 lg:h-auto lg:flex-1 lg:min-h-0">
           <Graph
             years={years}
             selectedYear={activeYear}
@@ -31,11 +32,9 @@ export function Dashboard() {
           />
         </div>
       </div>
-      <MonthlyTable
-        selectedYear={activeYear}
-
-      />
-
+      <div className="w-full lg:w-[28rem] flex-shrink-0">
+        <MonthlyTable selectedYear={activeYear} />
+      </div>
     </div>
   );
 }

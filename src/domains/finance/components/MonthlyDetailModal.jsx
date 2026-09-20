@@ -1,25 +1,15 @@
-import { X, Plus, Wallet, Edit2, Trash2 } from "lucide-react";
+import { X, Plus, Wallet, Edit2, Trash2, CreditCard } from "lucide-react";
 import Modal from "../../library/components/Modal";
 import { Currencyformatter } from "../utils/currency";
 
 export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
-  const C = {
-    networth: "text-blue-700",
-    asset: "text-emerald-700",
-    liab: "text-rose-700",
-    pos: "text-emerald-600",
-    neg: "text-rose-600",
-    posBadge: "bg-emerald-100 text-emerald-700",
-    negBadge: "bg-rose-100 text-rose-700",
-  };
 
   const CATEGORIES = {
-    "Cash & Savings": { label: "Cash & Savings", color: "#10b981" },
-    Investments: { label: "Investments", color: "#8b5cf6" },
-    Retirement: { label: "Retirement", color: "#3b82f6" },
-    Property: { label: "Property", color: "#f59e0b" },
+    "Cash & Savings": { label: "Cash & Savings"},
+    Investments: { label: "Investments" },
+    Retirement: { label: "Retirement" },
+    Property: { label: "Property" },
   };
-  const catColor = (t) => (CATEGORIES[t] || {}).color;
   const catLabel = (t) => (CATEGORIES[t] || {}).label;
 
   const assetAccounts = selectedMonth.accounts
@@ -46,7 +36,7 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
                 <div className="text-xs text-slate-500 uppercase tracking-wide">
                   Assets
                 </div>
-                <div className={`text-lg font-bold ${C.asset}`}>
+                <div className={`text-lg font-bold text-emerald-700`}>
                   {Currencyformatter.format(selectedMonth.assets)}
                 </div>
               </div>
@@ -54,7 +44,7 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
                 <div className="text-xs text-slate-500 uppercase tracking-wide">
                   Liabilities
                 </div>
-                <div className={`text-lg font-bold ${C.liab}`}>
+                <div className={`text-lg font-bold text-rose-700`}>
                   {Currencyformatter.format(selectedMonth.liabilities)}
                 </div>
               </div>
@@ -62,7 +52,7 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
                 <div className="text-xs text-slate-500 uppercase tracking-wide">
                   Net Worth
                 </div>
-                <div className={`text-lg font-bold ${C.networth}`}>
+                <div className={`text-lg font-bold text-blue-700`}>
                   {Currencyformatter.format(selectedMonth.netWorth)}
                 </div>
               </div>
@@ -233,15 +223,15 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
                     <span
                       className="text-xs px-2 py-0.5 rounded-full font-medium"
                       style={{
-                        backgroundColor: catColor(account.accountType) + "22",
-                        color: catColor(account.accountType),
+                        backgroundColor:  "#10b98122",
+                        color: "#10b981",
                       }}
                     >
                       {catLabel(account.accountType)}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`font-bold ${C.asset}`}>
+                    <span className={`font-bold text-emerald-700`}>
                       {Currencyformatter.format(account.balance)}
                     </span>
                     <button
@@ -416,16 +406,22 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
                   className="bg-rose-50 rounded-lg p-3 border border-rose-200 flex justify-between items-center hover:shadow-sm transition-all"
                 >
                   <div className="flex items-center gap-2">
-                    {/* <LiabilityIcon type={liab.type} /> */}
+                    <CreditCard size={16} className="text-rose-500" />
                     <span className="text-slate-700 font-medium text-sm">
                       {liability.accountName}
                     </span>
-                    <span className="text-xs bg-rose-100 text-rose-600 px-2 py-0.5 rounded-full">
+                    <span 
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"             
+                      style={{
+                        backgroundColor: "#b91c1c22",
+                        color: "#b91c1c",
+                      }}
+                    >
                       {liability.accountType}
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className={`font-bold ${C.liab}`}>
+                    <span className={`font-bold text-rose-700`}>
                       {Currencyformatter.format(liability.balance)}
                     </span>
                     <button
