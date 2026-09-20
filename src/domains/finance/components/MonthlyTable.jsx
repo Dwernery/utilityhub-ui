@@ -124,14 +124,16 @@ export function MonthlyTable({ selectedYear }) {
                       : "cursor-default"
                   } ${idx % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
                 >
-                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-base font-semibold text-slate-700 flex items-center gap-1 sm:gap-2">
-                    {month.month}
-                    {month.hasData && (
-                      <ChevronRight
-                        className="text-slate-300 group-hover:text-blue-600 hidden sm:block"
-                        size={16}
-                      />
-                    )}
+                  <td className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-base font-semibold text-slate-700 align-middle">
+                    <div className="flex items-center gap-1 sm:gap-2 h-full">
+                      {month.month}
+                      {month.hasData && (
+                        <ChevronRight
+                          className="text-slate-300 group-hover:text-blue-600 hidden sm:block"
+                          size={16}
+                        />
+                      )}
+                    </div>
                   </td>
                   {month.hasData ? (
                     <>
