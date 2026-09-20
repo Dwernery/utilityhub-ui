@@ -3,13 +3,8 @@ import { ChevronRight } from "lucide-react";
 import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
 import { Currencyformatter } from "../utils/currency";
 import { getEntryAssets, getEntryLiabilities } from "../utils/metrics";
-import { MONTH_LABELS } from "../utils/metrics";
+import { MONTH_LABELS, PRIOR_YEAR_ENDING_BALANCES } from "../utils/metrics";
 import { MonthlyDetailModal } from "./MonthlyDetailModal.jsx";
-
-// Previous year ending net worth for years where data collection started mid-way
-const PRIOR_YEAR_ENDING_BALANCES = {
-  2022: 48173.05, // Jan 2022 is the first month of data collection
-};
 
 export function MonthlyTable({ selectedYear }) {
   const { data: netWorthHistory } = useNetWorthHistory();
