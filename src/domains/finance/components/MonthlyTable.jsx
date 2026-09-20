@@ -6,12 +6,18 @@ import { getEntryAssets, getEntryLiabilities } from "../utils/metrics";
 import { MONTH_LABELS } from "../utils/metrics";
 import { MonthlyDetailModal } from "./MonthlyDetailModal.jsx";
 
+// Previous year ending net worth for years where data collection started mid-way
+const PRIOR_YEAR_ENDING_BALANCES = {
+  2022: 48173.05, // Jan 2022 is the first month of data collection
+};
+
 export function MonthlyTable({ selectedYear }) {
   const { data: netWorthHistory } = useNetWorthHistory();
   const [selectedMonth, setSelectedMonth] = useState(null);
 
   const monthlyData = useMemo(() => {
-    const entries = (netWorthHistory ? Object.values(netWorthHistory) : [])
+    const allEntries = netWorthHistory ? Object.values(netWorthHistory) : [];
+    const entries = allEntries
       .filter(
         (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
       )
@@ -23,11 +29,44 @@ export function MonthlyTable({ selectedYear }) {
       const totalLiabilities = getEntryLiabilities(entry);
 
       const netWorth = entry.netWorth || totalAssets - totalLiabilities;
+
+      let prevNetWorth = 0;
+      let change = 0;
+      let changePercent = 0;
+
       const prevEntry = entries[idx - 1];
-      const prevNetWorth = prevEntry?.netWorth || 0;
-      const change = prevEntry ? netWorth - prevNetWorth : 0;
-      const changePercent =
-        prevEntry && prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
+      if (prevEntry) {
+        prevNetWorth = prevEntry.netWorth || 0;
+        change = netWorth - prevNetWorth;
+        changePercent = prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
+      } else {
+        // For first entry in year (January), look at previous year's December
+        const monthIndex = parseInt((entry.date || "").split("-")[1]) - 1;
+        if (monthIndex === 0) {
+          // Check if we have a hardcoded prior year balance
+          if (PRIOR_YEAR_ENDING_BALANCES[selectedYear] !== undefined) {
+            prevNetWorth = PRIOR_YEAR_ENDING_BALANCES[selectedYear];
+            change = netWorth - prevNetWorth;
+            changePercent =
+              prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
+          } else {
+            // Otherwise, try to look up previous year's December from API data
+            const prevYearEntries = allEntries
+              .filter(
+                (e) =>
+                  parseInt((e?.date || "").split("-")[0]) === selectedYear - 1,
+              )
+              .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            if (prevYearEntries.length > 0) {
+              prevNetWorth = prevYearEntries[0].netWorth || 0;
+              change = netWorth - prevNetWorth;
+              changePercent =
+                prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
+            }
+          }
+        }
+      }
 
       const monthIndex = parseInt((entry.date || "").split("-")[1]) - 1;
 
