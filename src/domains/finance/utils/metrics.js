@@ -92,7 +92,15 @@ export const getYearMetrics = (netWorthHistory, selectedYear) => {
   const lastPrevYearEntry = prevYearEntries[prevYearEntries.length - 1];
 
   const currentNetWorth = lastYearEntry?.netWorth || 0;
-  const prevYearNetWorth = lastPrevYearEntry?.netWorth || 0;
+
+  // Use hardcoded prior year balance if available, otherwise use API data
+  let prevYearNetWorth = 0;
+  if (PRIOR_YEAR_ENDING_BALANCES[selectedYear] !== undefined) {
+    prevYearNetWorth = PRIOR_YEAR_ENDING_BALANCES[selectedYear];
+  } else if (lastPrevYearEntry) {
+    prevYearNetWorth = lastPrevYearEntry.netWorth || 0;
+  }
+
   const yoyChange = currentNetWorth - prevYearNetWorth;
   const yoyPercentage =
     prevYearNetWorth !== 0 ? (yoyChange / prevYearNetWorth) * 100 : 0;
