@@ -1,14 +1,21 @@
 import { useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { ChevronRight } from "lucide-react";
 import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
 import { Currencyformatter } from "../utils/currency";
 import { getEntryAssets, getEntryLiabilities } from "../utils/metrics";
 import { MONTH_LABELS, PRIOR_YEAR_ENDING_BALANCES } from "../utils/metrics";
 import { MonthlyDetailModal } from "./MonthlyDetailModal.jsx";
+import { NET_WORTH_HISTORY_KEY } from "../hooks/queryKeys.js";
 
 export function MonthlyTable({ selectedYear }) {
+  const queryClient = useQueryClient();
   const { data: netWorthHistory } = useNetWorthHistory();
   const [selectedMonth, setSelectedMonth] = useState(null);
+
+  const handleRefreshData = async () => {
+    await queryClient.invalidateQueries({ queryKey: NET_WORTH_HISTORY_KEY });
+  };
 
   const monthlyData = useMemo(() => {
     const allEntries = netWorthHistory ? Object.values(netWorthHistory) : [];
@@ -152,7 +159,7 @@ export function MonthlyTable({ selectedYear }) {
                           {Currencyformatter.format(month.change)}
                         </div>
                         <div className="text-[10px] sm:text-xs font-medium opacity-75">
-                          ({month.change >= 0 ? "+" : ""}
+                          ({month.change >= 0 ? "+" : "-"}
                           {Math.abs(month.changePercent).toFixed(1)}%)
                         </div>
                       </td>
@@ -181,6 +188,7 @@ export function MonthlyTable({ selectedYear }) {
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
           onClose={() => setSelectedMonth(null)}
+          onRefresh={handleRefreshData}
         />
       )}
     </>

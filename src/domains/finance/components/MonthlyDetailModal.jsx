@@ -1,22 +1,95 @@
+import { useState } from "react";
 import { X, Plus, Wallet, Edit2, Trash2, CreditCard } from "lucide-react";
 import Modal from "../../library/components/Modal";
 import { Currencyformatter } from "../utils/currency";
+import { updateAccountBalance } from "../api";
+import { useToast } from "../../../context/ToastContext";
 
-export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
+export function MonthlyDetailModal({
+  selectedMonth,
+  selectedYear,
+  onClose,
+  onRefresh,
+}) {
+  const addToast = useToast();
+  const [editingAccount, setEditingAccount] = useState(null);
+  const [editBalance, setEditBalance] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [displayMonth, setDisplayMonth] = useState(selectedMonth);
 
   const CATEGORIES = {
-    "Cash & Savings": { label: "Cash & Savings"},
+    "Cash & Savings": { label: "Cash & Savings" },
     Investments: { label: "Investments" },
     Retirement: { label: "Retirement" },
     Property: { label: "Property" },
   };
   const catLabel = (t) => (CATEGORIES[t] || {}).label;
 
-  const assetAccounts = selectedMonth.accounts
+  const handleEditClick = (account) => {
+    setEditingAccount(account);
+    setEditBalance(account.balance.toString());
+  };
+
+  const handleSaveBalance = async () => {
+    if (!editingAccount || editBalance === "") return;
+
+    const newBalance = parseFloat(editBalance);
+    if (isNaN(newBalance)) {
+      addToast("Please enter a valid number", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await updateAccountBalance(
+        editingAccount.id || editingAccount.accountId,
+        displayMonth.date,
+        newBalance,
+      );
+
+      // Update the displayed month data with new balance
+      const updatedAccounts = displayMonth.accounts.map((acc) =>
+        acc === editingAccount ? { ...acc, balance: newBalance } : acc,
+      );
+
+      const updatedAssets = updatedAccounts
+        .filter((acc) => acc.category === "ASSET")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+      const updatedLiabilities = updatedAccounts
+        .filter((acc) => acc.category === "LIABILITY")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+
+      setDisplayMonth({
+        ...displayMonth,
+        accounts: updatedAccounts,
+        assets: updatedAssets,
+        liabilities: updatedLiabilities,
+        netWorth: updatedAssets - updatedLiabilities,
+      });
+
+      addToast(`${editingAccount.accountName} balance updated`, "success");
+      setEditingAccount(null);
+      setEditBalance("");
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      addToast(err.message || "Failed to update balance", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingAccount(null);
+    setEditBalance("");
+  };
+
+  const assetAccounts = displayMonth.accounts
     .filter((account) => account.category === "ASSET")
     .sort((a, b) => a.accountType.localeCompare(b.accountType));
 
-  const liabilityAccounts = selectedMonth.accounts
+  const liabilityAccounts = displayMonth.accounts
     .filter((account) => account.category === "LIABILITY")
     .sort((a, b) => a.accountType.localeCompare(b.accountType));
 
@@ -29,31 +102,15 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
         <div className="flex justify-between items-start mb-4">
           <div>
             <h2 className="text-2xl font-bold text-slate-800 mb-1">
-              {selectedMonth.month} {selectedYear}
+              {displayMonth.month} {selectedYear}
             </h2>
             <div className="flex gap-5">
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wide">
-                  Assets
-                </div>
-                <div className={`text-lg font-bold text-emerald-700`}>
-                  {Currencyformatter.format(selectedMonth.assets)}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wide">
-                  Liabilities
-                </div>
-                <div className={`text-lg font-bold text-rose-700`}>
-                  {Currencyformatter.format(selectedMonth.liabilities)}
-                </div>
-              </div>
               <div>
                 <div className="text-xs text-slate-500 uppercase tracking-wide">
                   Net Worth
                 </div>
                 <div className={`text-lg font-bold text-blue-700`}>
-                  {Currencyformatter.format(selectedMonth.netWorth)}
+                  {Currencyformatter.format(displayMonth.netWorth)}
                 </div>
               </div>
             </div>
@@ -72,183 +129,77 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
         <div className="mb-5">
           <div className="flex justify-between items-center mb-3">
             <h3 className="text-lg font-semibold text-slate-800">Assets</h3>
-            <button
-              //onClick={() => setIsAddingAccount(true)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold"
-            >
+            <button className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold">
               <Plus size={14} />
               Add Asset
             </button>
           </div>
-          {/* {isAddingAccount && (
-            <div className="bg-emerald-50 rounded-lg p-4 mb-3 border-2 border-emerald-200">
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Account name"
-                  value={newAccount.name}
-                  onChange={(e) =>
-                    setNewAccount({ ...newAccount, name: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                />
-                <input
-                  type="number"
-                  placeholder="Value"
-                  value={newAccount.value}
-                  onChange={(e) =>
-                    setNewAccount({ ...newAccount, value: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                />
-                <select
-                  value={newAccount.type}
-                  onChange={(e) =>
-                    setNewAccount({ ...newAccount, type: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                >
-                  {Object.entries(CATEGORIES).map(([k, v]) => (
-                    <option key={k} value={k}>
-                      {v.label}
-                    </option>
-                  ))}
-                </select>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddAccount}
-                    className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsAddingAccount(false);
-                      setNewAccount({ name: "", value: "", type: "cash" });
-                    }}
-                    className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )} */}
           <div className="space-y-2">
             {assetAccounts.map((account, accountIndex) => {
-              //   if (
-              //     deleteConfirm?.type === "account" &&
-              //     deleteConfirm?.id === accountIndex
-              //   )
-              //     return (
-              //       <DeleteConfirmRow
-              //         key={accountIndex}
-              //         label={account.name}
-              //         onConfirm={() => handleDeleteAccount(accountIndex)}
-              //         onCancel={() => setDeleteConfirm(null)}
-              //       />
-              //     );
-              //   if (
-              //     editingAccount &&
-              //     editingAccount.accountIndex === accountIndex
-              //   )
-              //     return (
-              //       <div
-              //         key={accountIndex}
-              //         className="bg-emerald-50 rounded-lg p-3 border-2 border-emerald-200"
-              //       >
-              //         <div className="space-y-2">
-              //           <input
-              //             type="text"
-              //             value={editingAccount.name}
-              //             onChange={(e) =>
-              //               setEditingAccount({
-              //                 ...editingAccount,
-              //                 name: e.target.value,
-              //               })
-              //             }
-              //             className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-              //           />
-              //           <input
-              //             type="number"
-              //             value={editingAccount.value}
-              //             onChange={(e) =>
-              //               setEditingAccount({
-              //                 ...editingAccount,
-              //                 value: e.target.value,
-              //               })
-              //             }
-              //             className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-              //           />
-              //           <div className="flex gap-2">
-              //             <button
-              //               onClick={() => {
-              //                 const u = [...pendingChanges.accounts];
-              //                 u[accountIndex] = {
-              //                   name: editingAccount.name,
-              //                   value: parseFloat(editingAccount.value),
-              //                   type: editingAccount.type,
-              //                 };
-              //                 setPendingChanges({
-              //                   ...pendingChanges,
-              //                   accounts: u,
-              //                 });
-              //                 setHasUnsavedChanges(true);
-              //                 setEditingAccount(null);
-              //               }}
-              //               className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm"
-              //             >
-              //               Update
-              //             </button>
-              //             <button
-              //               onClick={() => setEditingAccount(null)}
-              //               className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-              //             >
-              //               Cancel
-              //             </button>
-              //           </div>
-              //         </div>
-              //       </div>
-              //     );
+              const isEditing = editingAccount === account;
               return (
-                <div
-                  key={accountIndex}
-                  className="bg-emerald-50 rounded-lg p-3 border border-emerald-200 flex justify-between items-center hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-2">
-                    <Wallet size={16} className="text-emerald-500" />
-                    <span className="text-slate-700 font-medium text-sm">
-                      {account.accountName}
-                    </span>
-                    <span
-                      className="text-xs px-2 py-0.5 rounded-full font-medium"
-                      style={{
-                        backgroundColor:  "#10b98122",
-                        color: "#10b981",
-                      }}
-                    >
-                      {catLabel(account.accountType)}
-                    </span>
+                <div key={accountIndex}>
+                  <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-200 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <Wallet size={16} className="text-emerald-500" />
+                      <span className="text-slate-700 font-medium text-sm">
+                        {account.accountName}
+                      </span>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          backgroundColor: "#10b98122",
+                          color: "#10b981",
+                        }}
+                      >
+                        {catLabel(account.accountType)}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold text-emerald-700`}>
+                        {Currencyformatter.format(account.balance)}
+                      </span>
+                      <button
+                        onClick={() => handleEditClick(account)}
+                        className="p-1 text-blue-600 hover:text-blue-700 hover:cursor-pointer"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button className="p-1 text-rose-500 hover:text-rose-700 hover:cursor-pointer">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold text-emerald-700`}>
-                      {Currencyformatter.format(account.balance)}
-                    </span>
-                    <button
-                      //onClick={() => handleEditAccount(account, accountIndex)}
-                      className="p-1 text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                      //   onClick={() =>
-                      //     setDeleteConfirm({ type: "account", id: accountIndex })
-                      //   }
-                      className="p-1 text-rose-500 hover:text-rose-700"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+
+                  {isEditing && (
+                    <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editBalance}
+                          onChange={(e) => setEditBalance(e.target.value)}
+                          placeholder="0.00"
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleSaveBalance}
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {isLoading ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isLoading}
+                          className="px-4 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -261,199 +212,82 @@ export function MonthlyDetailModal({ selectedMonth, selectedYear, onClose }) {
             <h3 className="text-lg font-semibold text-slate-800">
               Liabilities
             </h3>
-            <button
-              //onClick={() => setIsAddingLiability(true)}
-              className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold"
-            >
+            <button className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold">
               <Plus size={14} />
               Add Liability
             </button>
           </div>
-          {/* {isAddingLiability && (
-            <div className="bg-rose-50 rounded-lg p-4 mb-3 border-2 border-rose-200">
-              <div className="space-y-2">
-                <input
-                  type="text"
-                  placeholder="Liability name (e.g. Mortgage)"
-                  value={newLiability.name}
-                  onChange={(e) =>
-                    setNewLiability({ ...newLiability, name: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                />
-                <input
-                  type="number"
-                  placeholder="Balance owed"
-                  value={newLiability.value}
-                  onChange={(e) =>
-                    setNewLiability({ ...newLiability, value: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                />
-                <select
-                  value={newLiability.type}
-                  onChange={(e) =>
-                    setNewLiability({ ...newLiability, type: e.target.value })
-                  }
-                  className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                >
-                  <option value="mortgage">Mortgage</option>
-                  <option value="auto">Auto Loan</option>
-                  <option value="student">Student Loan</option>
-                  <option value="credit">Credit Card</option>
-                  <option value="other">Other</option>
-                </select>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleAddLiability}
-                    className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-sm"
-                  >
-                    Save
-                  </button>
-                  <button
-                    onClick={() => {
-                      setIsAddingLiability(false);
-                      setNewLiability({
-                        name: "",
-                        value: "",
-                        type: "mortgage",
-                      });
-                    }}
-                    className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )} */}
           <div className="space-y-2">
             {liabilityAccounts.map((liability, liabIndex) => {
-            //   if (
-            //     deleteConfirm?.type === "liability" &&
-            //     deleteConfirm?.id === liabIndex
-            //   )
-            //     return (
-            //       <DeleteConfirmRow
-            //         key={liabIndex}
-            //         label={liab.name}
-            //         onConfirm={() => handleDeleteLiability(liabIndex)}
-            //         onCancel={() => setDeleteConfirm(null)}
-            //       />
-            //     );
-            //   if (editingLiability && editingLiability.liabIndex === liabIndex)
-            //     return (
-            //       <div
-            //         key={liabIndex}
-            //         className="bg-rose-50 rounded-lg p-3 border-2 border-rose-200"
-            //       >
-            //         <div className="space-y-2">
-            //           <input
-            //             type="text"
-            //             value={editingLiability.name}
-            //             onChange={(e) =>
-            //               setEditingLiability({
-            //                 ...editingLiability,
-            //                 name: e.target.value,
-            //               })
-            //             }
-            //             className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-            //           />
-            //           <input
-            //             type="number"
-            //             value={editingLiability.value}
-            //             onChange={(e) =>
-            //               setEditingLiability({
-            //                 ...editingLiability,
-            //                 value: e.target.value,
-            //               })
-            //             }
-            //             className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-            //           />
-            //           <div className="flex gap-2">
-            //             <button
-            //               onClick={() => {
-            //                 const u = [...(pendingChanges.liabilities || [])];
-            //                 u[liabIndex] = {
-            //                   name: editingLiability.name,
-            //                   value: parseFloat(editingLiability.value),
-            //                   type: editingLiability.type,
-            //                 };
-            //                 setPendingChanges({
-            //                   ...pendingChanges,
-            //                   liabilities: u,
-            //                 });
-            //                 setHasUnsavedChanges(true);
-            //                 setEditingLiability(null);
-            //               }}
-            //               className="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold text-sm"
-            //             >
-            //               Update
-            //             </button>
-            //             <button
-            //               onClick={() => setEditingLiability(null)}
-            //               className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-            //             >
-            //               Cancel
-            //             </button>
-            //           </div>
-            //         </div>
-            //       </div>
-            //     );
+              const isEditing = editingAccount === liability;
               return (
-                <div
-                  key={liabIndex}
-                  className="bg-rose-50 rounded-lg p-3 border border-rose-200 flex justify-between items-center hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-2">
-                    <CreditCard size={16} className="text-rose-500" />
-                    <span className="text-slate-700 font-medium text-sm">
-                      {liability.accountName}
-                    </span>
-                    <span 
-                      className="text-xs px-2 py-0.5 rounded-full font-medium"             
-                      style={{
-                        backgroundColor: "#b91c1c22",
-                        color: "#b91c1c",
-                      }}
-                    >
-                      {liability.accountType}
-                    </span>
+                <div key={liabIndex}>
+                  <div className="bg-rose-50 rounded-lg p-3 border border-rose-200 flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <CreditCard size={16} className="text-rose-500" />
+                      <span className="text-slate-700 font-medium text-sm">
+                        {liability.accountName}
+                      </span>
+                      <span
+                        className="text-xs px-2 py-0.5 rounded-full font-medium"
+                        style={{
+                          backgroundColor: "#b91c1c22",
+                          color: "#b91c1c",
+                        }}
+                      >
+                        {liability.accountType}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className={`font-bold text-rose-700`}>
+                        {Currencyformatter.format(liability.balance)}
+                      </span>
+                      <button
+                        onClick={() => handleEditClick(liability)}
+                        className="p-1 text-blue-600 hover:text-blue-700 hover:cursor-pointer"
+                      >
+                        <Edit2 size={14} />
+                      </button>
+                      <button className="p-1 text-rose-500 hover:text-rose-700 hover:cursor-pointer">
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`font-bold text-rose-700`}>
-                      {Currencyformatter.format(liability.balance)}
-                    </span>
-                    <button
-                      //onClick={() => handleEditLiability(liab, liabIndex)}
-                      className="p-1 text-blue-600 hover:text-blue-700"
-                    >
-                      <Edit2 size={14} />
-                    </button>
-                    <button
-                    //   onClick={() =>
-                    //     setDeleteConfirm({ type: "liability", id: liabIndex })
-                    //   }
-                      className="p-1 text-rose-500 hover:text-rose-700"
-                    >
-                      <Trash2 size={14} />
-                    </button>
-                  </div>
+
+                  {isEditing && (
+                    <div className="mt-2 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex gap-2">
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editBalance}
+                          onChange={(e) => setEditBalance(e.target.value)}
+                          placeholder="0.00"
+                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          autoFocus
+                        />
+                        <button
+                          onClick={handleSaveBalance}
+                          disabled={isLoading}
+                          className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50"
+                        >
+                          {isLoading ? "Saving..." : "Save"}
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          disabled={isLoading}
+                          className="px-4 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
-            })} 
+            })}
           </div>
         </div>
-
-        {/* {hasUnsavedChanges && (
-          <button
-            onClick={handleSaveAllChanges}
-            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-all mt-2"
-          >
-            <Save size={18} />
-            Save Changes
-          </button>
-        )} */}
       </div>
     </Modal>
   );
