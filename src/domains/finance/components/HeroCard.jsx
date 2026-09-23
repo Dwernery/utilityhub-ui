@@ -67,7 +67,7 @@ export function HeroCard({ selectedYear }) {
           </span>
         </div>
       </div>
-      <div className="mt-6 pt-4 border-t border-blue-500/40">
+      <div className="mt-4 pt-4 border-t border-blue-500/40">
         <button
           type="button"
           onClick={() => setShowDetails((prev) => !prev)}
