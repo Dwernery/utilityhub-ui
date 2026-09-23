@@ -183,7 +183,7 @@ export function MonthlyDetailModal({
                   </div>
 
                   {isEditing && (
-                    <div className="mt-2 sm:p-4">
+                    <div className="mt-2 sm:p-1">
                       <div className="flex gap-2">
                         <input
                           type="number"
@@ -273,7 +273,7 @@ export function MonthlyDetailModal({
                   </div>
 
                   {isEditing && (
-                    <div className="mt-2 sm:p-4">
+                    <div className="mt-2 sm:p-1">
                       <div className="flex gap-2">
                         <input
                           type="number"
