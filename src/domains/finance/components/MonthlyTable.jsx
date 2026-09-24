@@ -168,19 +168,19 @@ export function MonthlyTable({ selectedYear }) {
           role="row"
         >
           <div
-            className="px-2 py-2 sm:px-4 sm:py-3 text-left text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
+            className="px-2 py-2 sm:px-4  text-left text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
             role="columnheader"
           >
             Month
           </div>
           <div
-            className="px-2 py-2 sm:px-4 sm:py-3 text-right text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
+            className="px-2 py-2 sm:px-4  text-right text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
             role="columnheader"
           >
             Net Worth
           </div>
           <div
-            className="px-2 py-2 sm:px-4 sm:py-3 text-right text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
+            className="px-2 py-2 sm:px-4  text-right text-[10px] sm:text-xs font-semibold text-slate-600 uppercase tracking-wider"
             role="columnheader"
           >
             Change
@@ -201,7 +201,7 @@ export function MonthlyTable({ selectedYear }) {
               } ${!month.isCurrentMonth && idx % 2 === 0 ? "bg-white" : ""}`}
             >
               <div
-                className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-base font-semibold text-slate-700"
+                className="px-2 py-2 sm:px-4 text-xs sm:text-base font-semibold text-slate-700"
                 role="cell"
               >
                 <div className="flex items-center gap-1 sm:gap-2">
@@ -217,13 +217,13 @@ export function MonthlyTable({ selectedYear }) {
               {month.hasData ? (
                 <>
                   <div
-                    className="px-2 py-2 sm:px-4 sm:py-3 text-right text-xs sm:text-base font-bold text-slate-800"
+                    className="px-2 py-2 sm:px-4 text-right text-xs sm:text-base font-bold text-slate-800"
                     role="cell"
                   >
                     {Currencyformatter.format(month.netWorth)}
                   </div>
                   <div
-                    className={`px-2 py-2 sm:px-4 sm:py-3 text-right font-semibold text-xs sm:text-sm ${
+                    className={`px-2 py-2 sm:px-4 text-right font-semibold text-xs sm:text-sm ${
                       month.change >= 0 ? "text-emerald-600" : "text-rose-600"
                     }`}
                     role="cell"
@@ -241,13 +241,13 @@ export function MonthlyTable({ selectedYear }) {
               ) : (
                 <>
                   <div
-                    className="px-2 py-2 sm:px-4 sm:py-3 text-right text-xs sm:text-base font-semibold text-slate-300"
+                    className="px-2 py-2 sm:px-4 text-right text-xs sm:text-base font-semibold text-slate-300"
                     role="cell"
                   >
                     —
                   </div>
                   <div
-                    className="px-2 py-2 sm:px-4 sm:py-3 text-right font-semibold text-xs sm:text-sm text-slate-300"
+                    className="px-2 py-2 sm:px-4 text-right font-semibold text-xs sm:text-sm text-slate-300"
                     role="cell"
                   >
                     <div>—</div>

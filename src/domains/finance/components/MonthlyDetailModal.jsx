@@ -107,7 +107,7 @@ export function MonthlyDetailModal({
       onClose={onClose}
       panelClassName="bg-white w-full max-w-3xl max-h-[90vh] rounded-xl border border-slate-200 shadow-2xl mx-4 sm:mx-0 flex flex-col"
     >
-      <div className="sticky top-0 bg-white border-b border-slate-100 px-3 sm:px-5 py-2.5 sm:py-3.5 z-10">
+      <div className="sticky top-0 bg-white border-b border-slate-100 px-3 sm:px-5 py-2.5 sm:py-3.5 z-10 rounded-t-xl">
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1">
