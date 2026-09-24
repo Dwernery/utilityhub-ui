@@ -31,20 +31,37 @@ export const MONTH_LABELS = [
   "December",
 ];
 
+// Helper function to exclude entries from the current month
+const excludeCurrentMonth = (entries) => {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1; // 1-indexed
+
+  return entries.filter((entry) => {
+    const entryYear = parseInt((entry?.date || "").split("-")[0]);
+    const entryMonth = parseInt((entry?.date || "").split("-")[1]);
+    return !(entryYear === currentYear && entryMonth === currentMonth);
+  });
+};
+
 export const getMonthlyChartData = (netWorthHistory, year) => {
   if (!netWorthHistory || netWorthHistory.length === 0) {
     return [];
   }
 
-  return netWorthHistory
-    .filter((entry) => parseInt((entry?.date || "").split("-")[0]) === year)
-    .map((entry) => {
-      const monthIndex = parseInt((entry?.date || "").split("-")[1]) - 1;
-      return {
-        month: MONTH_LABELS[monthIndex],
-        netWorth: entry.netWorth,
-      };
-    });
+  const filteredEntries = excludeCurrentMonth(
+    netWorthHistory.filter(
+      (entry) => parseInt((entry?.date || "").split("-")[0]) === year,
+    ),
+  );
+
+  return filteredEntries.map((entry) => {
+    const monthIndex = parseInt((entry?.date || "").split("-")[1]) - 1;
+    return {
+      month: MONTH_LABELS[monthIndex],
+      netWorth: entry.netWorth,
+    };
+  });
 };
 
 export const getEntryAssets = (entry) => {
@@ -79,10 +96,13 @@ export const getYearMetrics = (netWorthHistory, selectedYear) => {
     };
   }
 
-  // Get the last entry for the selected year
-  const yearEntries = Object.values(netWorthHistory).filter(
-    (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
-  );
+  // Get the last entry for the selected year, excluding current month
+  const yearEntries = excludeCurrentMonth(
+    Object.values(netWorthHistory).filter(
+      (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
+    ),
+  ).sort((a, b) => new Date(a.date) - new Date(b.date));
+
   const lastYearEntry = yearEntries[yearEntries.length - 1];
 
   // Get the last entry from previous year for YoY comparison
@@ -126,11 +146,11 @@ export const getYearStats = (netWorthHistory, selectedYear) => {
     return empty;
   }
 
-  const entries = Object.values(netWorthHistory)
-    .filter(
+  const entries = excludeCurrentMonth(
+    Object.values(netWorthHistory).filter(
       (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
-    )
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+    ),
+  ).sort((a, b) => new Date(a.date) - new Date(b.date));
 
   if (entries.length === 0) {
     return empty;

@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { X, Plus, Wallet, Edit2, Trash2, CreditCard } from "lucide-react";
+import {
+  X,
+  Plus,
+  Wallet,
+  Edit2,
+  Trash2,
+  CreditCard,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import Modal from "../../library/components/Modal";
 import { Currencyformatter } from "../utils/currency";
 import { updateAccountBalance } from "../api";
@@ -106,9 +115,6 @@ export function MonthlyDetailModal({
             </h2>
             <div className="flex gap-5">
               <div>
-                <div className="text-xs text-slate-500 uppercase tracking-wide">
-                  Net Worth
-                </div>
                 <div className={`text-lg font-bold text-blue-700`}>
                   {Currencyformatter.format(displayMonth.netWorth)}
                 </div>
@@ -130,12 +136,12 @@ export function MonthlyDetailModal({
         {/* Assets */}
         <div className="px-3 sm:px-5 py-4 sm:py-5 border-b border-slate-100">
           <div className="flex justify-between items-center mb-3 gap-2">
-            <h3 className="text-base sm:text-lg font-semibold text-slate-800">
+            <h3 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 text-emerald-600">
+              <TrendingUp size={16} />
               Assets
             </h3>
-            <button className="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-sm font-semibold flex-shrink-0">
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0">
               <Plus size={14} />
-              Add Asset
             </button>
           </div>
           <div className="space-y-2">
@@ -220,12 +226,12 @@ export function MonthlyDetailModal({
         {/* Liabilities */}
         <div className="px-3 sm:px-5 py-4 sm:py-5">
           <div className="flex justify-between items-center mb-3 gap-2">
-            <h3 className="text-base sm:text-lg font-semibold text-slate-800">
+            <h3 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 text-rose-600">
+              <TrendingDown size={16} />
               Liabilities
             </h3>
-            <button className="flex items-center gap-1 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-sm font-semibold flex-shrink-0">
+            <button className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0">
               <Plus size={14} />
-              Add Liability
             </button>
           </div>
           <div className="space-y-2">

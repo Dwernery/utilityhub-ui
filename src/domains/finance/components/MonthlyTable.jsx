@@ -18,11 +18,21 @@ export function MonthlyTable({ selectedYear }) {
   };
 
   const monthlyData = useMemo(() => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-indexed
+
     const allEntries = netWorthHistory ? Object.values(netWorthHistory) : [];
     const entries = allEntries
-      .filter(
-        (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
-      )
+      .filter((entry) => {
+        const entryYear = parseInt((entry?.date || "").split("-")[0]);
+        const entryMonth = parseInt((entry?.date || "").split("-")[1]);
+        // Exclude current month entries from calculations
+        if (entryYear === currentYear && entryMonth === currentMonth) {
+          return false;
+        }
+        return parseInt((entry?.date || "").split("-")[0]) === selectedYear;
+      })
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     const byMonthIndex = new Map();
@@ -82,8 +92,52 @@ export function MonthlyTable({ selectedYear }) {
         changePercent,
         accounts: entry.accounts || [],
         hasData: true,
+        isCurrentMonth: false,
       });
     });
+
+    // Add current month entries if they exist (for display only, not calculations)
+    if (selectedYear === currentYear) {
+      const currentMonthEntries = allEntries
+        .filter((entry) => {
+          const entryYear = parseInt((entry?.date || "").split("-")[0]);
+          const entryMonth = parseInt((entry?.date || "").split("-")[1]);
+          return entryYear === currentYear && entryMonth === currentMonth;
+        })
+        .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+      if (currentMonthEntries.length > 0) {
+        const entry = currentMonthEntries[0];
+        const totalAssets = getEntryAssets(entry);
+        const totalLiabilities = getEntryLiabilities(entry);
+        const netWorth = entry.netWorth || totalAssets - totalLiabilities;
+
+        // For current month, show change from last complete month
+        let change = 0;
+        let changePercent = 0;
+        if (entries.length > 0) {
+          const lastEntry = entries[entries.length - 1];
+          const prevNetWorth = lastEntry.netWorth || 0;
+          change = netWorth - prevNetWorth;
+          changePercent =
+            prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
+        }
+
+        const monthIndex = currentMonth - 1;
+        byMonthIndex.set(monthIndex, {
+          date: entry.date,
+          month: MONTH_LABELS[monthIndex],
+          assets: totalAssets,
+          liabilities: totalLiabilities,
+          netWorth,
+          change,
+          changePercent,
+          accounts: entry.accounts || [],
+          hasData: true,
+          isCurrentMonth: true,
+        });
+      }
+    }
 
     // Always show all 12 months, even if the API hasn't reported them yet.
     return MONTH_LABELS.map(
@@ -98,6 +152,7 @@ export function MonthlyTable({ selectedYear }) {
           changePercent: null,
           accounts: [],
           hasData: false,
+          isCurrentMonth: false,
         },
     );
   }, [netWorthHistory, selectedYear]);
@@ -138,10 +193,12 @@ export function MonthlyTable({ selectedYear }) {
               onClick={() => month.hasData && setSelectedMonth(month)}
               role="row"
               className={`flex-1 min-h-0 grid grid-cols-3 border-b border-slate-100 transition-colors items-center overflow-hidden ${
-                month.hasData
-                  ? "hover:bg-blue-50 cursor-pointer"
-                  : "cursor-default"
-              } ${idx % 2 === 0 ? "bg-white" : "bg-slate-50"}`}
+                month.isCurrentMonth
+                  ? "bg-yellow-100 hover:bg-yellow-200 cursor-pointer"
+                  : month.hasData
+                    ? "hover:bg-blue-50 cursor-pointer"
+                    : "cursor-default"
+              } ${!month.isCurrentMonth && idx % 2 === 0 ? "bg-white" : ""}`}
             >
               <div
                 className="px-2 py-2 sm:px-4 sm:py-3 text-xs sm:text-base font-semibold text-slate-700"
