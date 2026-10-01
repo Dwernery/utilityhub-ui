@@ -8,12 +8,25 @@ import {
   X,
 } from "lucide-react";
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTransactions } from "../hooks/useTransactions.js";
+import { updateTransaction, clearAllPaid } from "../api.js";
 import { Currencyformatter } from "../utils/currency";
+import { useToast } from "../../../context/ToastContext";
+import { TRANSACTIONS_KEY } from "../hooks/queryKeys.js";
 
 export const IncomeExpenses = () => {
   const { data: transactions = [], isLoading } = useTransactions();
+  const queryClient = useQueryClient();
+  const addToast = useToast();
   const [paidFilter, setPaidFilter] = useState("ALL"); // "ALL", "PAID", "UNPAID"
+  const [editingTransaction, setEditingTransaction] = useState(null);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    amount: "",
+    paid: false,
+  });
+  const [isSaving, setIsSaving] = useState(false);
   const C = {
     networth: "text-blue-700",
     asset: "text-emerald-700",
@@ -30,6 +43,70 @@ export const IncomeExpenses = () => {
     if (paidFilter === "UNPAID") return transaction.paid === false;
     return true; // ALL
   });
+
+  const handleEditClick = (transaction) => {
+    setEditingTransaction(transaction);
+    setEditFormData({
+      name: transaction.name,
+      amount: transaction.amount.toString(),
+      paid: transaction.paid || false,
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingTransaction) return;
+
+    const newAmount = parseFloat(editFormData.amount);
+    if (isNaN(newAmount)) {
+      addToast("Please enter a valid amount", "error");
+      return;
+    }
+
+    if (!editFormData.name.trim()) {
+      addToast("Please enter a transaction name", "error");
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await updateTransaction(
+        editingTransaction.id,
+        editFormData.name,
+        newAmount,
+        editFormData.paid,
+      );
+
+      addToast("Transaction updated successfully", "success");
+      setEditingTransaction(null);
+
+      // Refetch transactions
+      await queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
+    } catch (err) {
+      addToast(err.message || "Failed to update transaction", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleClearAllPaid = async () => {
+    if (
+      !confirm("Clear paid status from all income and expense transactions?")
+    ) {
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await clearAllPaid();
+      addToast("Cleared paid status from all transactions", "success");
+      // Refetch transactions
+      await queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
+    } catch (err) {
+      addToast(err.message || "Failed to clear paid status", "error");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   let income =
     filteredTransactions
@@ -96,85 +173,37 @@ export const IncomeExpenses = () => {
 
       <div className="bg-white rounded-2xl px-4 py-2 shadow-xl border border-slate-200 mb-4">
         {/* Paid Status Filter */}
-        <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-200">
-          <span className="text-sm font-semibold text-slate-700">Filter:</span>
-          <div className="flex gap-2">
-            {["ALL", "PAID", "UNPAID"].map((filter) => (
-              <button
-                key={filter}
-                onClick={() => setPaidFilter(filter)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
-                  paidFilter === filter
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
-                }`}
-              >
-                {filter}
-              </button>
-            ))}
-          </div>
-        </div>
-        {/* {isAddingTransaction && (
-          <div className="bg-blue-50 rounded-lg p-4 mb-4 border-2 border-blue-200">
-            <div className="space-y-2">
-              <input
-                type="text"
-                placeholder="Transaction name"
-                value={newTransaction.name}
-                onChange={(e) =>
-                  setNewTransaction({ ...newTransaction, name: e.target.value })
-                }
-                className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-              />
-              <select
-                value={newTransaction.direction}
-                onChange={(e) =>
-                  setNewTransaction({
-                    ...newTransaction,
-                    direction: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-              >
-                <option value="in">Income</option>
-                <option value="out">Expense</option>
-              </select>
-              <input
-                type="number"
-                placeholder="Amount"
-                value={newTransaction.amount}
-                onChange={(e) =>
-                  setNewTransaction({
-                    ...newTransaction,
-                    amount: e.target.value,
-                  })
-                }
-                className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-              />
-              <div className="flex gap-2">
+        <div className="flex items-center justify-between gap-2 py-2 border-b border-slate-200 mb-2">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-700">
+              Filter:
+            </span>
+            <div className="flex gap-2">
+              {["ALL", "PAID", "UNPAID"].map((filter) => (
                 <button
-                  onClick={handleAddTransaction}
-                  className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm"
+                  key={filter}
+                  onClick={() => setPaidFilter(filter)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                    paidFilter === filter
+                      ? "bg-blue-600 text-white"
+                      : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                  }`}
                 >
-                  Save
+                  {filter}
                 </button>
-                <button
-                  onClick={() => {
-                    setIsAddingTransaction(false);
-                    setNewTransaction({
-                      name: "",
-                      direction: "in",
-                      amount: "",
-                    });
-                  }}
-                  className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-                >
-                  Cancel
-                </button>
-              </div>
+              ))}
             </div>
           </div>
-        )}  */}
+          <button
+            onClick={handleClearAllPaid}
+            disabled={isSaving}
+            className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold text-xs"
+            title="Clear paid status from all transactions"
+          >
+            <X size={14} />
+            <span>Clear All Paid</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {["INCOME", "EXPENSE"].map((dir) => (
             <div key={dir} className="mb-3">
@@ -191,7 +220,7 @@ export const IncomeExpenses = () => {
                 </h3>
                 <button
                   // onClick={() => setIsAddingTransaction(true)}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold hover:cursor-pointer"
+                  className={`flex items-center gap-2 px-3 py-1.5 text-white rounded-lg font-semibold hover:cursor-pointer ${dir === "INCOME" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
                 >
                   <Plus size={14} />
                 </button>
@@ -200,106 +229,114 @@ export const IncomeExpenses = () => {
                 {filteredTransactions
                   .filter((transaction) => transaction.transactionType === dir)
                   .map((transaction) => {
-                    // if (
-                    //   deleteConfirm?.type === "tx" &&
-                    //   deleteConfirm?.id === tx.id
-                    // )
-                    //   return (
-                    //     <DeleteConfirmRow
-                    //       key={tx.id}
-                    //       label={tx.name}
-                    //       onConfirm={() => handleDeleteTransaction(tx.id)}
-                    //       onCancel={() => setDeleteConfirm(null)}
-                    //     />
-                    //   );
-                    // if (editingTransaction?.id === tx.id)
-                    //   return (
-                    //     <div
-                    //       key={tx.id}
-                    //       className={`rounded-lg p-3 border-2 ${dir === "in" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}
-                    //     >
-                    //       <div className="space-y-2">
-                    //         <input
-                    //           type="text"
-                    //           value={editingTransaction.name}
-                    //           onChange={(e) =>
-                    //             setEditingTransaction({
-                    //               ...editingTransaction,
-                    //               name: e.target.value,
-                    //             })
-                    //           }
-                    //           className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                    //         />
-                    //         <input
-                    //           type="number"
-                    //           value={editingTransaction.amount}
-                    //           onChange={(e) =>
-                    //             setEditingTransaction({
-                    //               ...editingTransaction,
-                    //               amount: e.target.value,
-                    //             })
-                    //           }
-                    //           className="w-full px-3 py-2 bg-white text-slate-900 rounded-lg border border-slate-300 text-sm"
-                    //         />
-                    //         <div className="flex gap-2">
-                    //           <button
-                    //             onClick={handleSaveTransaction}
-                    //             className={`flex-1 py-2 ${dir === "in" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"} text-white rounded-lg font-semibold text-sm`}
-                    //           >
-                    //             Save
-                    //           </button>
-                    //           <button
-                    //             onClick={() => setEditingTransaction(null)}
-                    //             className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg font-semibold text-sm"
-                    //           >
-                    //             Cancel
-                    //           </button>
-                    //         </div>
-                    //       </div>
-                    //     </div>
-                    //   );
+                    const isEditing = editingTransaction?.id === transaction.id;
                     return (
-                      <div
-                        key={transaction.id}
-                        className={`rounded-lg p-3 border flex justify-between items-center hover:shadow-sm transition-all ${dir === "INCOME" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="text-slate-800 font-medium text-sm">
-                            {transaction.name}
-                          </span>
-                          {transaction.paid && (
-                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-700 text-white">
-                              <Check size={12} />
-                              <span>Paid</span>
+                      <div key={transaction.id}>
+                        <div
+                          className={`rounded-lg p-3 border flex justify-between items-center hover:shadow-sm transition-all ${dir === "INCOME" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="text-slate-800 font-medium text-sm">
+                              {transaction.name}
+                            </span>
+                            {transaction.paid && (
+                              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-700 text-white">
+                                <Check size={12} />
+                                <span>Paid</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span
+                              className={`font-bold ${dir === "INCOME" ? C.asset : C.liab}`}
+                            >
+                              {Currencyformatter.format(transaction.amount)}
+                            </span>
+                            <button
+                              onClick={() => handleEditClick(transaction)}
+                              className="p-1 text-blue-600 hover:text-blue-700 ml-2"
+                            >
+                              <Edit2 size={14} />
+                            </button>
+                            <button
+                              // onClick={() =>
+                              //   setDeleteConfirm({ type: "tx", id: tx.id })
+                              // }
+                              className="p-1 text-rose-500 hover:text-rose-700"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {isEditing && (
+                          <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                            <div className="space-y-3">
+                              <div className="flex gap-2 flex-col sm:flex-row">
+                                <input
+                                  type="text"
+                                  value={editFormData.name}
+                                  onChange={(e) =>
+                                    setEditFormData({
+                                      ...editFormData,
+                                      name: e.target.value,
+                                    })
+                                  }
+                                  placeholder="Transaction name"
+                                  className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                  autoFocus
+                                />
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={editFormData.amount}
+                                  onChange={(e) =>
+                                    setEditFormData({
+                                      ...editFormData,
+                                      amount: e.target.value,
+                                    })
+                                  }
+                                  placeholder="0.00"
+                                  className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                                />
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editFormData.paid}
+                                    onChange={(e) =>
+                                      setEditFormData({
+                                        ...editFormData,
+                                        paid: e.target.checked,
+                                      })
+                                    }
+                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm font-medium text-slate-700">
+                                    Mark as Paid
+                                  </span>
+                                </label>
+                              </div>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleSaveEdit}
+                                  disabled={isSaving}
+                                  className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm"
+                                >
+                                  {isSaving ? "Saving..." : "Save"}
+                                </button>
+                                <button
+                                  onClick={() => setEditingTransaction(null)}
+                                  disabled={isSaving}
+                                  className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm"
+                                >
+                                  Cancel
+                                </button>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`font-bold ${dir === "INCOME" ? C.asset : C.liab}`}
-                          >
-                            {Currencyformatter.format(transaction.amount)}
-                          </span>
-                          <button
-                            // onClick={() =>
-                            //   setEditingTransaction({
-                            //     ...tx,
-                            //     amount: tx.amount.toString(),
-                            //   })
-                            // }
-                            className="p-1 text-blue-600 hover:text-blue-700"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            // onClick={() =>
-                            //   setDeleteConfirm({ type: "tx", id: tx.id })
-                            // }
-                            className="p-1 text-rose-500 hover:text-rose-700"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                          </div>
+                        )}
                       </div>
                     );
                   })}

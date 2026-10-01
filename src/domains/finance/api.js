@@ -107,3 +107,58 @@ export async function getTransactions() {
 
   return response.json();
 }
+
+export async function updateTransaction(id, name, amount, paid) {
+  const response = await fetch(`${API_URL}/api/finance/transactions`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      name,
+      amount,
+      paid,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to update transaction (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return { success: true };
+}
+
+export async function clearAllPaid() {
+  const response = await fetch(
+    `${API_URL}/api/finance/transactions/clear-paid`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    },
+  );
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to clear paid status (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return { success: true };
+}
