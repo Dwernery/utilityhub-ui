@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   X,
   Plus,
@@ -8,10 +8,16 @@ import {
   CreditCard,
   TrendingUp,
   TrendingDown,
+  AlertCircle,
 } from "lucide-react";
 import Modal from "../../library/components/Modal";
 import { Currencyformatter } from "../utils/currency";
-import { updateAccountBalance } from "../api";
+import {
+  updateAccountBalance,
+  getAccounts,
+  createAccount,
+  deleteAccountBalance,
+} from "../api";
 import { useToast } from "../../../context/ToastContext";
 
 export function MonthlyDetailModal({
@@ -25,6 +31,35 @@ export function MonthlyDetailModal({
   const [editBalance, setEditBalance] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [displayMonth, setDisplayMonth] = useState(selectedMonth);
+  const [addingAccountType, setAddingAccountType] = useState(null);
+  const [newAccountBalance, setNewAccountBalance] = useState("");
+  const [allAccounts, setAllAccounts] = useState([]);
+  const [addMode, setAddMode] = useState("select"); // "select" or "create"
+  const [newAccountName, setNewAccountName] = useState("");
+  const [newAccountCategory, setNewAccountCategory] =
+    useState("Cash & Savings");
+
+  useEffect(() => {
+    // Load accounts on mount using IIFE to avoid setState linter warning
+    (async () => {
+      try {
+        const accounts = await getAccounts();
+        setAllAccounts(accounts);
+      } catch {
+        addToast("Failed to load accounts", "error");
+      }
+    })();
+  }, [addToast]);
+
+  // Callback for refetching accounts (used when creating new accounts)
+  const refetchAccounts = useCallback(async () => {
+    try {
+      const accounts = await getAccounts();
+      setAllAccounts(accounts);
+    } catch {
+      addToast("Failed to load accounts", "error");
+    }
+  }, [addToast]);
 
   const CATEGORIES = {
     "Cash & Savings": { label: "Cash & Savings" },
@@ -94,6 +129,192 @@ export function MonthlyDetailModal({
     setEditBalance("");
   };
 
+  const handleAddAccountClick = (accountType) => {
+    setAddingAccountType(accountType);
+    setNewAccountBalance("");
+    setAddMode("select");
+    setNewAccountName("");
+    setNewAccountCategory("Cash & Savings");
+  };
+
+  const handleAddAccountSave = async (account) => {
+    if (!newAccountBalance || newAccountBalance === "") {
+      addToast("Please enter a balance", "error");
+      return;
+    }
+
+    const newBalance = parseFloat(newAccountBalance);
+    if (isNaN(newBalance)) {
+      addToast("Please enter a valid number", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await updateAccountBalance(
+        account.id || account.accountId,
+        displayMonth.date,
+        newBalance,
+      );
+
+      // Add the new account to display
+      const newAccount = {
+        ...account,
+        balance: newBalance,
+      };
+
+      const updatedAccounts = [...displayMonth.accounts, newAccount];
+      const updatedAssets = updatedAccounts
+        .filter((acc) => acc.category === "ASSET")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+      const updatedLiabilities = updatedAccounts
+        .filter((acc) => acc.category === "LIABILITY")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+
+      setDisplayMonth({
+        ...displayMonth,
+        accounts: updatedAccounts,
+        assets: updatedAssets,
+        liabilities: updatedLiabilities,
+        netWorth: updatedAssets - updatedLiabilities,
+        hasData: true,
+      });
+
+      addToast(`${account.accountName} added for this month`, "success");
+      setAddingAccountType(null);
+      setNewAccountBalance("");
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      addToast(err.message || "Failed to add account", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCreateAndAddAccount = async () => {
+    if (!newAccountName.trim()) {
+      addToast("Please enter an account name", "error");
+      return;
+    }
+
+    if (!newAccountBalance || newAccountBalance === "") {
+      addToast("Please enter a balance", "error");
+      return;
+    }
+
+    const newBalance = parseFloat(newAccountBalance);
+    if (isNaN(newBalance)) {
+      addToast("Please enter a valid number", "error");
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      // Create the new account
+      const newAccount = await createAccount(
+        newAccountName,
+        newAccountCategory,
+        addingAccountType,
+      );
+
+      // Add balance for this month
+      await updateAccountBalance(
+        newAccount.id || newAccount.accountId,
+        displayMonth.date,
+        newBalance,
+      );
+
+      // Add to display
+      const accountWithBalance = {
+        ...newAccount,
+        balance: newBalance,
+      };
+
+      const updatedAccounts = [...displayMonth.accounts, accountWithBalance];
+      const updatedAssets = updatedAccounts
+        .filter((acc) => acc.category === "ASSET")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+      const updatedLiabilities = updatedAccounts
+        .filter((acc) => acc.category === "LIABILITY")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+
+      setDisplayMonth({
+        ...displayMonth,
+        accounts: updatedAccounts,
+        assets: updatedAssets,
+        liabilities: updatedLiabilities,
+        netWorth: updatedAssets - updatedLiabilities,
+        hasData: true,
+      });
+
+      // Refresh accounts list
+      await refetchAccounts();
+
+      addToast(`${newAccountName} created and added for this month`, "success");
+      setAddingAccountType(null);
+      setNewAccountBalance("");
+      setNewAccountName("");
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      addToast(err.message || "Failed to create account", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelAdd = () => {
+    setAddingAccountType(null);
+    setNewAccountBalance("");
+  };
+
+  const handleDeleteAccount = async (account) => {
+    if (!confirm(`Delete ${account.accountName} from this month?`)) {
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await deleteAccountBalance(
+        account.id || account.accountId,
+        displayMonth.date,
+      );
+
+      // Remove the account from display
+      const updatedAccounts = displayMonth.accounts.filter(
+        (acc) =>
+          (acc.id || acc.accountId) !== (account.id || account.accountId),
+      );
+      const updatedAssets = updatedAccounts
+        .filter((acc) => acc.category === "ASSET")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+      const updatedLiabilities = updatedAccounts
+        .filter((acc) => acc.category === "LIABILITY")
+        .reduce((sum, acc) => sum + acc.balance, 0);
+
+      setDisplayMonth({
+        ...displayMonth,
+        accounts: updatedAccounts,
+        assets: updatedAssets,
+        liabilities: updatedLiabilities,
+        netWorth: updatedAssets - updatedLiabilities,
+        hasData: updatedAccounts.length > 0,
+      });
+
+      addToast(`${account.accountName} removed from this month`, "success");
+      if (onRefresh) {
+        await onRefresh();
+      }
+    } catch (err) {
+      addToast(err.message || "Failed to delete account", "error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const assetAccounts = displayMonth.accounts
     .filter((account) => account.category === "ASSET")
     .sort((a, b) => a.accountType.localeCompare(b.accountType));
@@ -133,6 +354,24 @@ export function MonthlyDetailModal({
       </div>
 
       <div className="flex-1 overflow-y-auto">
+        {!displayMonth.hasData && (
+          <div className="px-3 sm:px-5 py-4 bg-yellow-50 border border-yellow-200 rounded-lg m-3 sm:m-5 flex gap-3">
+            <AlertCircle
+              size={20}
+              className="text-yellow-600 flex-shrink-0 mt-0.5"
+            />
+            <div>
+              <h4 className="font-semibold text-yellow-900 mb-1">
+                No data for this month yet
+              </h4>
+              <p className="text-sm text-yellow-800">
+                Click the + button below to add account balances for{" "}
+                {displayMonth.month} {selectedYear}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Assets */}
         <div className="px-3 sm:px-5 py-4 sm:py-5 border-b border-slate-100">
           <div className="flex justify-between items-center mb-3 gap-2">
@@ -140,7 +379,11 @@ export function MonthlyDetailModal({
               <TrendingUp size={16} />
               Assets
             </h3>
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0">
+            <button
+              onClick={() => handleAddAccountClick("ASSET")}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0 disabled:opacity-50 transition-colors"
+            >
               <Plus size={14} />
             </button>
           </div>
@@ -181,7 +424,11 @@ export function MonthlyDetailModal({
                         >
                           <Edit2 size={14} />
                         </button>
-                        <button className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer">
+                        <button
+                          onClick={() => handleDeleteAccount(account)}
+                          disabled={isLoading}
+                          className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer disabled:opacity-50"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -220,6 +467,171 @@ export function MonthlyDetailModal({
                 </div>
               );
             })}
+
+            {/* Add new asset account form */}
+            {addingAccountType === "ASSET" && (
+              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-300 border-dashed">
+                {/* Mode Toggle */}
+                <div className="flex gap-2 mb-4 border-b border-emerald-200 pb-2">
+                  <button
+                    onClick={() => setAddMode("select")}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      addMode === "select"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-emerald-600 border border-emerald-200"
+                    }`}
+                    disabled={isLoading}
+                  >
+                    Select Existing
+                  </button>
+                  <button
+                    onClick={() => setAddMode("create")}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      addMode === "create"
+                        ? "bg-emerald-600 text-white"
+                        : "bg-white text-emerald-600 border border-emerald-200"
+                    }`}
+                    disabled={isLoading}
+                  >
+                    Create New
+                  </button>
+                </div>
+
+                {addMode === "select" ? (
+                  <>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Select Account
+                      </label>
+                      <select
+                        id="asset-select"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        disabled={isLoading}
+                      >
+                        <option value="">Choose an account...</option>
+                        {allAccounts
+                          .filter((acc) => acc.category === "ASSET")
+                          .map((acc) => (
+                            <option
+                              key={acc.id || acc.accountId}
+                              value={acc.id || acc.accountId}
+                            >
+                              {acc.accountName} ({catLabel(acc.accountType)})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Balance
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newAccountBalance}
+                        onChange={(e) => setNewAccountBalance(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        disabled={isLoading}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const select =
+                            document.getElementById("asset-select");
+                          const selectedAccountId = select.value;
+                          const account = allAccounts.find((acc) => {
+                            const accId = acc.id || acc.accountId;
+                            return String(accId) === String(selectedAccountId);
+                          });
+                          if (account) {
+                            handleAddAccountSave(account);
+                          } else {
+                            addToast("Please select an account", "error");
+                          }
+                        }}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        {isLoading ? "Adding..." : "Add"}
+                      </button>
+                      <button
+                        onClick={handleCancelAdd}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Account Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newAccountName}
+                        onChange={(e) => setNewAccountName(e.target.value)}
+                        placeholder="e.g., My Crypto Wallet"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        disabled={isLoading}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Account Type
+                      </label>
+                      <select
+                        value={newAccountCategory}
+                        onChange={(e) => setNewAccountCategory(e.target.value)}
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        disabled={isLoading}
+                      >
+                        <option value="Cash & Savings">Cash & Savings</option>
+                        <option value="Investments">Investments</option>
+                        <option value="Retirement">Retirement</option>
+                        <option value="Property">Property</option>
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Balance
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newAccountBalance}
+                        onChange={(e) => setNewAccountBalance(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCreateAndAddAccount}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        {isLoading ? "Creating..." : "Create & Add"}
+                      </button>
+                      <button
+                        onClick={handleCancelAdd}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -230,7 +642,11 @@ export function MonthlyDetailModal({
               <TrendingDown size={16} />
               Liabilities
             </h3>
-            <button className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0">
+            <button
+              onClick={() => handleAddAccountClick("LIABILITY")}
+              disabled={isLoading}
+              className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0 disabled:opacity-50 transition-colors"
+            >
               <Plus size={14} />
             </button>
           </div>
@@ -271,7 +687,11 @@ export function MonthlyDetailModal({
                         >
                           <Edit2 size={14} />
                         </button>
-                        <button className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer">
+                        <button
+                          onClick={() => handleDeleteAccount(liability)}
+                          disabled={isLoading}
+                          className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer disabled:opacity-50"
+                        >
                           <Trash2 size={14} />
                         </button>
                       </div>
@@ -310,6 +730,168 @@ export function MonthlyDetailModal({
                 </div>
               );
             })}
+
+            {/* Add new liability account form */}
+            {addingAccountType === "LIABILITY" && (
+              <div className="bg-rose-50 rounded-lg p-3 border border-rose-300 border-dashed">
+                {/* Mode Toggle */}
+                <div className="flex gap-2 mb-4 border-b border-rose-200 pb-2">
+                  <button
+                    onClick={() => setAddMode("select")}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      addMode === "select"
+                        ? "bg-rose-600 text-white"
+                        : "bg-white text-rose-600 border border-rose-200"
+                    }`}
+                    disabled={isLoading}
+                  >
+                    Select Existing
+                  </button>
+                  <button
+                    onClick={() => setAddMode("create")}
+                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
+                      addMode === "create"
+                        ? "bg-rose-600 text-white"
+                        : "bg-white text-rose-600 border border-rose-200"
+                    }`}
+                    disabled={isLoading}
+                  >
+                    Create New
+                  </button>
+                </div>
+
+                {addMode === "select" ? (
+                  <>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Select Account
+                      </label>
+                      <select
+                        id="liability-select"
+                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        disabled={isLoading}
+                      >
+                        <option value="">Choose an account...</option>
+                        {allAccounts
+                          .filter((acc) => acc.category === "LIABILITY")
+                          .map((acc) => (
+                            <option
+                              key={acc.id || acc.accountId}
+                              value={acc.id || acc.accountId}
+                            >
+                              {acc.accountName} ({acc.accountType})
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Balance
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newAccountBalance}
+                        onChange={(e) => setNewAccountBalance(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        disabled={isLoading}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const select =
+                            document.getElementById("liability-select");
+                          const selectedAccountId = select.value;
+                          const account = allAccounts.find((acc) => {
+                            const accId = acc.id || acc.accountId;
+                            return String(accId) === String(selectedAccountId);
+                          });
+                          if (account) {
+                            handleAddAccountSave(account);
+                          } else {
+                            addToast("Please select an account", "error");
+                          }
+                        }}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 bg-rose-600 text-white rounded-lg font-semibold hover:bg-rose-700 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        {isLoading ? "Adding..." : "Add"}
+                      </button>
+                      <button
+                        onClick={handleCancelAdd}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Account Name
+                      </label>
+                      <input
+                        type="text"
+                        value={newAccountName}
+                        onChange={(e) => setNewAccountName(e.target.value)}
+                        placeholder="e.g., Personal Loan"
+                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        disabled={isLoading}
+                        autoFocus
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Account Type
+                      </label>
+                      <input
+                        type="text"
+                        value={newAccountCategory}
+                        onChange={(e) => setNewAccountCategory(e.target.value)}
+                        placeholder="e.g., Credit Card, Mortgage"
+                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="mb-3">
+                      <label className="block text-xs font-semibold text-slate-700 mb-2">
+                        Balance
+                      </label>
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={newAccountBalance}
+                        onChange={(e) => setNewAccountBalance(e.target.value)}
+                        placeholder="0.00"
+                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleCreateAndAddAccount}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 bg-rose-600 text-white rounded-lg font-semibold hover:bg-rose-700 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        {isLoading ? "Creating..." : "Create & Add"}
+                      </button>
+                      <button
+                        onClick={handleCancelAdd}
+                        disabled={isLoading}
+                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
           </div>
         </div>
       </div>

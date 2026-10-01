@@ -1,9 +1,19 @@
-import { Plus, TrendingUp, TrendingDown, Edit2, Trash2 } from "lucide-react";
+import {
+  Plus,
+  TrendingUp,
+  TrendingDown,
+  Edit2,
+  Trash2,
+  Check,
+  X,
+} from "lucide-react";
+import { useState } from "react";
 import { useTransactions } from "../hooks/useTransactions.js";
 import { Currencyformatter } from "../utils/currency";
 
 export const IncomeExpenses = () => {
   const { data: transactions = [], isLoading } = useTransactions();
+  const [paidFilter, setPaidFilter] = useState("ALL"); // "ALL", "PAID", "UNPAID"
   const C = {
     networth: "text-blue-700",
     asset: "text-emerald-700",
@@ -13,22 +23,30 @@ export const IncomeExpenses = () => {
     posBadge: "bg-emerald-100 text-emerald-700",
     negBadge: "bg-rose-100 text-rose-700",
   };
+
+  // Filter transactions based on paid status
+  const filteredTransactions = transactions.filter((transaction) => {
+    if (paidFilter === "PAID") return transaction.paid === true;
+    if (paidFilter === "UNPAID") return transaction.paid === false;
+    return true; // ALL
+  });
+
   let income =
-    transactions
+    filteredTransactions
       ?.filter((transaction) => transaction.transactionType === "INCOME")
       .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
   let expenses =
-    transactions
+    filteredTransactions
       ?.filter((transaction) => transaction.transactionType === "EXPENSE")
       .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
   let netCashFlow =
-    (transactions
+    (filteredTransactions
       ?.filter(
         (transaction) =>
           transaction.transactionType === "INCOME" && transaction.cash,
       )
       .reduce((sum, transaction) => sum + transaction.amount, 0) || 0) -
-      transactions
+      filteredTransactions
         ?.filter(
           (transaction) =>
             transaction.transactionType === "EXPENSE" && transaction.cash,
@@ -76,7 +94,26 @@ export const IncomeExpenses = () => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl px-4 py-2 shadow-xl border border-slate-200 mb-2">
+      <div className="bg-white rounded-2xl px-4 py-2 shadow-xl border border-slate-200 mb-4">
+        {/* Paid Status Filter */}
+        <div className="flex items-center gap-2 mb-4 pb-4 border-b border-slate-200">
+          <span className="text-sm font-semibold text-slate-700">Filter:</span>
+          <div className="flex gap-2">
+            {["ALL", "PAID", "UNPAID"].map((filter) => (
+              <button
+                key={filter}
+                onClick={() => setPaidFilter(filter)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors ${
+                  paidFilter === filter
+                    ? "bg-blue-600 text-white"
+                    : "bg-slate-200 text-slate-700 hover:bg-slate-300"
+                }`}
+              >
+                {filter}
+              </button>
+            ))}
+          </div>
+        </div>
         {/* {isAddingTransaction && (
           <div className="bg-blue-50 rounded-lg p-4 mb-4 border-2 border-blue-200">
             <div className="space-y-2">
@@ -160,7 +197,7 @@ export const IncomeExpenses = () => {
                 </button>
               </div>
               <div className="space-y-2">
-                {transactions
+                {filteredTransactions
                   .filter((transaction) => transaction.transactionType === dir)
                   .map((transaction) => {
                     // if (
@@ -226,9 +263,17 @@ export const IncomeExpenses = () => {
                         key={transaction.id}
                         className={`rounded-lg p-3 border flex justify-between items-center hover:shadow-sm transition-all ${dir === "INCOME" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}
                       >
-                        <span className="text-slate-800 font-medium text-sm">
-                          {transaction.name}
-                        </span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-slate-800 font-medium text-sm">
+                            {transaction.name}
+                          </span>
+                          {transaction.paid && (
+                            <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-700 text-white">
+                              <Check size={12} />
+                              <span>Paid</span>
+                            </div>
+                          )}
+                        </div>
                         <div className="flex items-center gap-3">
                           <span
                             className={`font-bold ${dir === "INCOME" ? C.asset : C.liab}`}
@@ -258,7 +303,7 @@ export const IncomeExpenses = () => {
                       </div>
                     );
                   })}
-                {transactions.filter(
+                {filteredTransactions.filter(
                   (transaction) => transaction.transactionType === dir,
                 ).length === 0 &&
                   !isLoading && (

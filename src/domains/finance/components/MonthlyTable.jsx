@@ -140,9 +140,32 @@ export function MonthlyTable({ selectedYear }) {
     }
 
     // Always show all 12 months, even if the API hasn't reported them yet.
-    return MONTH_LABELS.map(
-      (month, monthIndex) =>
-        byMonthIndex.get(monthIndex) || {
+    return MONTH_LABELS.map((month, monthIndex) => {
+      const existing = byMonthIndex.get(monthIndex);
+
+      // For current month with no data, generate a date for the first of the month
+      if (
+        !existing &&
+        monthIndex === currentMonth - 1 &&
+        selectedYear === currentYear
+      ) {
+        const dateStr = `${selectedYear}-${String(currentMonth).padStart(2, "0")}-01`;
+        return {
+          date: dateStr,
+          month,
+          assets: 0,
+          liabilities: 0,
+          netWorth: 0,
+          change: null,
+          changePercent: null,
+          accounts: [],
+          hasData: false,
+          isCurrentMonth: true,
+        };
+      }
+
+      return (
+        existing || {
           date: null,
           month,
           assets: 0,
@@ -153,8 +176,9 @@ export function MonthlyTable({ selectedYear }) {
           accounts: [],
           hasData: false,
           isCurrentMonth: false,
-        },
-    );
+        }
+      );
+    });
   }, [netWorthHistory, selectedYear]);
 
   return (
@@ -190,7 +214,10 @@ export function MonthlyTable({ selectedYear }) {
           {monthlyData.map((month, idx) => (
             <div
               key={idx}
-              onClick={() => month.hasData && setSelectedMonth(month)}
+              onClick={() =>
+                (month.hasData || month.isCurrentMonth) &&
+                setSelectedMonth(month)
+              }
               role="row"
               className={`flex-1 min-h-0 grid grid-cols-3 border-b border-slate-100 transition-colors items-center overflow-hidden ${
                 month.isCurrentMonth

@@ -38,6 +38,66 @@ export async function updateAccountBalance(accountId, balanceDate, balance) {
   return { success: true };
 }
 
+export async function getAccounts() {
+  const response = await fetch(`${API_URL}/api/finance/accounts`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch accounts");
+  }
+
+  return response.json();
+}
+
+export async function createAccount(accountName, accountType, category) {
+  const response = await fetch(`${API_URL}/api/finance/accounts`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      accountName,
+      accountType,
+      category,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to create account (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function deleteAccountBalance(accountId, balanceDate) {
+  const response = await fetch(`${API_URL}/api/finance/account-balance`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      accountId,
+      balanceDate,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to delete account balance (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return { success: true };
+}
+
 export async function getTransactions() {
   const response = await fetch(`${API_URL}/api/finance/transactions`);
 
