@@ -87,7 +87,7 @@ export async function addBook({
     );
   }
 
-  return "Success";
+  return response.json();
 }
 
 export async function updateBook(data = {}) {
