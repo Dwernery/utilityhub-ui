@@ -9,7 +9,8 @@ export default function SeriesDetailModal({ series, onClose, onBookClick }) {
 
   const seriesBooks = books.filter((b) => b.seriesName === series);
   const readBooks = seriesBooks.filter((b) => b.status === "READ");
-  const totalPages = readBooks.reduce((s, b) => s + (b.pages || 0), 0);
+  const totalSeriesPages = seriesBooks.reduce((s, b) => s + (b.pages || 0), 0);
+  const pagesRead = readBooks.reduce((s, b) => s + (b.pages || 0), 0);
   const ratedBooks = readBooks.filter((b) => b.rating > 0);
   const avgRating = ratedBooks.length
     ? (
@@ -32,14 +33,19 @@ export default function SeriesDetailModal({ series, onClose, onBookClick }) {
         <div className="flex-1 min-w-0">
           <div className="font-semibold text-slate-800 truncate">{series}</div>
           <div className="text-xs text-slate-500">
-            {seriesBooks.length} books · {readBooks.length} read
+            {seriesBooks.length} book{seriesBooks.length !== 1 ? "s" : ""} ·{" "}
+            {totalSeriesPages.toLocaleString()} page
+            {totalSeriesPages !== 1 ? "s" : ""}
           </div>
         </div>
       </div>
       <div className="grid grid-cols-3 gap-px bg-slate-100 border-b border-slate-100">
         {[
-          ["Read", readBooks.length],
-          ["Pages", totalPages.toLocaleString()],
+          [`Book${readBooks.length !== 1 ? "s" : ""} Read`, readBooks.length],
+          [
+            `Page${pagesRead !== 1 ? "s" : ""} Read`,
+            pagesRead.toLocaleString(),
+          ],
           ["Avg ★", avgRating ?? "—"],
         ].map(([label, val]) => (
           <div key={label} className="bg-white px-4 py-3 text-center">
