@@ -292,6 +292,7 @@ export function MonthlyTable({ selectedYear }) {
         <MonthlyDetailModal
           selectedMonth={selectedMonth}
           selectedYear={selectedYear}
+          netWorthHistory={netWorthHistory}
           onClose={() => setSelectedMonth(null)}
           onRefresh={handleRefreshData}
         />

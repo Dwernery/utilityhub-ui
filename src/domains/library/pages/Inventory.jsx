@@ -14,6 +14,7 @@ import AddBookForm from "../components/inventory/AddBookForm";
 import { useBooks } from "../hooks/useBooks";
 import BookDetailModal from "../components/inventory/BookDetailModal";
 import AuthorDetailModal from "../components/inventory/AuthorDetailModal";
+import SeriesDetailModal from "../components/inventory/SeriesDetailModal";
 import BookCover from "../components/BookCover";
 import { groupBooks } from "../utils/metricUtils";
 
@@ -23,12 +24,19 @@ export function Inventory() {
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   const { data: books = [], isPending, isError, error } = useBooks();
-  const { openBookDialog, selectedBook, author, setAuthor } = useLibrary();
+  const {
+    openBookDialog,
+    selectedBook,
+    author,
+    setAuthor,
+    selectedSeries,
+    setSelectedSeries,
+  } = useLibrary();
 
   const normalizedSearch = searchTerm.trim().toLowerCase();
   const filteredBooks = filterBooks(books, normalizedSearch, statusFilter);
   const bookGroups = useMemo(() => groupBooks(filteredBooks), [filteredBooks]);
-  
+
   if (isPending) {
     return (
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-14 text-center">
@@ -97,7 +105,10 @@ export function Inventory() {
                 key={value}
                 onClick={() => setStatusFilter(value)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium whitespace-nowrap transition-colors ${
-                  statusFilter === value ? "bg-blue-600 text-white" : "text-slate-500 hover:bg-slate-100"}`}
+                  statusFilter === value
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-500 hover:bg-slate-100"
+                }`}
               >
                 {label}
               </button>
@@ -160,9 +171,15 @@ export function Inventory() {
 
                   <div className="flex items-center gap-2 mt-0.5 mb-0.5">
                     {book.seriesName && (
-                      <span className="text-xs text-blue-500 truncate">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedSeries(book.seriesName);
+                        }}
+                        className="text-xs text-blue-500 hover:text-blue-700 hover:underline truncate text-left cursor-pointer"
+                      >
                         {book.seriesName}
-                      </span>
+                      </button>
                     )}
                   </div>
                   {book.rating > 0 && (
@@ -188,7 +205,7 @@ export function Inventory() {
             {searchTerm && (
               <button
                 onClick={() => setSearchTerm("")}
-                className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700"
+                className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
               >
                 Clear search
               </button>
@@ -203,6 +220,16 @@ export function Inventory() {
           onClose={() => setAuthor(null)}
           onBookClick={(book) => {
             setAuthor(null);
+            openBookDialog(book);
+          }}
+        />
+      )}
+      {selectedSeries && (
+        <SeriesDetailModal
+          series={selectedSeries}
+          onClose={() => setSelectedSeries(null)}
+          onBookClick={(book) => {
+            setSelectedSeries(null);
             openBookDialog(book);
           }}
         />

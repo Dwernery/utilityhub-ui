@@ -15,6 +15,7 @@ export default function BookDetailModal() {
     setIsEditingInDialog,
     selectedBook,
     setAuthor,
+    setSelectedSeries,
     isEditingInDialog,
     closeBookDialog,
   } = useLibrary();
@@ -114,9 +115,15 @@ export default function BookDetailModal() {
                 {selectedBook.authorName}
               </button>
               {selectedBook.seriesName && (
-                <span className="text-xs sm:text-sm text-blue-600 truncate">
+                <button
+                  onClick={() => {
+                    closeBookDialog();
+                    setSelectedSeries(selectedBook.seriesName);
+                  }}
+                  className="text-xs sm:text-sm text-blue-600 hover:underline text-left"
+                >
                   {selectedBook.seriesName}
-                </span>
+                </button>
               )}
 
               <div className="flex items-center gap-2 sm:gap-3 mt-2.5">

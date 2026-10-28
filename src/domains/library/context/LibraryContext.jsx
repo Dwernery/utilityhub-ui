@@ -10,6 +10,7 @@ export function LibraryProvider({ children }) {
   const { data: books = [] } = useBooks();
   const [selectedBookId, setSelectedBookId] = useState(null);
   const [author, setAuthor] = useState(null);
+  const [selectedSeries, setSelectedSeries] = useState(null);
   const [isEditingInDialog, setIsEditingInDialog] = useState(false);
 
   // Always derive the selected book from the books query cache so the
@@ -48,6 +49,8 @@ export function LibraryProvider({ children }) {
       selectedBook,
       author,
       setAuthor,
+      selectedSeries,
+      setSelectedSeries,
       isEditingInDialog,
       setIsEditingInDialog,
       openBookDialog,
@@ -55,7 +58,14 @@ export function LibraryProvider({ children }) {
       seriesOptions,
       authorOptions,
     }),
-    [selectedBook, author, isEditingInDialog, seriesOptions, authorOptions],
+    [
+      selectedBook,
+      author,
+      selectedSeries,
+      isEditingInDialog,
+      seriesOptions,
+      authorOptions,
+    ],
   );
 
   return (

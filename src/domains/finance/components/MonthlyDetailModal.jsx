@@ -23,6 +23,7 @@ import { useToast } from "../../../context/ToastContext";
 export function MonthlyDetailModal({
   selectedMonth,
   selectedYear,
+  netWorthHistory,
   onClose,
   onRefresh,
 }) {
@@ -38,6 +39,57 @@ export function MonthlyDetailModal({
   const [newAccountName, setNewAccountName] = useState("");
   const [newAccountCategory, setNewAccountCategory] =
     useState("Cash & Savings");
+
+  // Helper function to get account balances for a specific month
+  const getAccountBalancesForMonth = useCallback(
+    (monthDate) => {
+      if (!netWorthHistory) return {};
+      const allEntries = Object.values(netWorthHistory);
+      const monthEntries = allEntries.filter((e) => e.date === monthDate);
+      if (monthEntries.length === 0) return {};
+
+      const entry = monthEntries[0];
+      const balancesByAccountId = {};
+      (entry.accounts || []).forEach((acc) => {
+        const key = acc.id || acc.accountId;
+        balancesByAccountId[key] = acc.balance;
+      });
+      return balancesByAccountId;
+    },
+    [netWorthHistory],
+  );
+
+  // Helper function to calculate the previous month's date string
+  const getPreviousMonthDate = useCallback(() => {
+    if (!displayMonth.date) return null;
+    const [year, month] = displayMonth.date.split("-");
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    date.setMonth(date.getMonth() - 1);
+    const prevYear = date.getFullYear();
+    const prevMonth = String(date.getMonth() + 1).padStart(2, "0");
+    return `${prevYear}-${prevMonth}-01`;
+  }, [displayMonth.date]);
+
+  // Helper function to get change for a specific account
+  const getAccountChange = useCallback(
+    (account) => {
+      const prevMonthDate = getPreviousMonthDate();
+      if (!prevMonthDate) return { change: null, changePercent: null };
+
+      const prevBalances = getAccountBalancesForMonth(prevMonthDate);
+      const accountKey = account.id || account.accountId;
+      const prevBalance = prevBalances[accountKey];
+
+      if (prevBalance === undefined)
+        return { change: null, changePercent: null };
+
+      const change = account.balance - prevBalance;
+      const changePercent =
+        prevBalance !== 0 ? (change / prevBalance) * 100 : 0;
+      return { change, changePercent };
+    },
+    [getPreviousMonthDate, getAccountBalancesForMonth],
+  );
 
   useEffect(() => {
     // Load accounts on mount using IIFE to avoid setState linter warning
@@ -390,6 +442,7 @@ export function MonthlyDetailModal({
           <div className="space-y-2">
             {assetAccounts.map((account, accountIndex) => {
               const isEditing = editingAccount === account;
+              const { change, changePercent } = getAccountChange(account);
               return (
                 <div key={accountIndex}>
                   <div className="bg-emerald-50 rounded-lg p-2 border border-emerald-200 flex justify-between items-center gap-3">
@@ -411,12 +464,26 @@ export function MonthlyDetailModal({
                         {catLabel(account.accountType)}
                       </span>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <span
-                        className={`font-bold text-emerald-700 text-sm sm:text-base`}
-                      >
-                        {Currencyformatter.format(account.balance)}
-                      </span>
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span
+                          className={`font-bold text-emerald-700 text-sm sm:text-base`}
+                        >
+                          {Currencyformatter.format(account.balance)}
+                        </span>
+                        {change !== null && (
+                          <div
+                            className={`text-xs font-medium ${change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+                          >
+                            {change >= 0 ? "+" : ""}
+                            {Currencyformatter.format(change)}
+                            <span className="ml-1 opacity-75">
+                              ({change >= 0 ? "+" : ""}
+                              {changePercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleEditClick(account)}
@@ -653,6 +720,7 @@ export function MonthlyDetailModal({
           <div className="space-y-2">
             {liabilityAccounts.map((liability, liabIndex) => {
               const isEditing = editingAccount === liability;
+              const { change, changePercent } = getAccountChange(liability);
               return (
                 <div key={liabIndex}>
                   <div className="bg-rose-50 rounded-lg p-2 border border-rose-200 flex justify-between items-center gap-3">
@@ -674,12 +742,26 @@ export function MonthlyDetailModal({
                         {liability.accountType}
                       </span>
                     </div>
-                    <div className="flex items-center gap-6">
-                      <span
-                        className={`font-bold text-rose-700 text-sm sm:text-base`}
-                      >
-                        {Currencyformatter.format(liability.balance)}
-                      </span>
+                    <div className="flex items-center gap-3 flex-wrap justify-end">
+                      <div className="flex flex-col items-end gap-0.5">
+                        <span
+                          className={`font-bold text-rose-700 text-sm sm:text-base`}
+                        >
+                          {Currencyformatter.format(liability.balance)}
+                        </span>
+                        {change !== null && (
+                          <div
+                            className={`text-xs font-medium ${change >= 0 ? "text-rose-600" : "text-emerald-600"}`}
+                          >
+                            {change >= 0 ? "+" : ""}
+                            {Currencyformatter.format(change)}
+                            <span className="ml-1 opacity-75">
+                              ({change >= 0 ? "+" : ""}
+                              {changePercent.toFixed(1)}%)
+                            </span>
+                          </div>
+                        )}
+                      </div>
                       <div className="flex items-center gap-1">
                         <button
                           onClick={() => handleEditClick(liability)}

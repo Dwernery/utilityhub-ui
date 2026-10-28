@@ -100,7 +100,7 @@ export function McuDetailModal({
       onClose={closeModal}
       panelClassName="bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 shadow-2xl"
     >
-      <div className="sticky top-0 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+      <div className="sticky top-0 z-50 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
         <div className="font-semibold text-slate-100 text-sm truncate pr-4">
           {MODAL_TITLE[selectedItem.type] || MODAL_TITLE.movie}
         </div>

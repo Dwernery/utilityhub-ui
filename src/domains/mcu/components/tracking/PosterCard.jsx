@@ -107,7 +107,7 @@ export function PosterCard({
       </button>
 
       <div
-        className={`absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5 transition-opacity duration-200 ${
+        className={`absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5 transition-opacity duration-200 rounded-b-[10px] ${
           imageLoaded ? "invisible group-hover:visible" : "visible"
         }`}
         style={{
