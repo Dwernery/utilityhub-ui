@@ -5,7 +5,10 @@ import { useTransactions } from "../../finance/hooks/useTransactions";
 import { useIncomeSources } from "../../finance/hooks/useIncomeSources";
 import { FinancesCurrentYearOverviewSection } from "./FinancesCurrentYearOverviewSection";
 import { useMemo } from "react";
-import { Currencyformatter } from "../../finance/utils/currency";
+import {
+  Currencyformatter,
+  CompactCurrencyFormatter,
+} from "../../finance/utils/currency";
 import { getYearTotal, getIncomeYoY } from "../../finance/utils/income";
 
 export function FinancesHomeCard() {
@@ -162,7 +165,7 @@ export function FinancesHomeCard() {
               }`}
             >
               <span>
-                {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
+                {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${CompactCurrencyFormatter.format(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
               </span>
             </div>
             <div className="text-[11px] text-slate-400">Change $</div>
@@ -208,7 +211,7 @@ export function FinancesHomeCard() {
               }`}
             >
               <span>
-                {`${incomeStats.change >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(incomeStats.change))}`}
+                {`${incomeStats.change >= 0 ? "+" : "-"}${CompactCurrencyFormatter.format(Math.abs(incomeStats.change))}`}
               </span>
             </div>
             <div className="text-[11px] text-slate-400">Change $</div>
