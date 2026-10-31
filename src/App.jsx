@@ -15,7 +15,6 @@ function App() {
         <ToastProvider>
           <McuTrackerProvider>
             <RouterProvider router={router} />
-            <ViewportDebug />
           </McuTrackerProvider>
         </ToastProvider>
       </QueryClientProvider>
@@ -24,25 +23,3 @@ function App() {
 }
 
 export default App;
-
-function ViewportDebug() {
-  return (
-    <div
-      style={{
-        position: "fixed",
-        bottom: 10,
-        left: 10,
-        zIndex: 999999,
-        background: "black",
-        color: "white",
-        padding: 15,
-        fontSize: 14,
-      }}
-    >
-      <div>Inner width: {window.innerWidth}</div>
-      <div>Screen width: {window.screen.width}</div>
-      <div>Outer width: {window.outerWidth}</div>
-      <div>Standalone: {String(window.navigator.standalone)}</div>
-    </div>
-  );
-}

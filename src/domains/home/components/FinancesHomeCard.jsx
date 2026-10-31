@@ -1,10 +1,12 @@
 import { UtilityCard } from "./UtilityCard";
-import { DollarSign, TrendingUp } from "lucide-react";
+import { DollarSign, TrendingUp, Wallet } from "lucide-react";
 import { useNetWorthHistory } from "../../finance/hooks/useNetWorthHistory";
 import { useTransactions } from "../../finance/hooks/useTransactions";
+import { useIncomeSources } from "../../finance/hooks/useIncomeSources";
 import { FinancesCurrentYearOverviewSection } from "./FinancesCurrentYearOverviewSection";
 import { useMemo } from "react";
 import { Currencyformatter } from "../../finance/utils/currency";
+import { getYearTotal, getIncomeYoY } from "../../finance/utils/income";
 
 export function FinancesHomeCard() {
   const {
@@ -15,6 +17,8 @@ export function FinancesHomeCard() {
   } = useNetWorthHistory();
 
   const { data: transactions = [] } = useTransactions();
+  const { data: incomeSources = [], isPending: isIncomePending } =
+    useIncomeSources();
 
   const stats = useMemo(() => {
     const now = new Date();
@@ -75,7 +79,14 @@ export function FinancesHomeCard() {
     return { netWorth, dollarChange, projectedNetWorth };
   }, [netWorthHistory, transactions]);
 
-  if (isPending) {
+  const incomeStats = useMemo(() => {
+    const currentYear = new Date().getFullYear();
+    const yearlyIncome = getYearTotal(incomeSources, currentYear);
+    const { change } = getIncomeYoY(incomeSources, currentYear);
+    return { yearlyIncome, change };
+  }, [incomeSources]);
+
+  if (isPending || isIncomePending) {
     return (
       <UtilityCard icon={DollarSign} title="Finances" to="/finances/dashboard">
         <div className="mt-4 space-y-3 animate-pulse">
@@ -120,9 +131,7 @@ export function FinancesHomeCard() {
             <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
               <span>{Currencyformatter.format(stats.projectedNetWorth)}</span>
             </div>
-            <div className="text-[11px] text-slate-400">
-              Net Worth
-            </div>
+            <div className="text-[11px] text-slate-400">Net Worth</div>
           </div>
 
           <div>
@@ -135,6 +144,37 @@ export function FinancesHomeCard() {
             >
               <span>
                 {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400">Change $</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="border-t border-slate-100 pt-3 mt-3">
+        <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
+          <span className="flex items-center gap-1 font-semibold">
+            <Wallet className="w-3.5 h-3.5 text-slate-400" />
+            Income ({new Date().getFullYear()})
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 text-center divide-x divide-slate-100">
+          <div>
+            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+              <span>{Currencyformatter.format(incomeStats.yearlyIncome)}</span>
+            </div>
+            <div className="text-[11px] text-slate-400">Total Comp</div>
+          </div>
+
+          <div>
+            <div
+              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+                incomeStats.change >= 0 ? "text-emerald-600" : "text-rose-600"
+              }`}
+            >
+              <span>
+                {`${incomeStats.change >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(incomeStats.change))}`}
               </span>
             </div>
             <div className="text-[11px] text-slate-400">Change $</div>
