@@ -22,7 +22,7 @@ export function FinancesCurrentYearOverviewSection({
 
       <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
         <div>
-          <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+          <div className="flex items-center justify-center gap-1 text-sm sm:text-lg font-bold text-slate-800">
             <span>{Currencyformatter.format(currentNetWorth)}</span>
           </div>
           <div className="text-[11px] text-slate-400">Net Worth</div>
@@ -30,7 +30,7 @@ export function FinancesCurrentYearOverviewSection({
 
         <div>
           <div
-            className={`flex items-center justify-center gap-1 text-lg font-bold ${getDollarChangeColor(dollarChange)}`}
+            className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${getDollarChangeColor(dollarChange)}`}
           >
             <span>
               {`${dollarChange >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(dollarChange))}`}
@@ -41,7 +41,7 @@ export function FinancesCurrentYearOverviewSection({
 
         <div>
           <div
-            className={`flex items-center justify-center gap-1 text-lg font-bold ${getDollarChangeColor(percentChange)}`}
+            className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${getDollarChangeColor(percentChange)}`}
           >
             <span>
               {`${percentChange >= 0 ? "+" : "-"}${Math.abs(percentChange).toFixed(1)}%`}

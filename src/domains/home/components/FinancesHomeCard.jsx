@@ -147,7 +147,7 @@ export function FinancesHomeCard() {
 
         <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
           <div>
-            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+            <div className="flex items-center justify-center gap-1 text-sm sm:text-lg font-bold text-slate-800">
               <span>{Currencyformatter.format(stats.projectedNetWorth)}</span>
             </div>
             <div className="text-[11px] text-slate-400">Net Worth</div>
@@ -155,7 +155,7 @@ export function FinancesHomeCard() {
 
           <div>
             <div
-              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+              className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${
                 stats.projectedNetWorth - stats.netWorth >= 0
                   ? "text-emerald-600"
                   : "text-rose-600"
@@ -170,7 +170,7 @@ export function FinancesHomeCard() {
 
           <div>
             <div
-              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+              className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${
                 stats.projectedPercentChange >= 0
                   ? "text-emerald-600"
                   : "text-rose-600"
@@ -195,7 +195,7 @@ export function FinancesHomeCard() {
 
         <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
           <div>
-            <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
+            <div className="flex items-center justify-center gap-1 text-sm sm:text-lg font-bold text-slate-800">
               <span>{Currencyformatter.format(incomeStats.yearlyIncome)}</span>
             </div>
             <div className="text-[11px] text-slate-400">Total Comp</div>
@@ -203,7 +203,7 @@ export function FinancesHomeCard() {
 
           <div>
             <div
-              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+              className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${
                 incomeStats.change >= 0 ? "text-emerald-600" : "text-rose-600"
               }`}
             >
@@ -216,7 +216,7 @@ export function FinancesHomeCard() {
 
           <div>
             <div
-              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+              className={`flex items-center justify-center gap-1 text-sm sm:text-lg font-bold ${
                 incomeStats.changePercent >= 0
                   ? "text-emerald-600"
                   : "text-rose-600"
