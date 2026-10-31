@@ -11,10 +11,30 @@ export const Header = () => {
   const location = useLocation();
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: BarChart3 },
-    { id: "income-expenses", label: "Income & Expenses", icon: DollarSign },
-    { id: "income-history", label: "Income History", icon: TrendingUp },
-    { id: "ai-assistant", label: "AI Assistant", icon: Target },
+    {
+      id: "dashboard",
+      label: "Dashboard",
+      mobileLabel: "Dashboard",
+      icon: BarChart3,
+    },
+    {
+      id: "income-expenses",
+      label: "Income & Expenses",
+      mobileLabel: "Expenses",
+      icon: DollarSign,
+    },
+    {
+      id: "income-history",
+      label: "Income History",
+      mobileLabel: "History",
+      icon: TrendingUp,
+    },
+    {
+      id: "ai-assistant",
+      label: "AI Assistant",
+      mobileLabel: "AI",
+      icon: Target,
+    },
   ];
   const activeTab =
     navItems.find((item) => `/finances/${item.id}` === location.pathname)?.id ||
@@ -89,7 +109,7 @@ export const Header = () => {
       {/* Mobile bottom tab bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-lg z-40">
         <div className="flex">
-          {navItems.map(({ id, label, icon: Icon }) => {
+          {navItems.map(({ id, mobileLabel, icon: Icon }) => {
             const active = activeTab === id;
             return (
               <Link
@@ -98,9 +118,7 @@ export const Header = () => {
                 className={`flex-1 flex flex-col items-center justify-center py-3 gap-1 transition-colors relative ${active ? "text-blue-600" : "text-slate-400 hover:text-slate-600"}`}
               >
                 <Icon size={22} />
-                <span className="text-[10px] font-medium">
-                  {label.split(" ")[0]}
-                </span>
+                <span className="text-[10px] font-medium">{mobileLabel}</span>
                 {active && (
                   <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-blue-600 rounded-t-full" />
                 )}

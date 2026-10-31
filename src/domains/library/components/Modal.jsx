@@ -1,11 +1,19 @@
 import { useEffect, useRef } from "react";
 
-export default function Modal({onClose, children, overlayClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4", panelClassName = ""}) {
+export default function Modal({
+  onClose,
+  children,
+  overlayClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",
+  panelClassName = "",
+}) {
   const panelRef = useRef(null);
   const previouslyFocusedRef = useRef(null);
 
   useEffect(() => {
     previouslyFocusedRef.current = document.activeElement;
+    return () => {
+      previouslyFocusedRef.current?.focus?.();
+    };
   }, []);
 
   useEffect(() => {
@@ -17,7 +25,9 @@ export default function Modal({onClose, children, overlayClassName = "fixed inse
 
       if (event.key !== "Tab") return;
 
-      const focusable = panelRef.current?.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+      const focusable = panelRef.current?.querySelectorAll(
+        'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])',
+      );
       if (!focusable || focusable.length === 0) return;
 
       const first = focusable[0];
@@ -35,7 +45,6 @@ export default function Modal({onClose, children, overlayClassName = "fixed inse
     document.addEventListener("keydown", handleKeyDown);
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
-      previouslyFocusedRef.current?.focus?.();
     };
   }, [onClose]);
 

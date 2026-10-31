@@ -162,3 +162,88 @@ export async function clearAllPaid() {
 
   return { success: true };
 }
+
+export async function getIncomeSources() {
+  const response = await fetch(`${API_URL}/api/finance/income-sources`);
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch income sources");
+  }
+
+  return response.json();
+}
+
+export async function createIncomeSource(year, name, amount) {
+  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      year,
+      name,
+      amount,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to create income source (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function updateIncomeSource(id, name, amount) {
+  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      id,
+      name,
+      amount,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to update income source (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return { success: true };
+}
+
+export async function deleteIncomeSource(id) {
+  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(
+      `Failed to delete income source (status ${response.status}): ${errorText || "Unknown error"}`,
+    );
+  }
+
+  const contentType = response.headers.get("content-type");
+  if (contentType && contentType.includes("application/json")) {
+    return response.json();
+  }
+
+  return { success: true };
+}
