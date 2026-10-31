@@ -35,7 +35,13 @@ export function FinancesHomeCard() {
       .sort((a, b) => new Date(a.date) - new Date(b.date));
 
     if (entriesForNetWorth.length === 0) {
-      return { netWorth: 0, dollarChange: 0, projectedNetWorth: 0 };
+      return {
+        netWorth: 0,
+        dollarChange: 0,
+        percentChange: 0,
+        projectedNetWorth: 0,
+        projectedPercentChange: 0,
+      };
     }
 
     const netWorth = entriesForNetWorth[entriesForNetWorth.length - 1].netWorth;
@@ -43,6 +49,10 @@ export function FinancesHomeCard() {
       (entry) => entry.date === `${new Date().getFullYear() - 1}-12-01`,
     ).netWorth;
     const dollarChange = netWorth - prevYearEndNetWorth;
+    const percentChange =
+      prevYearEndNetWorth !== 0
+        ? (dollarChange / prevYearEndNetWorth) * 100
+        : 0;
 
     // Get current month net worth for projection baseline
     const allEntries = Object.values(netWorthHistory).sort(
@@ -75,15 +85,23 @@ export function FinancesHomeCard() {
 
     const projectedNetWorth =
       currentMonthNetWorth + unpaidIncome - unpaidExpenses;
+    const projectedPercentChange =
+      netWorth !== 0 ? ((projectedNetWorth - netWorth) / netWorth) * 100 : 0;
 
-    return { netWorth, dollarChange, projectedNetWorth };
+    return {
+      netWorth,
+      dollarChange,
+      percentChange,
+      projectedNetWorth,
+      projectedPercentChange,
+    };
   }, [netWorthHistory, transactions]);
 
   const incomeStats = useMemo(() => {
     const currentYear = new Date().getFullYear();
     const yearlyIncome = getYearTotal(incomeSources, currentYear);
-    const { change } = getIncomeYoY(incomeSources, currentYear);
-    return { yearlyIncome, change };
+    const { change, changePercent } = getIncomeYoY(incomeSources, currentYear);
+    return { yearlyIncome, change, changePercent };
   }, [incomeSources]);
 
   if (isPending || isIncomePending) {
@@ -115,6 +133,7 @@ export function FinancesHomeCard() {
       <FinancesCurrentYearOverviewSection
         currentNetWorth={stats.netWorth}
         dollarChange={stats.dollarChange}
+        percentChange={stats.percentChange}
       />
 
       <div className="border-t border-slate-100 pt-3 mt-3">
@@ -126,7 +145,7 @@ export function FinancesHomeCard() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 text-center divide-x divide-slate-100">
+        <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
           <div>
             <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
               <span>{Currencyformatter.format(stats.projectedNetWorth)}</span>
@@ -148,6 +167,21 @@ export function FinancesHomeCard() {
             </div>
             <div className="text-[11px] text-slate-400">Change $</div>
           </div>
+
+          <div>
+            <div
+              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+                stats.projectedPercentChange >= 0
+                  ? "text-emerald-600"
+                  : "text-rose-600"
+              }`}
+            >
+              <span>
+                {`${stats.projectedPercentChange >= 0 ? "+" : "-"}${Math.abs(stats.projectedPercentChange).toFixed(1)}%`}
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400">Change %</div>
+          </div>
         </div>
       </div>
 
@@ -159,7 +193,7 @@ export function FinancesHomeCard() {
           </span>
         </div>
 
-        <div className="grid grid-cols-2 text-center divide-x divide-slate-100">
+        <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
           <div>
             <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
               <span>{Currencyformatter.format(incomeStats.yearlyIncome)}</span>
@@ -178,6 +212,21 @@ export function FinancesHomeCard() {
               </span>
             </div>
             <div className="text-[11px] text-slate-400">Change $</div>
+          </div>
+
+          <div>
+            <div
+              className={`flex items-center justify-center gap-1 text-lg font-bold ${
+                incomeStats.changePercent >= 0
+                  ? "text-emerald-600"
+                  : "text-rose-600"
+              }`}
+            >
+              <span>
+                {`${incomeStats.changePercent >= 0 ? "+" : "-"}${Math.abs(incomeStats.changePercent).toFixed(1)}%`}
+              </span>
+            </div>
+            <div className="text-[11px] text-slate-400">Change %</div>
           </div>
         </div>
       </div>

@@ -1,7 +1,11 @@
 import { BarChart3 } from "lucide-react";
 import { Currencyformatter } from "../../finance/utils/currency.js";
 
-export function FinancesCurrentYearOverviewSection({currentNetWorth, dollarChange}) {
+export function FinancesCurrentYearOverviewSection({
+  currentNetWorth,
+  dollarChange,
+  percentChange,
+}) {
   const getDollarChangeColor = (value) => {
     if (value === null || value === undefined) return "text-slate-600";
     return value >= 0 ? "text-emerald-600" : "text-rose-600";
@@ -16,12 +20,10 @@ export function FinancesCurrentYearOverviewSection({currentNetWorth, dollarChang
         </span>
       </div>
 
-      <div className="grid grid-cols-2 text-center divide-x divide-slate-100">
+      <div className="grid grid-cols-3 text-center divide-x divide-slate-100">
         <div>
           <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
-            <span>
-              {Currencyformatter.format(currentNetWorth)}
-            </span>
+            <span>{Currencyformatter.format(currentNetWorth)}</span>
           </div>
           <div className="text-[11px] text-slate-400">Net Worth</div>
         </div>
@@ -31,10 +33,21 @@ export function FinancesCurrentYearOverviewSection({currentNetWorth, dollarChang
             className={`flex items-center justify-center gap-1 text-lg font-bold ${getDollarChangeColor(dollarChange)}`}
           >
             <span>
-             {`${dollarChange >= 0 ? "+" : "-"}${Currencyformatter.format(dollarChange)}`}
+              {`${dollarChange >= 0 ? "+" : "-"}${Currencyformatter.format(dollarChange)}`}
             </span>
           </div>
           <div className="text-[11px] text-slate-400">Change $</div>
+        </div>
+
+        <div>
+          <div
+            className={`flex items-center justify-center gap-1 text-lg font-bold ${getDollarChangeColor(percentChange)}`}
+          >
+            <span>
+              {`${percentChange >= 0 ? "+" : "-"}${Math.abs(percentChange).toFixed(1)}%`}
+            </span>
+          </div>
+          <div className="text-[11px] text-slate-400">Change %</div>
         </div>
       </div>
     </div>
