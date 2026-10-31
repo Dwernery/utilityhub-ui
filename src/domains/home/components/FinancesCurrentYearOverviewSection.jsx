@@ -1,8 +1,5 @@
 import { BarChart3 } from "lucide-react";
-import {
-  Currencyformatter,
-  CompactCurrencyFormatter,
-} from "../../finance/utils/currency.js";
+import { Currencyformatter } from "../../finance/utils/currency.js";
 
 export function FinancesCurrentYearOverviewSection({
   currentNetWorth,
@@ -36,7 +33,7 @@ export function FinancesCurrentYearOverviewSection({
             className={`flex items-center justify-center gap-1 text-lg font-bold ${getDollarChangeColor(dollarChange)}`}
           >
             <span>
-              {`${dollarChange >= 0 ? "+" : "-"}${CompactCurrencyFormatter.format(Math.abs(dollarChange))}`}
+              {`${dollarChange >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(dollarChange))}`}
             </span>
           </div>
           <div className="text-[11px] text-slate-400">Change $</div>

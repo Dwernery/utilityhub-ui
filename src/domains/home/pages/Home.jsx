@@ -22,10 +22,10 @@ export default function Home() {
         </div>
         <div className="mt-5 border-b border-slate-200" />
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_1.3fr_1fr] gap-4 items-stretch">
         <LibraryHomeCard />
-        <MCUHomeCard />
         <FinancesHomeCard />
+        <MCUHomeCard />
       </div>
     </div>
   );
