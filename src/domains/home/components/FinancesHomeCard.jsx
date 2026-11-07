@@ -230,6 +230,11 @@ export function FinancesHomeCard() {
   const latestMonth = new Date().toLocaleString("default", {
     month: "long",
   });
+  const priorMonth = new Date(
+    new Date().setMonth(new Date().getMonth() - 1),
+  ).toLocaleString("default", {
+    month: "long",
+  });
 
   return (
     <Link
@@ -252,7 +257,7 @@ export function FinancesHomeCard() {
       {/* Year Net Worth Header - Mobile Only */}
       <div className="md:hidden mt-3 mb-2">
         <div className="text-xs text-slate-500 font-semibold">
-          {currentYear} Net Worth
+          Current ({priorMonth})
         </div>
       </div>
 
@@ -273,7 +278,7 @@ export function FinancesHomeCard() {
           {/* Current Year Overview */}
           <div>
             <div className="hidden md:block text-xs text-slate-500 font-semibold mb-2">
-              {currentYear} Net Worth
+              Current ({priorMonth})
             </div>
 
             <div className="grid grid-cols-3 text-center md:divide-x divide-slate-100 gap-2">
