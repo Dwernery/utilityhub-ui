@@ -25,7 +25,7 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const showEveryOtherLabel = width >= 768 && width < 1024;
+  const showEveryOtherLabel = width < 1024;
 
   return (
     <div
@@ -34,7 +34,7 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
       }`}
     >
       {years?.length > 1 && (
-        <div className="flex flex-shrink-0 gap-1 md:gap-2 mb-4 pb-3 overflow-x-auto border-b border-slate-100">
+        <div className="flex flex-shrink-0 gap-1 md:gap-2 mb-4 pb-3 pl-4 overflow-x-auto border-b border-slate-100">
           {years?.map((year) => (
             <button
               key={year}

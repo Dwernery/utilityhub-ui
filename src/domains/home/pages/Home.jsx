@@ -5,7 +5,7 @@ import { CoursesHomeCard } from "../components/CoursesHomeCard";
 
 export default function Home() {
   return (
-    <div>
+    <div className="pb-8 md:pb-6 lg:pb-0">
       <div className="mb-3">
         <div className="flex items-center gap-3">
           <img src="/logo.png" alt="Project SHIELD" className="w-12 h-12" />
