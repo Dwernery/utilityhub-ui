@@ -2,11 +2,30 @@ import { Link } from "react-router-dom";
 import { DollarSign } from "lucide-react";
 import { useNetWorthHistory } from "../../finance/hooks/useNetWorthHistory";
 import { useTransactions } from "../../finance/hooks/useTransactions";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Currencyformatter } from "../../finance/utils/currency";
 import { Graph } from "../../finance/components/Graph";
 
 export function FinancesHomeCard() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  const formatCurrency = (value) => {
+    if (isMobile) {
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0,
+      }).format(value);
+    }
+    return Currencyformatter.format(value);
+  };
   const {
     data: netWorthHistory = {},
     isPending,
@@ -260,7 +279,7 @@ export function FinancesHomeCard() {
             <div className="grid grid-cols-3 text-center md:divide-x divide-slate-100 gap-2">
               <div>
                 <div className="text-base font-bold text-slate-800 tabular-nums">
-                  {Currencyformatter.format(stats.netWorth)}
+                  {formatCurrency(stats.netWorth)}
                 </div>
                 <div className="text-[11px] text-slate-400">Net Worth</div>
               </div>
@@ -273,7 +292,7 @@ export function FinancesHomeCard() {
                       : "text-rose-600"
                   }`}
                 >
-                  {`${stats.dollarChange >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(stats.dollarChange))}`}
+                  {`${stats.dollarChange >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.dollarChange))}`}
                 </div>
                 <div className="text-[11px] text-slate-400">Change $</div>
               </div>
@@ -302,7 +321,7 @@ export function FinancesHomeCard() {
             <div className="grid grid-cols-3 text-center md:divide-x divide-slate-100 gap-2">
               <div>
                 <div className="text-base font-bold text-slate-800 tabular-nums">
-                  {Currencyformatter.format(stats.projectedNetWorth)}
+                  {formatCurrency(stats.projectedNetWorth)}
                 </div>
                 <div className="text-[11px] text-slate-400">Net Worth</div>
               </div>
@@ -315,7 +334,7 @@ export function FinancesHomeCard() {
                       : "text-rose-600"
                   }`}
                 >
-                  {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
+                  {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
                 </div>
                 <div className="text-[11px] text-slate-400">Change $</div>
               </div>
@@ -352,7 +371,7 @@ export function FinancesHomeCard() {
                     {/* Balance */}
                     <div className="flex justify-end pr-2 min-w-0">
                       <span className="font-semibold text-slate-800 tabular-nums whitespace-nowrap">
-                        {Currencyformatter.format(account.balance || 0)}
+                        {formatCurrency(account.balance || 0)}
                       </span>
                     </div>
 
@@ -370,7 +389,7 @@ export function FinancesHomeCard() {
                         >
                           {account.change === null || account.change === 0
                             ? "—"
-                            : `${account.change >= 0 ? "+" : "-"}${Currencyformatter.format(Math.abs(account.change))}`}
+                            : `${account.change >= 0 ? "+" : "-"}${formatCurrency(Math.abs(account.change))}`}
                         </span>
 
                         {account.percentChange !== null &&
