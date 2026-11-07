@@ -29,7 +29,7 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
 
   return (
     <div
-      className={`flex flex-col h-full min-h-[200px] bg-white rounded-2xl sm:pt-4 ${
+      className={`flex flex-col h-full min-h-[200px] bg-white rounded-2xl pt-4 ${
         flat ? "" : "border border-slate-200 shadow-xl"
       }`}
     >
