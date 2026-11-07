@@ -4,9 +4,11 @@ import { LibraryProvider } from "./context/LibraryContext";
 
 function LayoutContent() {
   return (
-    <div className="flex flex-col w-full h-full">
-      <Header />
-      <main className="w-full p-4 sm:p-6 flex-1 min-h-0 overflow-y-auto">
+    <div className="flex flex-col w-full min-h-dvh">
+      <div className="sticky top-0 z-30">
+        <Header />
+      </div>
+      <main className="w-full p-4 sm:p-6 flex-1">
         <div className="max-w-7xl mx-auto">
           <Outlet />
         </div>
@@ -18,7 +20,7 @@ function LayoutContent() {
 export function AppLayout() {
   return (
     <LibraryProvider>
-      <div className="h-screen flex flex-col overflow-hidden">
+      <div className="min-h-dvh flex flex-col">
         <LayoutContent />
       </div>
     </LibraryProvider>
