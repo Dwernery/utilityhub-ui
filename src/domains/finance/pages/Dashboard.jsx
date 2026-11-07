@@ -19,7 +19,7 @@ export function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col lg:flex-row gap-4 lg:h-full lg:min-h-0 pb-24 md:pb-8 lg:pb-4">
+    <div className="flex flex-col lg:flex-row gap-4 lg:h-full lg:min-h-0 pb-16 md:pb-8 lg:pb-4">
       <div className="flex flex-col flex-1 min-w-0 gap-4 lg:min-h-0">
         <div className="flex-shrink-0">
           <HeroCard selectedYear={activeYear} />

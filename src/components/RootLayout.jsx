@@ -27,7 +27,7 @@ export default function RootLayout() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 pt-3 px-4 sm:px-5 lg:px-4">
+    <div className="min-h-screen pt-3 px-4 sm:px-5 lg:px-4">
       <div className="max-w-[96rem] mx-auto">
         <Outlet />
       </div>
