@@ -8,6 +8,8 @@ export default function RootLayout() {
     pathname.startsWith("/finances") ||
     pathname.startsWith("/library");
   const isMcuPage = pathname.startsWith("/mcu");
+  const isFinancesPage = pathname.startsWith("/finances");
+  const isLibraryPage = pathname.startsWith("/library");
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -15,12 +17,15 @@ export default function RootLayout() {
 
   useEffect(() => {
     const htmlEl = document.documentElement;
+    htmlEl.classList.remove("mcu-page", "finances-page", "library-page");
     if (isMcuPage) {
       htmlEl.classList.add("mcu-page");
-    } else {
-      htmlEl.classList.remove("mcu-page");
+    } else if (isFinancesPage) {
+      htmlEl.classList.add("finances-page");
+    } else if (isLibraryPage) {
+      htmlEl.classList.add("library-page");
     }
-  }, [isMcuPage]);
+  }, [isMcuPage, isFinancesPage, isLibraryPage]);
 
   if (isFullBleed) {
     return <Outlet />;

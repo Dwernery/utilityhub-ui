@@ -6,6 +6,14 @@ html.mcu-page {
   background: #0f172a;
 }
 
+html.finances-page {
+  background: #f0f4f8;
+}
+
+html.library-page {
+  background: #faf8f3;
+}
+
 body {
   margin: 0;
   width: 100%;
