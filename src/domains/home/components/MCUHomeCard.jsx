@@ -8,45 +8,61 @@ import { combineStats, computeStats } from "../../mcu/utils/stats";
 import { UtilityCard } from "./UtilityCard";
 import { MCUStatsSection } from "./MCUStatsSection";
 
-
 export function MCUHomeCard() {
   const { watched } = useMcuTracker();
-  const { data = { domains: [] }, isPending, isError, error } = useMcuTrackerData();
-  const { phases, expandedCategories } = useMemo(() => normalizeTrackerData(data),
-    [data]);
-  const mcuStats = useMemo(() => combineStats(phases.map((phase) => computeStats(phase.items, watched))),
-    [phases, watched]);
-  const expandedStats = useMemo(() => combineStats(expandedCategories.map((category) => computeStats(category.items, watched))),
-    [expandedCategories, watched]);
+  const {
+    data = { domains: [] },
+    isPending,
+    isError,
+    error,
+  } = useMcuTrackerData();
+  const { phases, expandedCategories } = useMemo(
+    () => normalizeTrackerData(data),
+    [data],
+  );
+  const mcuStats = useMemo(
+    () =>
+      combineStats(phases.map((phase) => computeStats(phase.items, watched))),
+    [phases, watched],
+  );
+  const expandedStats = useMemo(
+    () =>
+      combineStats(
+        expandedCategories.map((category) =>
+          computeStats(category.items, watched),
+        ),
+      ),
+    [expandedCategories, watched],
+  );
 
-  const inProgress = data.domains.flatMap(domain => [
+  const inProgress = data.domains.flatMap((domain) => [
     ...(domain.movies ?? [])
-      .filter(item => item.status === "IN_PROGRESS")
-      .map(movie => ({
+      .filter((item) => item.status === "IN_PROGRESS")
+      .map((movie) => ({
         ...movie,
         domainName: domain.domainName,
       })),
 
-    ...(domain.shows ?? []).flatMap(show =>
-      (show.seasons ?? []).flatMap(season =>
+    ...(domain.shows ?? []).flatMap((show) =>
+      (show.seasons ?? []).flatMap((season) =>
         (season.episodes ?? [])
-          .filter(episode => episode.status === "IN_PROGRESS")
-          .map(episode => ({
+          .filter((episode) => episode.status === "IN_PROGRESS")
+          .map((episode) => ({
             ...episode,
             s3Url: show.s3Url,
             showTitle: show.title,
             showGlobalId: show.globalId,
             seasonNumber: season.seasonNumber,
             domainName: domain.domainName,
-          }))
-      )
+          })),
+      ),
     ),
   ]);
 
   if (isPending) {
     return (
       <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
-        <div className="mt-4 space-y-3 animate-pulse">
+        <div className="mt-3 space-y-3 animate-pulse">
           <div className="h-12 bg-slate-100 rounded-lg" />
           <div className="h-4 bg-slate-100 rounded w-3/4" />
           <div className="h-4 bg-slate-100 rounded w-1/2" />
@@ -71,11 +87,11 @@ export function MCUHomeCard() {
     <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
       <MCUStatsSection label="MCU Phases" stats={mcuStats} />
 
-      <div className="border-t border-slate-100 pt-3 mt-3">
+      <div className="border-t border-slate-100 pt-2 mt-2">
         <MCUStatsSection label="Expanded Universe" stats={expandedStats} />
       </div>
 
-      <div className="border-t border-slate-100 pt-3 mt-3">
+      <div className="border-t border-slate-100 pt-2 mt-2">
         <MCUCurrentlyWatching content={inProgress} />
       </div>
     </UtilityCard>

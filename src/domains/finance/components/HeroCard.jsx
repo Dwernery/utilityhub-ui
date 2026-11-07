@@ -42,7 +42,7 @@ export function HeroCard({ selectedYear }) {
   } = getYearStats(netWorthHistory, selectedYear);
 
   return (
-    <div className="flex flex-col justify-between h-full bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl px-4 md:px-6 py-4 md:py-5 shadow-xl">
+    <div className="flex flex-col justify-between h-full bg-gradient-to-br from-blue-600 to-blue-700 rounded-2xl px-4 md:px-6 py-4 md:py-5 lg:py-3 shadow-xl">
       <div>
         <div className="flex items-center gap-2 mb-1">
           <DollarSign className="text-blue-100" size={18} />
