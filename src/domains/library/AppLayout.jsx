@@ -18,7 +18,7 @@ function LayoutContent() {
 export function AppLayout() {
   return (
     <LibraryProvider>
-      <div className="h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex flex-col overflow-hidden">
+      <div className="h-screen flex flex-col overflow-hidden">
         <LayoutContent />
       </div>
     </LibraryProvider>
