@@ -1,4 +1,5 @@
 import { API_URL } from "../../config";
+import { readErrorMessage } from "../../apiError";
 
 export async function getBooks() {
   const response = await fetch(`${API_URL}/api/library/books`);
@@ -81,7 +82,7 @@ export async function addBook({
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to create book (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -137,7 +138,7 @@ export async function updateBook(data = {}) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to update book (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -167,7 +168,7 @@ export async function getPresignedUploadUrl(fileName, fileType) {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to get upload URL (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -194,7 +195,7 @@ export async function attachFileToBook(bookId, s3Key, fileType = "cover") {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to attach file to book (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -211,7 +212,7 @@ export async function deleteBook(id) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to delete book (status ${response.status}): ${errorText || "Unknown error"}`,
     );

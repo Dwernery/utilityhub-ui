@@ -55,7 +55,11 @@ function extractDomainItems(domain) {
     return dateA - dateB;
   });
   return items.map((item) => {
-    item.premiereDate = new Date(item.premiereDate).getFullYear();
+    // premiereDate is a calendar date ("YYYY-MM-DD"). Read the year from the string:
+    // new Date(...) would interpret it in the browser's time zone and can shift the year.
+    item.premiereDate = item.premiereDate
+      ? Number(String(item.premiereDate).slice(0, 4))
+      : NaN;
     return item;
   });
 }

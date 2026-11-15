@@ -1,4 +1,5 @@
 import { API_URL } from "../../config";
+import { readErrorMessage } from "../../apiError";
 
 export async function getNetWorthHistory() {
   const response = await fetch(`${API_URL}/api/finance/net-worth-history`);
@@ -11,20 +12,19 @@ export async function getNetWorthHistory() {
 }
 
 export async function updateAccountBalance(accountId, balanceDate, balance) {
-  const response = await fetch(`${API_URL}/api/finance/account-balance`, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
+  const response = await fetch(
+    `${API_URL}/api/finance/accounts/${accountId}/balances/${balanceDate}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ balance }),
     },
-    body: JSON.stringify({
-      accountId,
-      balanceDate,
-      balance,
-    }),
-  });
+  );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to update account balance (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -62,7 +62,7 @@ export async function createAccount(accountName, accountType, category) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to create account (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -72,19 +72,13 @@ export async function createAccount(accountName, accountType, category) {
 }
 
 export async function deleteAccountBalance(accountId, balanceDate) {
-  const response = await fetch(`${API_URL}/api/finance/account-balance`, {
-    method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      accountId,
-      balanceDate,
-    }),
-  });
+  const response = await fetch(
+    `${API_URL}/api/finance/accounts/${accountId}/balances/${balanceDate}`,
+    { method: "DELETE" },
+  );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to delete account balance (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -109,13 +103,12 @@ export async function getTransactions() {
 }
 
 export async function updateTransaction(id, name, amount, paid) {
-  const response = await fetch(`${API_URL}/api/finance/transactions`, {
+  const response = await fetch(`${API_URL}/api/finance/transactions/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      id,
       name,
       amount,
       paid,
@@ -123,7 +116,7 @@ export async function updateTransaction(id, name, amount, paid) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to update transaction (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -149,7 +142,7 @@ export async function clearAllPaid() {
   );
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to clear paid status (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -187,7 +180,7 @@ export async function createIncomeSource(year, name, amount) {
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to create income source (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -197,20 +190,19 @@ export async function createIncomeSource(year, name, amount) {
 }
 
 export async function updateIncomeSource(id, name, amount) {
-  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+  const response = await fetch(`${API_URL}/api/finance/income-sources/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      id,
       name,
       amount,
     }),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to update income source (status ${response.status}): ${errorText || "Unknown error"}`,
     );
@@ -225,16 +217,12 @@ export async function updateIncomeSource(id, name, amount) {
 }
 
 export async function deleteIncomeSource(id) {
-  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+  const response = await fetch(`${API_URL}/api/finance/income-sources/${id}`, {
     method: "DELETE",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ id }),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
+    const errorText = await readErrorMessage(response);
     throw new Error(
       `Failed to delete income source (status ${response.status}): ${errorText || "Unknown error"}`,
     );
