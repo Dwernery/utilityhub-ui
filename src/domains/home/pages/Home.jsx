@@ -2,6 +2,20 @@ import { FinancesHomeCard } from "../components/FinancesHomeCard";
 import { LibraryHomeCard } from "../components/LibraryHomeCard";
 import { McuHomeCard } from "../components/McuHomeCard";
 import { CoursesHomeCard } from "../components/CoursesHomeCard";
+import { Lock } from "lucide-react";
+import { clearApiToken } from "../../../lib/apiToken";
+
+// For a shared or borrowed computer: forgets the token, so the app is locked
+// until it is entered again.
+function lockThisDevice() {
+  if (
+    window.confirm(
+      "Forget the access token on this device? You'll need to enter it again to use the app.",
+    )
+  ) {
+    clearApiToken();
+  }
+}
 
 export function Home() {
   return (
@@ -17,6 +31,15 @@ export function Home() {
               Your personal command center
             </p>
           </div>
+          <button
+            type="button"
+            onClick={lockThisDevice}
+            title="Forget the access token on this device"
+            className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 hover:cursor-pointer"
+          >
+            <Lock className="w-3.5 h-3.5" />
+            Lock
+          </button>
         </div>
         <div className="mt-3 border-b border-slate-200" />
       </div>

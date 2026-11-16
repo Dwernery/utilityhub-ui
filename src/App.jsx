@@ -5,6 +5,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./lib/queryClient";
 import { ToastProvider } from "./context/ToastContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import { TokenGate } from "./components/TokenGate";
 import { McuTrackerProvider } from "./domains/mcu/context/McuTrackerContext";
 
 export function App() {
@@ -12,9 +13,12 @@ export function App() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ToastProvider>
-          <McuTrackerProvider>
-            <RouterProvider router={router} />
-          </McuTrackerProvider>
+          {/* Everything that talks to the API sits inside the gate. */}
+          <TokenGate>
+            <McuTrackerProvider>
+              <RouterProvider router={router} />
+            </McuTrackerProvider>
+          </TokenGate>
         </ToastProvider>
       </QueryClientProvider>
     </ErrorBoundary>
