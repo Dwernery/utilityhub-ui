@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 
-export default function Modal({
+export function Modal({
   onClose,
   children,
   overlayClassName = "fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4",

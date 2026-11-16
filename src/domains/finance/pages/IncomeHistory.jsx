@@ -1,26 +1,33 @@
 import { useMemo, useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
 import { Plus, Edit2, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import Modal from "../../library/components/Modal";
-import { useIncomeSources } from "../hooks/useIncomeSources.js";
+import { Modal } from "../../../components/Modal";
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
 import {
-  createIncomeSource,
-  updateIncomeSource,
-  deleteIncomeSource,
-} from "../api.js";
-import { INCOME_SOURCES_KEY } from "../hooks/queryKeys.js";
-import { Currencyformatter } from "../utils/currency.js";
+  useIncomeSources,
+  useDeleteIncomeSource,
+  useSaveIncomeSource,
+} from "../hooks";
+import { currencyFormatter, parseMoney } from "../utils/currency";
 import {
   getIncomeYears,
   getSourcesForYear,
   getYearTotal,
   getIncomeYoY,
-} from "../utils/income.js";
+} from "../utils/income";
 import { useToast } from "../../../context/ToastContext";
 
-export const IncomeHistory = () => {
-  const { data: incomeSources, isLoading } = useIncomeSources();
-  const queryClient = useQueryClient();
+export function IncomeHistory() {
+  const {
+    data: incomeSources,
+    isPending,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useIncomeSources();
+  const saveIncomeSource = useSaveIncomeSource();
+  const deleteIncomeSource = useDeleteIncomeSource();
   const addToast = useToast();
 
   const years = useMemo(() => getIncomeYears(incomeSources), [incomeSources]);
@@ -38,7 +45,6 @@ export const IncomeHistory = () => {
   const [editingSource, setEditingSource] = useState(null);
   const [isAdding, setIsAdding] = useState(false);
   const [formData, setFormData] = useState({ name: "", amount: "" });
-  const [isSaving, setIsSaving] = useState(false);
   const [isAddingYear, setIsAddingYear] = useState(false);
   const [yearInput, setYearInput] = useState("");
 
@@ -62,31 +68,31 @@ export const IncomeHistory = () => {
   };
 
   const handleSave = async () => {
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount)) {
-      addToast("Please enter a valid amount", "error");
+    const parsed = parseMoney(formData.amount);
+    if (!parsed.ok) {
+      addToast(parsed.error, "error");
       return;
     }
+    const amount = parsed.value;
     if (!formData.name.trim()) {
       addToast("Please enter a source name", "error");
       return;
     }
 
-    setIsSaving(true);
     try {
-      if (editingSource) {
-        await updateIncomeSource(editingSource.id, formData.name, amount);
-        addToast("Income source updated", "success");
-      } else {
-        await createIncomeSource(activeYear, formData.name, amount);
-        addToast("Income source added", "success");
-      }
-      await queryClient.invalidateQueries({ queryKey: INCOME_SOURCES_KEY });
+      await saveIncomeSource.mutateAsync({
+        id: editingSource?.id,
+        year: activeYear,
+        name: formData.name,
+        amount,
+      });
+      addToast(
+        editingSource ? "Income source updated" : "Income source added",
+        "success",
+      );
       closeForm();
     } catch (err) {
       addToast(err.message || "Failed to save income source", "error");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -116,17 +122,22 @@ export const IncomeHistory = () => {
     if (!confirm(`Delete ${source.name}?`)) return;
 
     try {
-      await deleteIncomeSource(source.id);
+      await deleteIncomeSource.mutateAsync(source.id);
       addToast(`${source.name} deleted`, "success");
-      await queryClient.invalidateQueries({ queryKey: INCOME_SOURCES_KEY });
     } catch (err) {
       addToast(err.message || "Failed to delete income source", "error");
     }
   };
 
-  if (isLoading) {
+  if (isPending) return <LoadingState what="income history" />;
+  if (isLoadingError) {
     return (
-      <div className="flex items-center justify-center p-8">Loading...</div>
+      <LoadError
+        what="income history"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+      />
     );
   }
 
@@ -241,7 +252,7 @@ export const IncomeHistory = () => {
             </div>
             <div className="flex items-center justify-end gap-3 sm:gap-4">
               <span className="font-bold text-emerald-600 whitespace-nowrap">
-                {Currencyformatter.format(source.amount)}
+                {currencyFormatter.format(source.amount)}
               </span>
               <div className="flex items-center gap-0.5 flex-shrink-0">
                 <button
@@ -264,7 +275,7 @@ export const IncomeHistory = () => {
         <div className="grid grid-cols-2 items-center py-3 px-3 mt-1 bg-emerald-50 rounded-lg border border-emerald-100">
           <div className="font-bold text-slate-800">Total</div>
           <div className="text-right font-extrabold text-base sm:text-lg text-emerald-700 whitespace-nowrap">
-            {Currencyformatter.format(total)}
+            {currencyFormatter.format(total)}
           </div>
         </div>
 
@@ -282,7 +293,7 @@ export const IncomeHistory = () => {
               className={`font-semibold ${change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
             >
               {change >= 0 ? "+" : ""}
-              {Currencyformatter.format(change)} ({change >= 0 ? "+" : "-"}
+              {currencyFormatter.format(change)} ({change >= 0 ? "+" : "-"}
               {Math.abs(changePercent).toFixed(1)}%)
             </span>
           </div>
@@ -319,7 +330,8 @@ export const IncomeHistory = () => {
                 Amount
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={formData.amount}
                 onChange={(e) =>
                   setFormData({ ...formData, amount: e.target.value })
@@ -338,7 +350,7 @@ export const IncomeHistory = () => {
             </button>
             <button
               onClick={handleSave}
-              disabled={isSaving}
+              disabled={saveIncomeSource.isPending}
               className="px-4 py-2 rounded-lg font-semibold text-sm bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white hover:cursor-pointer disabled:cursor-not-allowed"
             >
               Save
@@ -382,4 +394,4 @@ export const IncomeHistory = () => {
       )}
     </div>
   );
-};
+}

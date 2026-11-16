@@ -1,7 +1,7 @@
-import BookCover from "../BookCover.jsx";
+import { BookCover } from "../BookCover";
 import { Book, Shuffle, Play, RotateCcw } from "lucide-react";
 
-export const RandomSelector = ({
+export function RandomSelector({
   pick,
   counts,
   category,
@@ -9,7 +9,7 @@ export const RandomSelector = ({
   seriesSizes,
   isSpinning,
   onStartReading,
-}) => {
+}) {
   const selectedBook = pick?.type === "series" ? pick.firstBook : pick;
   const booksInSeries = pick?.type === "series" ? (pick.books ?? []) : [];
   const totalPages =
@@ -111,4 +111,4 @@ export const RandomSelector = ({
       )}
     </>
   );
-};
+}

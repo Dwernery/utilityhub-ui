@@ -2,7 +2,14 @@ import { useState, useRef } from "react";
 import { Upload, CheckCircle } from "lucide-react";
 import { formatFileSize } from "../utils/s3Upload";
 
-export default function FileUploadInput({onFileSelected, disabled = false, uploadProgress = 0, selectedFile = null, isUploading = false, label = "Upload File"}) {
+export function FileUploadInput({
+  onFileSelected,
+  disabled = false,
+  uploadProgress = 0,
+  selectedFile = null,
+  isUploading = false,
+  label = "Upload File",
+}) {
   const fileInputRef = useRef(null);
   const [fileName, setFileName] = useState(null);
   const [fileError, setFileError] = useState(null);

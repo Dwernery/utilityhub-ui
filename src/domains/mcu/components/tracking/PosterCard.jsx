@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { posterBackground } from "../../utils/posterArt";
@@ -128,19 +127,3 @@ export function PosterCard({
     </div>
   );
 }
-
-PosterCard.propTypes = {
-  item: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    s3Url: PropTypes.string,
-    type: PropTypes.oneOf(["movie", "tv"]).isRequired,
-    title: PropTypes.string.isRequired,
-    episodes: PropTypes.array,
-    premiereDate: PropTypes.string,
-    seasonNumber: PropTypes.number,
-  }).isRequired,
-  color: PropTypes.string,
-  watched: PropTypes.object,
-  onToggleItem: PropTypes.func,
-  onSelectItem: PropTypes.func,
-};

@@ -1,19 +1,12 @@
-// Previous year ending net worth for years where data collection started mid-way
+import { byDate, isoMonth, isoYear } from "../../../lib/dates";
+
+// Net-worth dashboard metrics. Mirrors utility-hub-mobile's
+// lib/finance/utils/metrics.ts. Dates are "YYYY-MM-DD" strings, read with
+// isoYear/isoMonth and ordered with byDate (never through Date/UTC).
+
+/** Previous-year ending net worth for years where data collection started mid-way. */
 export const PRIOR_YEAR_ENDING_BALANCES = {
   2022: 48173.05, // Jan 2022 is the first month of data collection
-};
-
-export const getYears = (netWorthHistory) => {
-  if (!netWorthHistory || netWorthHistory.length === 0) {
-    return [];
-  }
-
-  const years = netWorthHistory.map((entry) => {
-    const year = parseInt((entry?.date || "").split("-")[0]);
-    return year;
-  });
-
-  return [...new Set(years)].sort((a, b) => a - b);
 };
 
 export const MONTH_LABELS = [
@@ -31,58 +24,48 @@ export const MONTH_LABELS = [
   "December",
 ];
 
-// Helper function to exclude entries from the current month
+/** Exclude the in-progress current month. */
 const excludeCurrentMonth = (entries) => {
   const now = new Date();
   const currentYear = now.getFullYear();
   const currentMonth = now.getMonth() + 1; // 1-indexed
+  return entries.filter(
+    (entry) =>
+      !(
+        isoYear(entry.date) === currentYear &&
+        isoMonth(entry.date) === currentMonth
+      ),
+  );
+};
 
-  return entries.filter((entry) => {
-    const entryYear = parseInt((entry?.date || "").split("-")[0]);
-    const entryMonth = parseInt((entry?.date || "").split("-")[1]);
-    return !(entryYear === currentYear && entryMonth === currentMonth);
-  });
+export const getYears = (netWorthHistory) => {
+  if (!netWorthHistory || netWorthHistory.length === 0) return [];
+  return [...new Set(netWorthHistory.map((entry) => isoYear(entry.date)))].sort(
+    (a, b) => a - b,
+  );
 };
 
 export const getMonthlyChartData = (netWorthHistory, year) => {
-  if (!netWorthHistory || netWorthHistory.length === 0) {
-    return [];
-  }
+  if (!netWorthHistory || netWorthHistory.length === 0) return [];
+  return excludeCurrentMonth(
+    netWorthHistory.filter((entry) => isoYear(entry.date) === year),
+  )
+    .sort(byDate)
+    .map((entry) => ({
+      month: MONTH_LABELS[isoMonth(entry.date) - 1],
+      netWorth: entry.netWorth,
+    }));
+};
 
-  const filteredEntries = excludeCurrentMonth(
-    netWorthHistory.filter(
-      (entry) => parseInt((entry?.date || "").split("-")[0]) === year,
-    ),
+const sumCategory = (entry, category) =>
+  (entry?.accounts || []).reduce(
+    (sum, account) =>
+      account.category === category ? sum + (account.balance || 0) : sum,
+    0,
   );
 
-  return filteredEntries.map((entry) => {
-    const monthIndex = parseInt((entry?.date || "").split("-")[1]) - 1;
-    return {
-      month: MONTH_LABELS[monthIndex],
-      netWorth: entry.netWorth,
-    };
-  });
-};
-
-export const getEntryAssets = (entry) => {
-  let totalAssets = 0;
-  (entry?.accounts || []).forEach((account) => {
-    if (account.category === "ASSET") {
-      totalAssets += account.balance || 0;
-    }
-  });
-  return totalAssets;
-};
-
-export const getEntryLiabilities = (entry) => {
-  let totalLiabilities = 0;
-  (entry?.accounts || []).forEach((account) => {
-    if (account.category === "LIABILITY") {
-      totalLiabilities += account.balance || 0;
-    }
-  });
-  return totalLiabilities;
-};
+export const getEntryAssets = (entry) => sumCategory(entry, "ASSET");
+export const getEntryLiabilities = (entry) => sumCategory(entry, "LIABILITY");
 
 export const getYearMetrics = (netWorthHistory, selectedYear) => {
   if (!netWorthHistory || !selectedYear) {
@@ -91,29 +74,25 @@ export const getYearMetrics = (netWorthHistory, selectedYear) => {
       prevYearNetWorth: 0,
       yoyChange: 0,
       yoyPercentage: 0,
-      currentAssets: 0,
-      currentLiabilities: 0,
     };
   }
 
-  // Get the last entry for the selected year, excluding current month
+  // Last entry for the selected year, excluding current month
   const yearEntries = excludeCurrentMonth(
-    Object.values(netWorthHistory).filter(
-      (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
-    ),
-  ).sort((a, b) => new Date(a.date) - new Date(b.date));
+    netWorthHistory.filter((entry) => isoYear(entry.date) === selectedYear),
+  ).sort(byDate);
+  const lastYearEntry = yearEntries.at(-1);
 
-  const lastYearEntry = yearEntries[yearEntries.length - 1];
-
-  // Get the last entry from previous year for YoY comparison
-  const prevYearEntries = Object.values(netWorthHistory).filter(
-    (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear - 1,
-  );
-  const lastPrevYearEntry = prevYearEntries[prevYearEntries.length - 1];
+  // Last entry from previous year for YoY comparison.
+  // Sort first: "last" must mean the latest date, not whatever happened to come last in the array.
+  const prevYearEntries = netWorthHistory
+    .filter((entry) => isoYear(entry.date) === selectedYear - 1)
+    .sort(byDate);
+  const lastPrevYearEntry = prevYearEntries.at(-1);
 
   const currentNetWorth = lastYearEntry?.netWorth || 0;
 
-  // Use hardcoded prior year balance if available, otherwise use API data
+  // Use hardcoded prior-year balance if available, otherwise API data
   let prevYearNetWorth = 0;
   if (PRIOR_YEAR_ENDING_BALANCES[selectedYear] !== undefined) {
     prevYearNetWorth = PRIOR_YEAR_ENDING_BALANCES[selectedYear];
@@ -125,12 +104,7 @@ export const getYearMetrics = (netWorthHistory, selectedYear) => {
   const yoyPercentage =
     prevYearNetWorth !== 0 ? (yoyChange / prevYearNetWorth) * 100 : 0;
 
-  return {
-    currentNetWorth,
-    prevYearNetWorth,
-    yoyChange,
-    yoyPercentage,
-  };
+  return { currentNetWorth, prevYearNetWorth, yoyChange, yoyPercentage };
 };
 
 export const getYearStats = (netWorthHistory, selectedYear) => {
@@ -142,79 +116,54 @@ export const getYearStats = (netWorthHistory, selectedYear) => {
     highest: 0,
     lowest: 0,
   };
-  if (!netWorthHistory || !selectedYear) {
-    return empty;
-  }
+  if (!netWorthHistory || !selectedYear) return empty;
 
   const entries = excludeCurrentMonth(
-    Object.values(netWorthHistory).filter(
-      (entry) => parseInt((entry?.date || "").split("-")[0]) === selectedYear,
-    ),
-  ).sort((a, b) => new Date(a.date) - new Date(b.date));
+    netWorthHistory.filter((entry) => isoYear(entry.date) === selectedYear),
+  ).sort(byDate);
+  if (entries.length === 0) return empty;
 
-  if (entries.length === 0) {
-    return empty;
-  }
-
-  const allEntries = Object.values(netWorthHistory);
-
-  // Calculate monthly changes, handling January specially
+  // Monthly changes; January compares against the prior year's ending balance
   const monthlyChanges = entries.map((entry, idx) => {
-    const monthIndex = parseInt((entry.date || "").split("-")[1]) - 1;
+    const monthIndex = isoMonth(entry.date) - 1;
     let prevNetWorth = 0;
 
     if (idx > 0) {
-      // For months after January, compare to previous month
       prevNetWorth = entries[idx - 1].netWorth || 0;
     } else if (monthIndex === 0) {
-      // For January, check for hardcoded prior year balance
       if (PRIOR_YEAR_ENDING_BALANCES[selectedYear] !== undefined) {
         prevNetWorth = PRIOR_YEAR_ENDING_BALANCES[selectedYear];
       } else {
-        // Otherwise, try to look up previous year's December from API data
-        const prevYearEntries = allEntries
-          .filter(
-            (e) => parseInt((e?.date || "").split("-")[0]) === selectedYear - 1,
-          )
-          .sort((a, b) => new Date(b.date) - new Date(a.date));
-
-        if (prevYearEntries.length > 0) {
+        const prevYearEntries = netWorthHistory
+          .filter((e) => isoYear(e.date) === selectedYear - 1)
+          .sort((a, b) => byDate(b, a));
+        if (prevYearEntries.length > 0)
           prevNetWorth = prevYearEntries[0].netWorth || 0;
-        }
       }
     }
 
     const change = (entry.netWorth || 0) - prevNetWorth;
     const changePercent =
       prevNetWorth !== 0 ? (change / prevNetWorth) * 100 : 0;
-
-    return {
-      month: MONTH_LABELS[monthIndex],
-      change,
-      changePercent,
-    };
+    return { month: MONTH_LABELS[monthIndex], change, changePercent };
   });
 
-  const bestMonth = monthlyChanges.length
-    ? monthlyChanges.reduce((a, b) => (b.change > a.change ? b : a))
-    : null;
-  const worstMonth = monthlyChanges.length
-    ? monthlyChanges.reduce((a, b) => (b.change < a.change ? b : a))
-    : null;
+  const bestMonth = monthlyChanges.reduce((a, b) =>
+    b.change > a.change ? b : a,
+  );
+  const worstMonth = monthlyChanges.reduce((a, b) =>
+    b.change < a.change ? b : a,
+  );
 
-  // Determine if this is a complete year (has data for all 12 months)
-  const currentYear = new Date().getFullYear();
-  const isCompleteYear = selectedYear < currentYear && entries.length === 12;
-
-  // For complete past years, divide by 12; for in-progress years, divide by actual month count
+  // Complete past years divide by 12; in-progress years by the actual month count
+  const isCompleteYear =
+    selectedYear < new Date().getFullYear() && entries.length === 12;
   const avgDivisor = isCompleteYear ? 12 : monthlyChanges.length;
 
-  const avgChange = monthlyChanges.length
-    ? monthlyChanges.reduce((sum, m) => sum + m.change, 0) / avgDivisor
-    : 0;
-  const avgChangePercent = monthlyChanges.length
-    ? monthlyChanges.reduce((sum, m) => sum + m.changePercent, 0) / avgDivisor
-    : 0;
+  const avgChange =
+    monthlyChanges.reduce((sum, m) => sum + m.change, 0) / avgDivisor;
+  const avgChangePercent =
+    monthlyChanges.reduce((sum, m) => sum + m.changePercent, 0) / avgDivisor;
 
   const netWorths = entries.map((entry) => entry.netWorth || 0);
 

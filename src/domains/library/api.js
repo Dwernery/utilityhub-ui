@@ -1,75 +1,45 @@
-import { API_URL } from "../../config";
-import { readErrorMessage } from "../../apiError";
+import { requestJson, requestVoid } from "../../lib/http";
 
-export async function getBooks() {
-  const response = await fetch(`${API_URL}/api/library/books`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch books");
-  }
-
-  return response.json();
+export function getBooks() {
+  return requestJson("/api/library/books", {
+    errorMessage: "Failed to fetch books",
+  });
 }
 
-export async function getAuthors() {
-  const response = await fetch(`${API_URL}/api/library/authors`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch authors");
-  }
-
-  return response.json();
+export function getAuthors() {
+  return requestJson("/api/library/authors", {
+    errorMessage: "Failed to fetch authors",
+  });
 }
 
-export async function getSeries() {
-  const response = await fetch(`${API_URL}/api/library/series`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch series");
-  }
-
-  return response.json();
+export function getSeries() {
+  return requestJson("/api/library/series", {
+    errorMessage: "Failed to fetch series",
+  });
 }
 
 export async function createAuthor(authorName) {
-  const response = await fetch(`${API_URL}/api/library/authors`, {
+  await requestVoid("/api/library/authors", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fullName: authorName }),
+    body: { fullName: authorName },
+    errorMessage: "Failed to create author",
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to create author (status ${response.status})`);
-  }
-
   return { name: authorName };
 }
 
 export async function createSeries(seriesName) {
-  const response = await fetch(`${API_URL}/api/library/series`, {
+  await requestVoid("/api/library/series", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ name: seriesName }),
+    body: { name: seriesName },
+    errorMessage: "Failed to create series",
   });
-
-  if (!response.ok) {
-    throw new Error(`Failed to create series (status ${response.status})`);
-  }
-
   return { name: seriesName };
 }
 
-export async function addBook({
-  title,
-  pages,
-  authorName,
-  seriesName,
-  isbn13,
-}) {
-  const response = await fetch(`${API_URL}/api/library/books`, {
+export function addBook({ title, pages, authorName, seriesName, isbn13 }) {
+  return requestJson("/api/library/books", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
+    body: {
       title,
       pages:
         pages === "" || pages === null || pages === undefined
@@ -78,22 +48,14 @@ export async function addBook({
       authorName,
       seriesName: seriesName || null,
       isbn13: isbn13 || null,
-    }),
+    },
+    errorMessage: "Failed to create book",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to create book (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
 }
 
 export async function updateBook(data = {}) {
   const { id, ...fields } = data;
-
   if (!id) throw new Error("Missing book id for update");
 
   const payload = {};
@@ -102,121 +64,62 @@ export async function updateBook(data = {}) {
     // Skip undefined fields so PATCH only sends things the caller intended to change
     if (value === undefined) continue;
 
-    if (key === "pages") {
-      payload.pages = value === "" || value === null ? null : Number(value);
-      continue;
+    switch (key) {
+      case "pages":
+      case "rating":
+        payload[key] = value === "" || value === null ? null : Number(value);
+        break;
+      case "currentPage":
+        payload[key] = value === "" || value === null ? 0 : Number(value);
+        break;
+      case "seriesName":
+      case "isbn13":
+        payload[key] = value || null;
+        break;
+      default:
+        // Dates: callers may explicitly pass null to clear a date
+        payload[key] = value;
     }
-
-    if (key === "currentPage") {
-      payload.currentPage = value === "" || value === null ? 0 : Number(value);
-      continue;
-    }
-
-    if (key === "seriesName") {
-      payload.seriesName = value || null;
-      continue;
-    }
-
-    if (key === "isbn13") {
-      payload.isbn13 = value || null;
-      continue;
-    }
-
-    if (key === "rating") {
-      payload.rating = value === "" || value === null ? null : Number(value);
-      continue;
-    }
-
-    // Dates: allow callers to explicitly pass null to clear a date, otherwise send as-is
-    payload[key] = value;
   }
 
-  const response = await fetch(`${API_URL}/api/library/books/${id}`, {
+  await requestVoid(`/api/library/books/${id}`, {
     method: "PATCH",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
+    body: payload,
+    errorMessage: "Failed to update book",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to update book (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
   return "Success";
 }
 
 /**
- * Get a presigned URL for uploading a file to S3
- * @param {string} fileName - The name of the file to upload
- * @param {string} fileType - The MIME type of the file
+ * Get a presigned URL for uploading a file to S3.
  * @returns {Promise<{presignedUrl: string, s3Key: string}>}
  */
-export async function getPresignedUploadUrl(fileName, fileType) {
-  const queryParams = new URLSearchParams({
-    fileName,
-    fileType,
+export function getPresignedUploadUrl(fileName, fileType) {
+  const params = new URLSearchParams({ fileName, fileType });
+  return requestJson(`/api/library/books/upload-url?${params}`, {
+    errorMessage: "Failed to get upload URL",
+    includeErrorDetail: true,
   });
-
-  const response = await fetch(
-    `${API_URL}/api/library/books/upload-url?${queryParams}`,
-    {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
-    },
-  );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to get upload URL (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
 }
 
-/**
- * Associate an uploaded file with a book
- * @param {string} bookId - The ID of the book
- * @param {string} s3Key - The S3 key of the uploaded file
- * @param {string} fileType - The type of file (e.g., 'cover', 'document')
- * @returns {Promise<Object>}
- */
-export async function attachFileToBook(bookId, s3Key, fileType = "cover") {
-  const response = await fetch(
-    `${API_URL}/api/library/books/${bookId}/attach-file`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ s3Key, fileType }),
-    },
-  );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to attach file to book (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
+/** Associate an uploaded S3 object with a book. */
+export function attachFileToBook(bookId, s3Key, fileType = "cover") {
+  return requestJson(`/api/library/books/${bookId}/attach-file`, {
+    method: "POST",
+    body: { s3Key, fileType },
+    errorMessage: "Failed to attach file to book",
+    includeErrorDetail: true,
+  });
 }
 
 // NOTE: rating updates are handled via `updateBook({ id, rating })` (PATCH).
 
 export async function deleteBook(id) {
-  const response = await fetch(`${API_URL}/api/library/books/${id}`, {
+  await requestVoid(`/api/library/books/${id}`, {
     method: "DELETE",
+    errorMessage: "Failed to delete book",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to delete book (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
   return "Success";
 }

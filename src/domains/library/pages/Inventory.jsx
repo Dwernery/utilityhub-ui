@@ -7,23 +7,31 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { useState, useMemo } from "react";
-import { filterBooks } from "../utils/metricUtils";
-import StarRating from "../components/StarRating";
+import { filterBooks, groupBooks } from "../utils/metricUtils";
+import { StarRating } from "../components/StarRating";
 import { useLibrary } from "../context/LibraryContext";
-import AddBookForm from "../components/inventory/AddBookForm";
-import { useBooks } from "../hooks/useBooks";
-import BookDetailModal from "../components/inventory/BookDetailModal";
-import AuthorDetailModal from "../components/inventory/AuthorDetailModal";
-import SeriesDetailModal from "../components/inventory/SeriesDetailModal";
-import BookCover from "../components/BookCover";
-import { groupBooks } from "../utils/metricUtils";
+import { AddBookForm } from "../components/inventory/AddBookForm";
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
+import { useBooks } from "../hooks";
+import { BookDetailModal } from "../components/inventory/BookDetailModal";
+import { AuthorDetailModal } from "../components/inventory/AuthorDetailModal";
+import { SeriesDetailModal } from "../components/inventory/SeriesDetailModal";
+import { BookCover } from "../components/BookCover";
 
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  const { data: books = [], isPending, isError, error } = useBooks();
+  const {
+    data: books = [],
+    isPending,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useBooks();
   const {
     openBookDialog,
     selectedBook,
@@ -37,21 +45,15 @@ export function Inventory() {
   const filteredBooks = filterBooks(books, normalizedSearch, statusFilter);
   const bookGroups = useMemo(() => groupBooks(filteredBooks), [filteredBooks]);
 
-  if (isPending) {
+  if (isPending) return <LoadingState what="books" />;
+  if (isLoadingError) {
     return (
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 py-14 text-center">
-        <p className="text-sm text-slate-400">Loading books…</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="bg-white rounded-xl shadow-sm border border-red-200 py-14 text-center">
-        <p className="text-sm text-red-500">
-          Failed to load books: {error?.message || "Unknown error"}
-        </p>
-      </div>
+      <LoadError
+        what="books"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+      />
     );
   }
 

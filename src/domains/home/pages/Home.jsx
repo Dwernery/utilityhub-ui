@@ -1,9 +1,9 @@
 import { FinancesHomeCard } from "../components/FinancesHomeCard";
 import { LibraryHomeCard } from "../components/LibraryHomeCard";
-import { MCUHomeCard } from "../components/MCUHomeCard";
+import { McuHomeCard } from "../components/McuHomeCard";
 import { CoursesHomeCard } from "../components/CoursesHomeCard";
 
-export default function Home() {
+export function Home() {
   return (
     <div className="pb-8 md:pb-6 lg:pb-0">
       <div className="mb-3">
@@ -23,7 +23,7 @@ export default function Home() {
       <div className="space-y-3">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           <LibraryHomeCard />
-          <MCUHomeCard />
+          <McuHomeCard />
           <CoursesHomeCard />
         </div>
         <FinancesHomeCard />

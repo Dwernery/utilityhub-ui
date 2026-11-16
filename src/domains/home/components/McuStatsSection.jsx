@@ -1,7 +1,7 @@
 import { Galaxy } from "lucide-react";
 import { BREAKDOWN } from "../../mcu/utils/statConstants";
 
-export function MCUStatsSection({ label, stats }) {
+export function McuStatsSection({ label, stats }) {
   return (
     <div>
       <div className="flex items-center justify-between text-xs text-slate-500 mb-3">

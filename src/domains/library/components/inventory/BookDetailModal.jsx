@@ -1,16 +1,15 @@
 import { useState } from "react";
 import { useLibrary } from "../../context/LibraryContext";
 import { X } from "lucide-react";
-import StarRating from "../StarRating";
-import BookCover from "../BookCover";
-import EditBookForm from "./EditBookForm";
-import Modal from "../Modal";
-import { useUpdateBook } from "../../hooks/useUpdateBook";
-import { useDeleteBook } from "../../hooks/useDeleteBook";
+import { StarRating } from "../StarRating";
+import { BookCover } from "../BookCover";
+import { EditBookForm } from "./EditBookForm";
+import { Modal } from "../../../../components/Modal";
+import { useUpdateBook, useDeleteBook } from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
-import { formatDate } from "../../utils/dateUtils";
+import { formatDate } from "../../../../lib/dates";
 
-export default function BookDetailModal() {
+export function BookDetailModal() {
   const {
     setIsEditingInDialog,
     selectedBook,

@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { combineStats, percentage } from "../../utils/stats";
 import { SagaHeader } from "./SagaHeader";
 import { SectionCard } from "./SectionCard";
@@ -75,24 +74,3 @@ export function SagaSection({
     </div>
   );
 }
-
-SagaSection.propTypes = {
-  sagaKey: PropTypes.string.isRequired,
-  title: PropTypes.string.isRequired,
-  subtitle: PropTypes.string,
-  color: PropTypes.string,
-  cards: PropTypes.arrayOf(
-    PropTypes.shape({
-      key: PropTypes.string.isRequired,
-      label: PropTypes.string.isRequired,
-      items: PropTypes.array.isRequired,
-      stats: PropTypes.object,
-    }),
-  ).isRequired,
-  expandedSections: PropTypes.object.isRequired,
-  onToggleSection: PropTypes.func,
-  watched: PropTypes.object,
-  onToggleItem: PropTypes.func,
-  onSelectItem: PropTypes.func,
-  isCategory: PropTypes.bool,
-};

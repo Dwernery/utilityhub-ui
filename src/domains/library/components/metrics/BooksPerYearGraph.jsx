@@ -1,10 +1,10 @@
-export const BooksPerYearGraph = ({
+export function BooksPerYearGraph({
   metrics,
   selectedReadingYear,
   setSelectedReadingYear,
   graphMetric,
   setGraphMetric,
-}) => {
+}) {
   const metricConfig = {
     books: {
       label: "Books per year",
@@ -112,4 +112,4 @@ export const BooksPerYearGraph = ({
       </div>
     </div>
   );
-};
+}

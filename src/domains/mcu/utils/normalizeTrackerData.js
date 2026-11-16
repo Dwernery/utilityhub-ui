@@ -1,3 +1,20 @@
+/**
+ * One poster on the tracker: a movie, a special, or one season of a show.
+ *
+ * @typedef {object} TrackerItem
+ * @property {string} id  unique per poster: the globalId, or "<globalId>-season<n>" for a season
+ * @property {string} globalId  the content's id in the API (shared by all seasons of a show)
+ * @property {"movie" | "special" | "tv"} type
+ * @property {string} title
+ * @property {number} [seasonNumber]  tv only
+ * @property {string} [premiereDate]  "YYYY-MM-DD"
+ * @property {number} [runtime]  minutes; movies and specials
+ * @property {string} [synopsis]
+ * @property {string} [s3Url]  poster image
+ * @property {{ globalId: string, episodeNumber: number, title: string, runtime: number }[]} [episodes]  tv only
+ */
+
+/** @returns {TrackerItem | TrackerItem[]} */
 function normalizeItem(source, type) {
   const id = source.globalId;
 

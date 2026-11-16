@@ -1,20 +1,35 @@
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
 import { HeroCard } from "../components/HeroCard";
-import { getYears } from "../utils/metrics.js";
+import { getYears } from "../utils/metrics";
 import { useState, useMemo } from "react";
-import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
-import { Graph } from "../components/Graph.jsx";
-import { MonthlyTable } from "../components/MonthlyTable.jsx";
+import { useNetWorthHistory } from "../hooks";
+import { Graph } from "../components/Graph";
+import { MonthlyTable } from "../components/MonthlyTable";
 
 export function Dashboard() {
-  let { data: netWorthHistory, isLoading } = useNetWorthHistory();
+  const {
+    data: netWorthHistory,
+    isPending,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useNetWorthHistory();
 
   const years = useMemo(() => getYears(netWorthHistory), [netWorthHistory]);
   const [selectedYear, setSelectedYear] = useState(null);
   const activeYear = selectedYear ?? years?.[years.length - 1] ?? null;
 
-  if (isLoading) {
+  if (isPending) return <LoadingState what="net worth" />;
+  if (isLoadingError) {
     return (
-      <div className="flex items-center justify-center p-8">Loading...</div>
+      <LoadError
+        what="net worth history"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+      />
     );
   }
 

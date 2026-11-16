@@ -1,6 +1,12 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { updateContentStatus } from "../api.js";
-import { MCU_TRACKER_KEY } from "./queryKeys.js";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { getMcuTracker, updateContentStatus } from "./api";
+import { MCU_TRACKER_KEY } from "./queryKeys";
+
+// MCU tracker query and mutation. Mirrors utility-hub-mobile's lib/mcu/hooks.ts.
+
+export function useMcuTrackerData() {
+  return useQuery({ queryKey: MCU_TRACKER_KEY, queryFn: getMcuTracker });
+}
 
 export function useUpdateContentStatus() {
   const queryClient = useQueryClient();

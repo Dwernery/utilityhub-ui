@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useMemo } from "react";
-import { useSeries } from "../hooks/useSeries";
-import { useAuthors } from "../hooks/useAuthors";
-import { useBooks } from "../hooks/useBooks";
+import { useSeries, useAuthors, useBooks } from "../hooks";
 const LibraryContext = createContext();
 
 export function LibraryProvider({ children }) {

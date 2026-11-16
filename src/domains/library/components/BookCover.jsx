@@ -1,6 +1,6 @@
 import { Book } from "lucide-react";
 
-export default function BookCover({ book, className = "" }) {
+export function BookCover({ book, className = "" }) {
   if (book.s3Url)
     return (
       <img
@@ -11,7 +11,9 @@ export default function BookCover({ book, className = "" }) {
       />
     );
   return (
-    <div className={`bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center ${className}`}>
+    <div
+      className={`bg-gradient-to-br from-slate-200 to-slate-300 flex items-center justify-center ${className}`}
+    >
       <Book className="w-8 h-8 text-slate-400" />
     </div>
   );

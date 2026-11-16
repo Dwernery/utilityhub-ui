@@ -2,13 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { SAGAS } from "../utils/statConstants";
 import { useMcuTracker } from "../context/McuTrackerContext";
-import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
-import { useUpdateContentStatus } from "../hooks/useUpdateContentStatus";
-import { useToast } from "../../../context/ToastContext";
+import { useMcuTrackerData } from "../hooks";
+import { useChangeStatus } from "../useChangeStatus";
 import { normalizeTrackerData } from "../utils/normalizeTrackerData";
 import { computeStats, nextStatus, combineStats } from "../utils/stats";
 import { SagaSection } from "../components/tracking/SagaSection";
 import { McuDetailModal } from "../components/tracking/McuDetailModal";
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
 
 const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
   return Object.fromEntries([
@@ -38,28 +39,41 @@ const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
   ]);
 };
 
-export const Tracker = () => {
-  const { view, watched, toggleItem, toggleEpisode, setView } = useMcuTracker();
-  const { data, isPending, isError } = useMcuTrackerData();
-  const { mutate: updateContentStatus } = useUpdateContentStatus();
-  const addToast = useToast();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedItemColor, setSelectedItemColor] = useState("#3b82f6");
+export function Tracker() {
+  const { view } = useMcuTracker();
+  const { data, isPending, isLoadingError, error, refetch, isFetching } =
+    useMcuTrackerData();
+  const [, setSearchParams] = useSearchParams();
 
-  // Sync view with URL on mount
-  useEffect(() => {
-    const urlView = searchParams.get("view");
-    if (urlView && (urlView === "phases" || urlView === "categories")) {
-      setView(urlView);
-    }
-  }, []); // Only on mount
-
-  // Update URL when view changes
+  // Keep ?view= in the URL in step with the toggle (the initial view is read
+  // from the URL by McuTrackerProvider).
   useEffect(() => {
     setSearchParams({ view }, { replace: true });
   }, [view, setSearchParams]);
+
+  if (isPending) return <LoadingState what="MCU tracker" dark />;
+  if (isLoadingError) {
+    return (
+      <LoadError
+        what="MCU tracker"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+        dark
+      />
+    );
+  }
+
+  // Mounts once data exists, so its default expansion is computed exactly once.
+  return <TrackerBody data={data} view={view} />;
+}
+
+function TrackerBody({ data, view }) {
+  const { watched } = useMcuTracker();
+  const { change } = useChangeStatus();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedItem, setSelectedItem] = useState(null);
+  const [selectedItemColor, setSelectedItemColor] = useState("#3b82f6");
 
   const { phases, expandedCategories } = useMemo(
     () => normalizeTrackerData(data),
@@ -109,43 +123,16 @@ export const Tracker = () => {
     });
   }, [expandedCategories, watched]);
 
-  // Initialize expandedSections as empty - effect will populate it on first data load
-  const [expandedSections, setExpandedSections] = useState({});
+  // Unfinished sections start open. Computed once, so marking something watched
+  // doesn't re-open sections you collapsed.
+  const [expandedSections, setExpandedSections] = useState(() =>
+    getDefaultExpandedSections(phases, expandedCategories, watched),
+  );
 
-  // Update expanded sections when phases or watched status changes
-  useEffect(() => {
-    if (phases.length > 0) {
-      const defaultExpandedSections = getDefaultExpandedSections(
-        phases,
-        expandedCategories,
-        watched,
-      );
-      setExpandedSections(defaultExpandedSections);
-    }
-  }, [phases, expandedCategories, watched]);
-
-  // Wrapper for toggling movie/special status - API call then state update
-  // Note: TV episodes are toggled individually from the modal only
-  const handleToggleItem = (item) => {
-    // Cycle through status: UNWATCHED -> IN_PROGRESS -> WATCHED -> UNWATCHED
-    const currentStatus = watched[item.id] || "UNWATCHED";
-    const newStatus = nextStatus(currentStatus);
-    updateContentStatus(
-      {
-        globalId: item.id,
-        status: newStatus,
-      },
-      {
-        onSuccess: () => {
-          toggleItem(item);
-          addToast(`Status updated to ${newStatus}`, "success");
-        },
-        onError: (err) => {
-          addToast("Failed to update status. Please try again.", "error");
-        },
-      },
-    );
-  };
+  // Posters cycle UNWATCHED → IN_PROGRESS → WATCHED. (TV posters open the
+  // detail modal instead, where episodes are changed one at a time.)
+  const handleToggleItem = (item) =>
+    change(item.id, nextStatus(watched[item.id]));
 
   const toggleSection = (key) =>
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -160,22 +147,6 @@ export const Tracker = () => {
     setIsModalOpen(false);
     setSelectedItem(null);
   };
-
-  if (isPending) {
-    return (
-      <div className="max-w-7xl mx-auto pb-4 px-4 py-14 text-center">
-        <p className="text-sm text-slate-400">Loading MCU tracker…</p>
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="max-w-7xl mx-auto pb-4 px-4 py-14 text-center">
-        <p className="text-sm text-red-400">Failed to load MCU tracker data.</p>
-      </div>
-    );
-  }
 
   return (
     <div className="max-w-7xl mx-auto pb-4 px-4">
@@ -225,4 +196,4 @@ export const Tracker = () => {
       />
     </div>
   );
-};
+}

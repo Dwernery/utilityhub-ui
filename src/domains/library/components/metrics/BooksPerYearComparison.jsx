@@ -5,11 +5,11 @@ import {
   ChevronDown,
 } from "lucide-react";
 
-export const BooksPerYearComparison = ({
+export function BooksPerYearComparison({
   metrics,
   selectedReadingYear,
   setSelectedReadingYear,
-}) => {
+}) {
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-100">
@@ -108,4 +108,4 @@ export const BooksPerYearComparison = ({
       </div>
     </div>
   );
-};
+}

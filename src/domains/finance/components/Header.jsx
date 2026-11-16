@@ -1,13 +1,7 @@
-import {
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  Target,
-  ArrowLeft,
-} from "lucide-react";
+import { TrendingUp, DollarSign, BarChart3, ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
-export const Header = () => {
+export function Header() {
   const location = useLocation();
 
   const navItems = [
@@ -28,12 +22,6 @@ export const Header = () => {
       label: "Income History",
       mobileLabel: "History",
       icon: TrendingUp,
-    },
-    {
-      id: "ai-assistant",
-      label: "AI Assistant",
-      mobileLabel: "AI",
-      icon: Target,
     },
   ];
   const activeTab =
@@ -129,4 +117,4 @@ export const Header = () => {
       </nav>
     </>
   );
-};
+}

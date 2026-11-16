@@ -1,10 +1,10 @@
 import { ArrowLeft, CheckCircle2, Circle } from "lucide-react";
-import BookCover from "../BookCover";
-import StarRating from "../StarRating";
-import Modal from "../Modal";
-import { useBooks } from "../../hooks/useBooks";
+import { BookCover } from "../BookCover";
+import { StarRating } from "../StarRating";
+import { Modal } from "../../../../components/Modal";
+import { useBooks } from "../../hooks";
 
-export default function SeriesDetailModal({ series, onClose, onBookClick }) {
+export function SeriesDetailModal({ series, onClose, onBookClick }) {
   const { data: books = [] } = useBooks();
 
   const seriesBooks = books.filter((b) => b.seriesName === series);

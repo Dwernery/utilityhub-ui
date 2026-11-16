@@ -1,14 +1,13 @@
 import "./App.css";
 import { RouterProvider } from "react-router-dom";
-import { router } from "./router.jsx";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToastProvider } from "./context/ToastContext.jsx";
-import { ErrorBoundary } from "./components/ErrorBoundary.jsx";
-import { McuTrackerProvider } from "./domains/mcu/context/McuTrackerContext.jsx";
+import { router } from "./router";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./lib/queryClient";
+import { ToastProvider } from "./context/ToastContext";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { McuTrackerProvider } from "./domains/mcu/context/McuTrackerContext";
 
-const queryClient = new QueryClient();
-
-function App() {
+export function App() {
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
@@ -21,5 +20,3 @@ function App() {
     </ErrorBoundary>
   );
 }
-
-export default App;

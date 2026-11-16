@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 
-export const RandomCategories = ({ category, setCategory, counts }) => {
+export function RandomCategories({ category, setCategory, counts }) {
   const categoryDefs = useMemo(
     () => [
       { id: "standalone", label: "Standalones", sub: null },
@@ -37,4 +37,4 @@ export const RandomCategories = ({ category, setCategory, counts }) => {
       ))}
     </div>
   );
-};
+}

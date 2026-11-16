@@ -12,7 +12,10 @@ export function RouteError() {
       <p className="text-sm text-slate-500 mb-4">
         {error?.statusText || error?.message || "An unexpected error occurred."}
       </p>
-      <a href="/" className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700">
+      <a
+        href="/"
+        className="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-700"
+      >
         Go to Home
       </a>
     </div>

@@ -1,6 +1,6 @@
 import { Book, BookOpen, CalendarDays, Star } from "lucide-react";
 
-export function LibraryStatsSection({label, booksRead,pages, avgRating}) {
+export function LibraryStatsSection({ label, booksRead, pages, avgRating }) {
   return (
     <div>
       <div className="flex items-center justify-between text-xs text-slate-500 mb-3">

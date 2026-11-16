@@ -1,8 +1,8 @@
 import { ArrowLeft } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useBooks } from "../hooks/useBooks";
+import { useBooks } from "../hooks";
 
-export default function Header() {
+export function Header() {
   const location = useLocation();
   const { data: books = [] } = useBooks();
 

@@ -1,10 +1,10 @@
 import { Search, X } from "lucide-react";
-import BookCover from "../BookCover";
-import Modal from "../Modal";
+import { BookCover } from "../BookCover";
+import { Modal } from "../../../../components/Modal";
 import { useState } from "react";
-import { useStartReading } from "../../hooks/useStartReading";
+import { useStartReading } from "../../hooks";
 
-export const StartReadingModal = ({ setShowAddCurrentlyReading, books }) => {
+export function StartReadingModal({ setShowAddCurrentlyReading, books }) {
   const [currentlyReadingSearch, setCurrentlyReadingSearch] = useState("");
   const { startReading, isPending } = useStartReading();
 
@@ -89,4 +89,4 @@ export const StartReadingModal = ({ setShowAddCurrentlyReading, books }) => {
       </div>
     </Modal>
   );
-};
+}

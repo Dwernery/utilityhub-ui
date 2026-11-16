@@ -1,10 +1,7 @@
-import { useState } from "react";
-import PropTypes from "prop-types";
 import { X } from "lucide-react";
-import Modal from "../../../library/components/Modal";
+import { Modal } from "../../../../components/Modal";
 import { useMcuTracker } from "../../context/McuTrackerContext";
-import { useUpdateContentStatus } from "../../hooks/useUpdateContentStatus";
-import { useToast } from "../../../../context/ToastContext";
+import { useChangeStatus } from "../../useChangeStatus";
 import { getStatus, nextStatus } from "../../utils/stats";
 import { TYPE_META } from "../../utils/constants";
 import { posterBackground } from "../../utils/posterArt";
@@ -16,10 +13,8 @@ export function McuDetailModal({
   selectedItem,
   selectedItemColor,
 }) {
-  const { watched, setWatched } = useMcuTracker();
-  const { mutate: updateContentStatus } = useUpdateContentStatus();
-  const addToast = useToast();
-  const [isUpdating, setIsUpdating] = useState(false);
+  const { watched } = useMcuTracker();
+  const { change, isPending: isUpdating } = useChangeStatus();
 
   if (!selectedItem || !isOpen) return null;
 
@@ -35,63 +30,14 @@ export function McuDetailModal({
 
   const handleStatusChange = (newStatus) => {
     if (isTv) return; // Status toggle not available for TV shows in detail view
-
-    setIsUpdating(true);
-    updateContentStatus(
-      {
-        globalId: selectedItem.id,
-        status: newStatus,
-      },
-      {
-        onSuccess: () => {
-          setWatched((prev) => ({
-            ...prev,
-            [selectedItem.id]: newStatus,
-          }));
-          addToast(`Status updated to ${newStatus}`, "success");
-        },
-        onError: () => {
-          addToast("Failed to update status. Please try again.", "error");
-        },
-        onSettled: () => {
-          setIsUpdating(false);
-        },
-      },
-    );
+    change(selectedItem.id, newStatus);
   };
 
-  const handleEpisodeStatusChange = (episodeGlobalId) => {
-    // Cycle through status: UNWATCHED -> IN_PROGRESS -> WATCHED -> UNWATCHED
-    const episodeStatus =
-      getStatus(watched, episodeGlobalId) || STATUS.UNWATCHED;
-    const newEpisodeStatus = nextStatus(episodeStatus);
-
-    setIsUpdating(true);
-    updateContentStatus(
-      {
-        globalId: episodeGlobalId,
-        status: newEpisodeStatus,
-      },
-      {
-        onSuccess: () => {
-          setWatched((prev) => ({
-            ...prev,
-            [episodeGlobalId]: newEpisodeStatus,
-          }));
-          addToast(`Episode status updated to ${newEpisodeStatus}`, "success");
-        },
-        onError: () => {
-          addToast(
-            "Failed to update episode status. Please try again.",
-            "error",
-          );
-        },
-        onSettled: () => {
-          setIsUpdating(false);
-        },
-      },
-    );
-  };
+  // Episodes cycle UNWATCHED -> IN_PROGRESS -> WATCHED -> UNWATCHED
+  const handleEpisodeStatusChange = (episodeGlobalId) =>
+    change(episodeGlobalId, nextStatus(watched[episodeGlobalId]), {
+      episode: true,
+    });
 
   const Icon = TYPE_META[selectedItem.type].icon;
 
@@ -404,22 +350,3 @@ export function McuDetailModal({
     </Modal>
   );
 }
-
-McuDetailModal.propTypes = {
-  isOpen: PropTypes.bool.isRequired,
-  onClose: PropTypes.func,
-  selectedItem: PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    type: PropTypes.oneOf(["movie", "tv"]).isRequired,
-    title: PropTypes.string.isRequired,
-    seasonNumber: PropTypes.number,
-    episodes: PropTypes.arrayOf(
-      PropTypes.shape({
-        globalId: PropTypes.string.isRequired,
-        episodeNumber: PropTypes.number,
-        title: PropTypes.string,
-      }),
-    ),
-  }),
-  selectedItemColor: PropTypes.string,
-};

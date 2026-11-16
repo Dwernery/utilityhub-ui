@@ -1,23 +1,27 @@
-import {
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Edit2,
-  Trash2,
-  Check,
-  X,
-} from "lucide-react";
+import { TrendingUp, TrendingDown, Edit2, Check, X } from "lucide-react";
 import { useState } from "react";
-import { useQueryClient } from "@tanstack/react-query";
-import { useTransactions } from "../hooks/useTransactions.js";
-import { updateTransaction, clearAllPaid } from "../api.js";
-import { Currencyformatter } from "../utils/currency";
+import {
+  useTransactions,
+  useClearAllPaid,
+  useUpdateTransaction,
+} from "../hooks";
+import { currencyFormatter, parseMoney } from "../utils/currency";
+import { transactionTotals } from "../utils/monthly";
 import { useToast } from "../../../context/ToastContext";
-import { TRANSACTIONS_KEY } from "../hooks/queryKeys.js";
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
 
-export const IncomeExpenses = () => {
-  const { data: transactions = [], isLoading } = useTransactions();
-  const queryClient = useQueryClient();
+export function IncomeExpenses() {
+  const {
+    data: transactions = [],
+    isPending,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useTransactions();
+  const updateTransaction = useUpdateTransaction();
+  const clearAllPaid = useClearAllPaid();
   const addToast = useToast();
   const [paidFilter, setPaidFilter] = useState("ALL"); // "ALL", "PAID", "UNPAID"
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -26,7 +30,7 @@ export const IncomeExpenses = () => {
     amount: "",
     paid: false,
   });
-  const [isSaving, setIsSaving] = useState(false);
+  const isSaving = updateTransaction.isPending || clearAllPaid.isPending;
   const C = {
     networth: "text-blue-700",
     asset: "text-emerald-700",
@@ -56,35 +60,29 @@ export const IncomeExpenses = () => {
   const handleSaveEdit = async () => {
     if (!editingTransaction) return;
 
-    const newAmount = parseFloat(editFormData.amount);
-    if (isNaN(newAmount)) {
-      addToast("Please enter a valid amount", "error");
+    const parsed = parseMoney(editFormData.amount);
+    if (!parsed.ok) {
+      addToast(parsed.error, "error");
       return;
     }
+    const newAmount = parsed.value;
 
     if (!editFormData.name.trim()) {
       addToast("Please enter a transaction name", "error");
       return;
     }
 
-    setIsSaving(true);
     try {
-      await updateTransaction(
-        editingTransaction.id,
-        editFormData.name,
-        newAmount,
-        editFormData.paid,
-      );
-
+      await updateTransaction.mutateAsync({
+        id: editingTransaction.id,
+        name: editFormData.name,
+        amount: newAmount,
+        paid: editFormData.paid,
+      });
       addToast("Transaction updated successfully", "success");
       setEditingTransaction(null);
-
-      // Refetch transactions
-      await queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
     } catch (err) {
       addToast(err.message || "Failed to update transaction", "error");
-    } finally {
-      setIsSaving(false);
     }
   };
 
@@ -95,40 +93,28 @@ export const IncomeExpenses = () => {
       return;
     }
 
-    setIsSaving(true);
     try {
-      await clearAllPaid();
+      await clearAllPaid.mutateAsync();
       addToast("Cleared paid status from all transactions", "success");
-      // Refetch transactions
-      await queryClient.invalidateQueries({ queryKey: TRANSACTIONS_KEY });
     } catch (err) {
       addToast(err.message || "Failed to clear paid status", "error");
-    } finally {
-      setIsSaving(false);
     }
   };
 
-  let income =
-    filteredTransactions
-      ?.filter((transaction) => transaction.transactionType === "INCOME")
-      .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
-  let expenses =
-    filteredTransactions
-      ?.filter((transaction) => transaction.transactionType === "EXPENSE")
-      .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
-  let netCashFlow =
-    (filteredTransactions
-      ?.filter(
-        (transaction) =>
-          transaction.transactionType === "INCOME" && transaction.cash,
-      )
-      .reduce((sum, transaction) => sum + transaction.amount, 0) || 0) -
-      filteredTransactions
-        ?.filter(
-          (transaction) =>
-            transaction.transactionType === "EXPENSE" && transaction.cash,
-        )
-        .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
+  const { income, expenses, netIncome, netCashFlow } =
+    transactionTotals(filteredTransactions);
+
+  if (isPending) return <LoadingState what="transactions" />;
+  if (isLoadingError) {
+    return (
+      <LoadError
+        what="transactions"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+      />
+    );
+  }
 
   return (
     <div>
@@ -138,7 +124,7 @@ export const IncomeExpenses = () => {
             Total Income
           </div>
           <div className="text-base md:text-lg lg:text-2xl font-bold text-white">
-            {Currencyformatter.format(income)}
+            {currencyFormatter.format(income)}
           </div>
         </div>
         <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg text-center">
@@ -146,27 +132,27 @@ export const IncomeExpenses = () => {
             Total Expenses
           </div>
           <div className="text-base md:text-lg lg:text-2xl font-bold text-white">
-            {Currencyformatter.format(expenses)}
+            {currencyFormatter.format(expenses)}
           </div>
         </div>
         <div
-          className={`bg-gradient-to-br ${income - expenses >= 0 ? "from-blue-500 to-blue-600" : "from-orange-500 to-orange-600"} rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg text-center`}
+          className={`bg-gradient-to-br ${netIncome >= 0 ? "from-blue-500 to-blue-600" : "from-orange-500 to-orange-600"} rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg text-center`}
         >
           <div className="text-blue-100 text-xs font-medium uppercase tracking-wide mb-0.5">
             Net Cash Flow
           </div>
           <div className="text-base md:text-lg lg:text-2xl font-bold text-white">
-            {Currencyformatter.format(netCashFlow)}
+            {currencyFormatter.format(netCashFlow)}
           </div>
         </div>
         <div
-          className={`bg-gradient-to-br ${income - expenses >= 0 ? "from-blue-500 to-blue-600" : "from-orange-500 to-orange-600"} rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg text-center`}
+          className={`bg-gradient-to-br ${netIncome >= 0 ? "from-blue-500 to-blue-600" : "from-orange-500 to-orange-600"} rounded-lg md:rounded-xl p-2 md:p-3 shadow-lg text-center`}
         >
           <div className="text-blue-100 text-xs font-medium uppercase tracking-wide mb-0.5">
             Net Income
           </div>
           <div className="text-base md:text-lg lg:text-2xl font-bold text-white">
-            {Currencyformatter.format(income - expenses)}
+            {currencyFormatter.format(netIncome)}
           </div>
         </div>
       </div>
@@ -218,12 +204,6 @@ export const IncomeExpenses = () => {
                   )}
                   {dir === "INCOME" ? "Income" : "Expenses"}
                 </h3>
-                <button
-                  // onClick={() => setIsAddingTransaction(true)}
-                  className={`flex items-center gap-2 px-3 py-1.5 text-white rounded-lg font-semibold hover:cursor-pointer ${dir === "INCOME" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
-                >
-                  <Plus size={14} />
-                </button>
               </div>
               <div className="space-y-2">
                 {filteredTransactions
@@ -250,21 +230,13 @@ export const IncomeExpenses = () => {
                             <span
                               className={`font-bold ${dir === "INCOME" ? C.asset : C.liab}`}
                             >
-                              {Currencyformatter.format(transaction.amount)}
+                              {currencyFormatter.format(transaction.amount)}
                             </span>
                             <button
                               onClick={() => handleEditClick(transaction)}
                               className="p-1 text-blue-600 hover:text-blue-700 ml-2"
                             >
                               <Edit2 size={14} />
-                            </button>
-                            <button
-                              // onClick={() =>
-                              //   setDeleteConfirm({ type: "tx", id: tx.id })
-                              // }
-                              className="p-1 text-rose-500 hover:text-rose-700"
-                            >
-                              <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
@@ -287,8 +259,8 @@ export const IncomeExpenses = () => {
                                   autoFocus
                                 />
                                 <input
-                                  type="number"
-                                  step="0.01"
+                                  type="text"
+                                  inputMode="decimal"
                                   value={editFormData.amount}
                                   onChange={(e) =>
                                     setEditFormData({
@@ -342,13 +314,12 @@ export const IncomeExpenses = () => {
                   })}
                 {filteredTransactions.filter(
                   (transaction) => transaction.transactionType === dir,
-                ).length === 0 &&
-                  !isLoading && (
-                    <p className="text-slate-400 text-sm italic">
-                      No {dir === "INCOME" ? "income" : "expense"} transactions
-                      yet
-                    </p>
-                  )}
+                ).length === 0 && (
+                  <p className="text-slate-400 text-sm italic">
+                    No {dir === "INCOME" ? "income" : "expense"} transactions
+                    yet
+                  </p>
+                )}
               </div>
             </div>
           ))}
@@ -356,4 +327,4 @@ export const IncomeExpenses = () => {
       </div>
     </div>
   );
-};
+}

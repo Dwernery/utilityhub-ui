@@ -1,13 +1,13 @@
 import { CheckCircle2 } from "lucide-react";
-import StarRating from "../StarRating";
-import { formatDate, parseLocalDate } from "../../utils/dateUtils";
+import { StarRating } from "../StarRating";
+import { daysBetween, formatDate, parseLocalDate } from "../../../../lib/dates";
 
-export const BooksPerYearDetails = ({
+export function BooksPerYearDetails({
   metrics,
   selectedReadingYear,
   setSelectedReadingYear,
   books,
-}) => {
+}) {
   const filteredBooks = books.filter(
     (b) =>
       b.status === "READ" &&
@@ -85,11 +85,7 @@ export const BooksPerYearDetails = ({
             .map((book) => {
               const days =
                 book.startDate && book.endDate
-                  ? Math.ceil(
-                      (parseLocalDate(book.endDate) -
-                        parseLocalDate(book.startDate)) /
-                        86400000,
-                    )
+                  ? daysBetween(book.startDate, book.endDate)
                   : null;
               return (
                 <div
@@ -129,4 +125,4 @@ export const BooksPerYearDetails = ({
       </div>
     </div>
   );
-};
+}

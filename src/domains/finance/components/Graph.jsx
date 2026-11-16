@@ -7,25 +7,17 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { getMonthlyChartData } from "../utils/metrics.js";
-import { useNetWorthHistory } from "../hooks/useNetWorthHistory";
-import { Currencyformatter } from "../utils/currency.js";
-import { useState, useEffect } from "react";
+import { getMonthlyChartData } from "../utils/metrics";
+import { useNetWorthHistory } from "../hooks";
+import { currencyFormatter } from "../utils/currency";
+import { BREAKPOINTS, useMediaQuery } from "../../../lib/useMediaQuery";
 
 export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
   const { data: netWorthHistory } = useNetWorthHistory();
   const fmtY = (v) => "$" + Math.floor(v / 1000) + "k";
-  const [width, setWidth] = useState(
-    typeof window !== "undefined" ? window.innerWidth : 0,
-  );
-
-  useEffect(() => {
-    const handleResize = () => setWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
-
-  const showEveryOtherLabel = width < 1024;
+  const isPhone = !useMediaQuery(BREAKPOINTS.md);
+  // Below lg there isn't room for all 12 month labels.
+  const showEveryOtherLabel = !useMediaQuery(BREAKPOINTS.lg);
 
   return (
     <div
@@ -53,7 +45,7 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
             margin={{
               top: 5,
               right: 20,
-              left: width < 768 ? -15 : 0,
+              left: isPhone ? -15 : 0,
               bottom: 5,
             }}
           >
@@ -61,14 +53,14 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
             <XAxis
               dataKey={"month"}
               stroke="#64748b"
-              tick={{ fontSize: width < 768 ? 11 : 12 }}
+              tick={{ fontSize: isPhone ? 11 : 12 }}
               interval={showEveryOtherLabel ? 1 : 0}
               padding={{ right: 16 }}
             />
             <YAxis
               stroke="#64748b"
               tickFormatter={fmtY}
-              tick={{ fontSize: width < 768 ? 11 : 12 }}
+              tick={{ fontSize: isPhone ? 11 : 12 }}
               domain={[
                 (dataMin) => Math.floor(dataMin / 10000) * 10000,
                 (dataMax) => Math.ceil(dataMax / 10000) * 10000,
@@ -82,15 +74,15 @@ export function Graph({ years, selectedYear, onSelectYear, flat = false }) {
                 color: "#1e293b",
                 boxShadow: "0 4px 6px -1px rgba(0,0,0,.1)",
               }}
-              formatter={(v) => [Currencyformatter.format(v), "Net Worth"]}
+              formatter={(v) => [currencyFormatter.format(v), "Net Worth"]}
             />
             <Line
               type="monotone"
               dataKey="netWorth"
               stroke="#3b82f6"
-              strokeWidth={width < 768 ? 2 : 3}
-              dot={{ fill: "#3b82f6", r: width < 768 ? 3 : 5 }}
-              activeDot={{ r: width < 768 ? 5 : 8 }}
+              strokeWidth={isPhone ? 2 : 3}
+              dot={{ fill: "#3b82f6", r: isPhone ? 3 : 5 }}
+              activeDot={{ r: isPhone ? 5 : 8 }}
             />
           </LineChart>
         </ResponsiveContainer>

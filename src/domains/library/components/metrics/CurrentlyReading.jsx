@@ -1,10 +1,12 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { StartReadingModal } from "./StartReadingModal";
-import { useUpdateBook } from "../../hooks/useUpdateBook";
+import { useUpdateBook } from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
+import { todayIso } from "../../../../lib/dates";
+import { readingProgress } from "../../utils/metricUtils";
 
-export const CurrentlyReading = ({ books }) => {
+export function CurrentlyReading({ books }) {
   const [showAddCurrentlyReading, setShowAddCurrentlyReading] = useState(false);
   const updateBook = useUpdateBook();
   const addToast = useToast();
@@ -28,19 +30,7 @@ export const CurrentlyReading = ({ books }) => {
           {books
             .filter((b) => b.status === "IN_PROGRESS")
             .map((book) => {
-              const pctRaw = book.pages
-                ? (book.currentPage / book.pages) * 100
-                : 0;
-              const pct = Math.min(100, Math.max(0, Math.round(pctRaw || 0)));
-              const days = book.startDate
-                ? Math.max(
-                    0,
-                    Math.floor(
-                      (new Date() - new Date(`${book.startDate}T00:00:00`)) /
-                        86400000,
-                    ),
-                  )
-                : null;
+              const { pct, days } = readingProgress(book);
               const isRowPending =
                 updateBook.isPending && updateBook.variables?.id === book.id;
               return (
@@ -58,12 +48,11 @@ export const CurrentlyReading = ({ books }) => {
                     <div className="flex gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => {
-                          const endDate = new Date().toISOString().slice(0, 10);
                           updateBook.mutate(
                             {
                               id: book.id,
                               status: "READ",
-                              endDate,
+                              endDate: todayIso(),
                               currentPage: book.pages,
                             },
                             {
@@ -174,4 +163,4 @@ export const CurrentlyReading = ({ books }) => {
       )}
     </div>
   );
-};
+}

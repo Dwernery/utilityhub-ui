@@ -1,237 +1,120 @@
-import { API_URL } from "../../config";
-import { readErrorMessage } from "../../apiError";
+import { requestJson, requestMaybeJson } from "../../lib/http";
 
-export async function getNetWorthHistory() {
-  const response = await fetch(`${API_URL}/api/finance/net-worth-history`);
+const BASE = "/api/finance";
 
-  if (!response.ok) {
-    throw new Error("Failed to fetch net worth history");
-  }
-
-  return response.json();
+export function getNetWorthHistory() {
+  return requestJson(`${BASE}/net-worth-history`, {
+    errorMessage: "Failed to fetch net worth history",
+  });
 }
 
-export async function updateAccountBalance(accountId, balanceDate, balance) {
-  const response = await fetch(
-    `${API_URL}/api/finance/accounts/${accountId}/balances/${balanceDate}`,
+export function updateAccountBalance(accountId, balanceDate, balance) {
+  return requestMaybeJson(
+    `${BASE}/accounts/${accountId}/balances/${balanceDate}`,
     {
       method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ balance }),
+      body: { balance },
+      errorMessage: "Failed to update account balance",
+      includeErrorDetail: true,
     },
   );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to update account balance (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
 }
 
-export async function getAccounts() {
-  const response = await fetch(`${API_URL}/api/finance/accounts`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch accounts");
-  }
-
-  return response.json();
-}
-
-export async function createAccount(accountName, accountType, category) {
-  const response = await fetch(`${API_URL}/api/finance/accounts`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+export function deleteAccountBalance(accountId, balanceDate) {
+  return requestMaybeJson(
+    `${BASE}/accounts/${accountId}/balances/${balanceDate}`,
+    {
+      method: "DELETE",
+      errorMessage: "Failed to delete account balance",
+      includeErrorDetail: true,
     },
-    body: JSON.stringify({
+  );
+}
+
+export function getAccounts() {
+  return requestJson(`${BASE}/accounts`, {
+    errorMessage: "Failed to fetch accounts",
+  });
+}
+
+/**
+ * Create an account, optionally with its first monthly balance. Passing
+ * initialBalance ({ balance, date }) makes this one atomic request: the API
+ * creates both or neither, so a failed balance can't leave an empty account.
+ */
+export function createAccount({
+  accountName,
+  accountType,
+  category,
+  initialBalance,
+}) {
+  return requestJson(`${BASE}/accounts`, {
+    method: "POST",
+    body: {
       accountName,
       accountType,
       category,
-    }),
+      ...(initialBalance && {
+        balance: initialBalance.balance,
+        balanceDate: initialBalance.date,
+      }),
+    },
+    errorMessage: "Failed to create account",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to create account (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
 }
 
-export async function deleteAccountBalance(accountId, balanceDate) {
-  const response = await fetch(
-    `${API_URL}/api/finance/accounts/${accountId}/balances/${balanceDate}`,
-    { method: "DELETE" },
-  );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to delete account balance (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
+export function getTransactions() {
+  return requestJson(`${BASE}/transactions`, {
+    errorMessage: "Failed to fetch transactions",
+  });
 }
 
-export async function getTransactions() {
-  const response = await fetch(`${API_URL}/api/finance/transactions`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch transactions");
-  }
-
-  return response.json();
-}
-
-export async function updateTransaction(id, name, amount, paid) {
-  const response = await fetch(`${API_URL}/api/finance/transactions/${id}`, {
+export function updateTransaction(id, name, amount, paid) {
+  return requestMaybeJson(`${BASE}/transactions/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name,
-      amount,
-      paid,
-    }),
+    body: { name, amount, paid },
+    errorMessage: "Failed to update transaction",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to update transaction (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
 }
 
-export async function clearAllPaid() {
-  const response = await fetch(
-    `${API_URL}/api/finance/transactions/clear-paid`,
-    {
-      method: "PUT",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    },
-  );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to clear paid status (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
+export function clearAllPaid() {
+  return requestMaybeJson(`${BASE}/transactions/clear-paid`, {
+    method: "PUT",
+    errorMessage: "Failed to clear paid status",
+    includeErrorDetail: true,
+  });
 }
 
-export async function getIncomeSources() {
-  const response = await fetch(`${API_URL}/api/finance/income-sources`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch income sources");
-  }
-
-  return response.json();
+export function getIncomeSources() {
+  return requestJson(`${BASE}/income-sources`, {
+    errorMessage: "Failed to fetch income sources",
+  });
 }
 
-export async function createIncomeSource(year, name, amount) {
-  const response = await fetch(`${API_URL}/api/finance/income-sources`, {
+export function createIncomeSource(year, name, amount) {
+  return requestJson(`${BASE}/income-sources`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      year,
-      name,
-      amount,
-    }),
+    body: { year, name, amount },
+    errorMessage: "Failed to create income source",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to create income source (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  return response.json();
 }
 
-export async function updateIncomeSource(id, name, amount) {
-  const response = await fetch(`${API_URL}/api/finance/income-sources/${id}`, {
+export function updateIncomeSource(id, name, amount) {
+  return requestMaybeJson(`${BASE}/income-sources/${id}`, {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      name,
-      amount,
-    }),
+    body: { name, amount },
+    errorMessage: "Failed to update income source",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to update income source (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
 }
 
-export async function deleteIncomeSource(id) {
-  const response = await fetch(`${API_URL}/api/finance/income-sources/${id}`, {
+export function deleteIncomeSource(id) {
+  return requestMaybeJson(`${BASE}/income-sources/${id}`, {
     method: "DELETE",
+    errorMessage: "Failed to delete income source",
+    includeErrorDetail: true,
   });
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to delete income source (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
-  const contentType = response.headers.get("content-type");
-  if (contentType && contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  return { success: true };
 }

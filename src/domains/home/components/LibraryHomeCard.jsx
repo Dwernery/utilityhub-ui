@@ -1,12 +1,20 @@
 import { Book } from "lucide-react";
-import { useBooks } from "../../library/hooks/useBooks";
-import { parseLocalDate } from "../../library/utils/dateUtils";
-import { UtilityCard } from "./UtilityCard";
+import { useBooks } from "../../library/hooks";
+import { parseLocalDate } from "../../../lib/dates";
+import { UtilityCard, UtilityCardSkeleton } from "./UtilityCard";
+import { LoadError } from "../../../components/LoadError";
 import { LibraryStatsSection } from "./LibraryStatsSection";
 import { LibraryCurrentlyReading } from "./LibraryCurrentlyReading";
 
 export function LibraryHomeCard() {
-  const { data: books = [], isPending, isError, error } = useBooks();
+  const {
+    data: books = [],
+    isPending,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useBooks();
 
   /* Stat Calculations */
   const finishedBooks = books.filter(
@@ -46,23 +54,26 @@ export function LibraryHomeCard() {
   if (isPending) {
     return (
       <UtilityCard icon={Book} title="Library" to="/library/inventory">
-        <div className="mt-3 space-y-3 animate-pulse">
-          <div className="h-12 bg-slate-100 rounded-lg" />
-          <div className="h-4 bg-slate-100 rounded w-3/4" />
-          <div className="h-4 bg-slate-100 rounded w-1/2" />
-          <div className="h-4 bg-slate-100 rounded w-2/3" />
-        </div>
+        <UtilityCardSkeleton />
       </UtilityCard>
     );
   }
 
-  if (isError) {
+  if (isLoadingError) {
     return (
-      <UtilityCard icon={Book} title="Library" to="/library/inventory">
-        <p className="text-sm text-red-500 mt-4">
-          Failed to load library data
-          {error?.message ? `: ${error.message}` : "."}
-        </p>
+      <UtilityCard
+        icon={Book}
+        title="Library"
+        to="/library/inventory"
+        linked={false}
+      >
+        <LoadError
+          what="library"
+          error={error}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+          card={false}
+        />
       </UtilityCard>
     );
   }

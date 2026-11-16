@@ -1,23 +1,29 @@
-import { createBrowserRouter } from "react-router-dom";
-import RootLayout from "./components/RootLayout";
-import { AppLayout as LibraryAppLayout } from "./domains/library/AppLayout";
-import { AppLayout as McuAppLayout } from "./domains/mcu/AppLayout";
-import { AppLayout as FinancesAppLayout } from "./domains/finance/AppLayout";
-import Home from "./domains/home/pages/Home";
-import { Tracker } from "./domains/mcu/pages/Tracker";
-import { Inventory } from "./domains/library/pages/Inventory";
-import Metrics from "./domains/library/pages/Metrics";
-import Randomize from "./domains/library/pages/Randomize";
-import { Dashboard as FinancesDashboard } from "./domains/finance/pages/Dashboard";
-import { IncomeExpenses } from "./domains/finance/pages/IncomeExpenses";
-import { IncomeHistory } from "./domains/finance/pages/IncomeHistory";
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import { RootLayout } from "./components/RootLayout";
+import { Home } from "./domains/home/pages/Home";
 import { NotFound } from "./components/NotFound";
 import { RouteError } from "./components/RouteError";
 
-export const router = createBrowserRouter([
+/**
+ * Load a route's component on first visit, so each section's code (and the
+ * chart library, which only Finances needs) is downloaded only when it's opened.
+ * The router waits for the download before switching pages, so the current page
+ * stays on screen meanwhile.
+ *
+ * @param {() => Promise<object>} load  e.g. () => import("./domains/mcu/pages/Tracker")
+ * @param {string} name  the module's named export
+ */
+const lazyComponent = (load, name) => async () => ({
+  Component: (await load())[name],
+});
+
+export const routes = [
   {
     element: <RootLayout />,
     errorElement: <RouteError />,
+    // Shown only on a cold start at a section's URL, for the moment its code
+    // takes to download. Blank rather than "Loading…", which would just flash.
+    hydrateFallbackElement: <div className="min-h-dvh" aria-busy="true" />,
     children: [
       {
         index: true,
@@ -25,47 +31,80 @@ export const router = createBrowserRouter([
       },
       {
         path: "library",
-        element: <LibraryAppLayout />,
+        lazy: lazyComponent(
+          () => import("./domains/library/AppLayout"),
+          "AppLayout",
+        ),
         children: [
+          { index: true, element: <Navigate to="inventory" replace /> },
           {
             path: "inventory",
-            element: <Inventory />,
+            lazy: lazyComponent(
+              () => import("./domains/library/pages/Inventory"),
+              "Inventory",
+            ),
           },
           {
             path: "metrics",
-            element: <Metrics />,
+            lazy: lazyComponent(
+              () => import("./domains/library/pages/Metrics"),
+              "Metrics",
+            ),
           },
           {
             path: "randomize",
-            element: <Randomize />,
+            lazy: lazyComponent(
+              () => import("./domains/library/pages/Randomize"),
+              "Randomize",
+            ),
           },
         ],
       },
       {
         path: "finances",
-        element: <FinancesAppLayout />,
+        lazy: lazyComponent(
+          () => import("./domains/finance/AppLayout"),
+          "AppLayout",
+        ),
         children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
           {
             path: "dashboard",
-            element: <FinancesDashboard />,
+            lazy: lazyComponent(
+              () => import("./domains/finance/pages/Dashboard"),
+              "Dashboard",
+            ),
           },
           {
             path: "income-expenses",
-            element: <IncomeExpenses />,
+            lazy: lazyComponent(
+              () => import("./domains/finance/pages/IncomeExpenses"),
+              "IncomeExpenses",
+            ),
           },
           {
             path: "income-history",
-            element: <IncomeHistory />,
+            lazy: lazyComponent(
+              () => import("./domains/finance/pages/IncomeHistory"),
+              "IncomeHistory",
+            ),
           },
         ],
       },
       {
         path: "mcu",
-        element: <McuAppLayout />,
+        lazy: lazyComponent(
+          () => import("./domains/mcu/AppLayout"),
+          "AppLayout",
+        ),
         children: [
+          { index: true, element: <Navigate to="tracker" replace /> },
           {
             path: "tracker",
-            element: <Tracker />,
+            lazy: lazyComponent(
+              () => import("./domains/mcu/pages/Tracker"),
+              "Tracker",
+            ),
           },
         ],
       },
@@ -75,4 +114,6 @@ export const router = createBrowserRouter([
       },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(routes);

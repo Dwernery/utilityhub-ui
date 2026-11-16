@@ -1,32 +1,17 @@
-import { API_URL } from "../../config";
-import { readErrorMessage } from "../../apiError";
+import { requestJson, requestVoid } from "../../lib/http";
 
-export async function getMcuTracker() {
-  const response = await fetch(`${API_URL}/api/mcu/tracker`);
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch MCU tracker data");
-  }
-
-  return response.json();
+export function getMcuTracker() {
+  return requestJson("/api/mcu/tracker", {
+    errorMessage: "Failed to fetch MCU tracker data",
+  });
 }
 
 export async function updateContentStatus({ globalId, status }) {
-  const response = await fetch(
-    `${API_URL}/api/mcu/tracker/${encodeURIComponent(globalId)}/status`,
-    {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    },
-  );
-
-  if (!response.ok) {
-    const errorText = await readErrorMessage(response);
-    throw new Error(
-      `Failed to update content status (status ${response.status}): ${errorText || "Unknown error"}`,
-    );
-  }
-
+  await requestVoid(`/api/mcu/tracker/${encodeURIComponent(globalId)}/status`, {
+    method: "PUT",
+    body: { status },
+    errorMessage: "Failed to update content status",
+    includeErrorDetail: true,
+  });
   return "Success";
 }

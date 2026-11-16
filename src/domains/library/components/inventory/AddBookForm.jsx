@@ -1,18 +1,20 @@
 import { useState } from "react";
-import SearchableDropdown from "../SearchableDropdown";
-import FileUploadInput from "../FileUploadInput";
+import { SearchableDropdown } from "../SearchableDropdown";
+import { FileUploadInput } from "../FileUploadInput";
 import { useLibrary } from "../../context/LibraryContext";
-import { useCreateAuthor } from "../../hooks/useCreateAuthor";
-import { useCreateSeries } from "../../hooks/useCreateSeries";
-import { useAddBook } from "../../hooks/useAddBook";
-import { useS3Upload } from "../../hooks/useS3Upload";
+import {
+  useCreateAuthor,
+  useCreateSeries,
+  useAddBook,
+  useS3Upload,
+} from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
 import {
   isBookValid,
   BOOK_VALIDATION_MESSAGE,
 } from "../../utils/bookValidation";
 
-export default function AddBookForm({ setShowAddForm }) {
+export function AddBookForm({ setShowAddForm }) {
   const { authorOptions, seriesOptions } = useLibrary();
 
   const [newBook, setNewBook] = useState({

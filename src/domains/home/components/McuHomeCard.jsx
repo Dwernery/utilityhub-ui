@@ -1,20 +1,23 @@
 import { Clapperboard } from "lucide-react";
-import { MCUCurrentlyWatching } from "./MCUCurrentlyWatching";
+import { McuCurrentlyWatching } from "./McuCurrentlyWatching";
 import { useMemo } from "react";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
-import { useMcuTrackerData } from "../../mcu/hooks/useMcuTrackerData";
+import { useMcuTrackerData } from "../../mcu/hooks";
 import { normalizeTrackerData } from "../../mcu/utils/normalizeTrackerData";
 import { combineStats, computeStats } from "../../mcu/utils/stats";
-import { UtilityCard } from "./UtilityCard";
-import { MCUStatsSection } from "./MCUStatsSection";
+import { UtilityCard, UtilityCardSkeleton } from "./UtilityCard";
+import { LoadError } from "../../../components/LoadError";
+import { McuStatsSection } from "./McuStatsSection";
 
-export function MCUHomeCard() {
+export function McuHomeCard() {
   const { watched } = useMcuTracker();
   const {
     data = { domains: [] },
     isPending,
-    isError,
+    isLoadingError,
     error,
+    refetch,
+    isFetching,
   } = useMcuTrackerData();
   const { phases, expandedCategories } = useMemo(
     () => normalizeTrackerData(data),
@@ -62,37 +65,40 @@ export function MCUHomeCard() {
   if (isPending) {
     return (
       <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
-        <div className="mt-3 space-y-3 animate-pulse">
-          <div className="h-12 bg-slate-100 rounded-lg" />
-          <div className="h-4 bg-slate-100 rounded w-3/4" />
-          <div className="h-4 bg-slate-100 rounded w-1/2" />
-          <div className="h-4 bg-slate-100 rounded w-2/3" />
-        </div>
+        <UtilityCardSkeleton />
       </UtilityCard>
     );
   }
 
-  if (isError) {
+  if (isLoadingError) {
     return (
-      <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
-        <p className="text-sm text-red-500 mt-4">
-          Failed to load MCU data
-          {error?.message ? `: ${error.message}` : "."}
-        </p>
+      <UtilityCard
+        icon={Clapperboard}
+        title="MCU"
+        to="/mcu/tracker"
+        linked={false}
+      >
+        <LoadError
+          what="MCU data"
+          error={error}
+          onRetry={() => refetch()}
+          retrying={isFetching}
+          card={false}
+        />
       </UtilityCard>
     );
   }
 
   return (
     <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
-      <MCUStatsSection label="MCU Phases" stats={mcuStats} />
+      <McuStatsSection label="MCU Phases" stats={mcuStats} />
 
       <div className="border-t border-slate-100 pt-2 mt-2">
-        <MCUStatsSection label="Expanded Universe" stats={expandedStats} />
+        <McuStatsSection label="Expanded Universe" stats={expandedStats} />
       </div>
 
       <div className="border-t border-slate-100 pt-2 mt-2">
-        <MCUCurrentlyWatching content={inProgress} />
+        <McuCurrentlyWatching content={inProgress} />
       </div>
     </UtilityCard>
   );

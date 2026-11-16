@@ -1,4 +1,3 @@
-import PropTypes from "prop-types";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { PosterCard } from "./PosterCard";
 
@@ -61,27 +60,3 @@ export function SectionCard({
     </section>
   );
 }
-
-SectionCard.propTypes = {
-  label: PropTypes.string.isRequired,
-  color: PropTypes.string,
-  items: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      type: PropTypes.string.isRequired,
-    }),
-  ).isRequired,
-  stats: PropTypes.shape({
-    moviesDone: PropTypes.number,
-    movies: PropTypes.number,
-    episodesDone: PropTypes.number,
-    episodes: PropTypes.number,
-    specialsDone: PropTypes.number,
-    specials: PropTypes.number,
-  }),
-  watched: PropTypes.object,
-  expanded: PropTypes.bool,
-  onToggleExpand: PropTypes.func,
-  onToggleItem: PropTypes.func,
-  onSelectItem: PropTypes.func,
-};

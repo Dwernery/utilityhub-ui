@@ -1,18 +1,26 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
-import { useBooks } from "../hooks/useBooks.js";
-import { useStartReading } from "../hooks/useStartReading.js";
+import { useBooks, useStartReading } from "../hooks";
 import { Book } from "lucide-react";
-import { RandomCategories } from "../components/randomize/RandomCategories.jsx";
-import { RandomSelector } from "../components/randomize/RandomSelector.jsx";
-import { EligibleBooks } from "../components/randomize/EligibleBooks.jsx";
+import { RandomCategories } from "../components/randomize/RandomCategories";
+import { RandomSelector } from "../components/randomize/RandomSelector";
+import { EligibleBooks } from "../components/randomize/EligibleBooks";
+import { LoadingState } from "../../../components/LoadingState";
+import { LoadError } from "../../../components/LoadError";
 
-export default function Randomize() {
+export function Randomize() {
   const [category, setCategory] = useState("standalone");
   const [pick, setPick] = useState(null);
   const [isSpinning, setIsSpinning] = useState(false);
   const lastPickRef = useRef(null);
   const spinTimeoutRef = useRef(null);
-  const { data: books = [] } = useBooks();
+  const {
+    data: books = [],
+    isPending: isLoadingBooks,
+    isLoadingError,
+    error,
+    refetch,
+    isFetching,
+  } = useBooks();
   const { startReading, isPending: isStartingReading } = useStartReading();
 
   const seriesSizes = useMemo(() => {
@@ -203,6 +211,18 @@ export default function Randomize() {
       },
     });
   }, [pick, startReading]);
+
+  if (isLoadingBooks) return <LoadingState what="books" />;
+  if (isLoadingError) {
+    return (
+      <LoadError
+        what="books"
+        error={error}
+        onRetry={() => refetch()}
+        retrying={isFetching}
+      />
+    );
+  }
 
   return (
     <div className="space-y-4">

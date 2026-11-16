@@ -1,6 +1,6 @@
-import BookCover from "../BookCover.jsx";
+import { BookCover } from "../BookCover";
 
-export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
+export function EligibleBooks({ category, pools, seriesGroups, pick }) {
   return (
     <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
       <div className="px-4 py-2.5 border-b border-slate-100">
@@ -69,4 +69,4 @@ export const EligibleBooks = ({ category, pools, seriesGroups, pick }) => {
       </div>
     </div>
   );
-};
+}

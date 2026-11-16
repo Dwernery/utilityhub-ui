@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { useLibrary } from "../../context/LibraryContext";
-import SearchableDropdown from "../SearchableDropdown";
-import FileUploadInput from "../FileUploadInput";
+import { SearchableDropdown } from "../SearchableDropdown";
+import { FileUploadInput } from "../FileUploadInput";
 import { X } from "lucide-react";
-import { useUpdateBook } from "../../hooks/useUpdateBook";
-import { useCreateAuthor } from "../../hooks/useCreateAuthor";
-import { useCreateSeries } from "../../hooks/useCreateSeries";
-import { useS3Upload } from "../../hooks/useS3Upload";
+import {
+  useUpdateBook,
+  useCreateAuthor,
+  useCreateSeries,
+  useS3Upload,
+} from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
 import {
   isBookValid,
   BOOK_VALIDATION_MESSAGE,
 } from "../../utils/bookValidation";
 
-export default function EditBookForm() {
+export function EditBookForm() {
   const {
     closeBookDialog,
     selectedBook,

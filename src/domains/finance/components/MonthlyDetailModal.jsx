@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Plus,
@@ -10,370 +10,206 @@ import {
   TrendingDown,
   AlertCircle,
 } from "lucide-react";
-import Modal from "../../library/components/Modal";
-import { Currencyformatter } from "../utils/currency";
+import { Modal } from "../../../components/Modal";
+import { LoadError } from "../../../components/LoadError";
+import { currencyFormatter, parseMoney } from "../utils/currency";
+import { ASSET_TYPES, monthAccounts } from "../utils/monthly";
 import {
-  updateAccountBalance,
-  getAccounts,
-  createAccount,
-  deleteAccountBalance,
-} from "../api";
+  useNetWorthHistory,
+  useAccounts,
+  useCreateAccount,
+  useRemoveAccountBalance,
+  useSetAccountBalance,
+} from "../hooks";
 import { useToast } from "../../../context/ToastContext";
 
-export function MonthlyDetailModal({
-  selectedMonth,
-  selectedYear,
-  netWorthHistory,
-  onClose,
-  onRefresh,
-}) {
+// Everything that differs between the Assets and Liabilities sections.
+// (Tailwind needs whole class names, so they're spelled out rather than built.)
+const SECTION = {
+  ASSET: {
+    title: "Assets",
+    HeadingIcon: TrendingUp,
+    RowIcon: Wallet,
+    heading: "text-emerald-600",
+    solid: "bg-emerald-600 hover:bg-emerald-700",
+    row: "bg-emerald-50 border-emerald-200",
+    rowIcon: "text-emerald-500",
+    badge: { backgroundColor: "#10b98122", color: "#10b981" },
+    balance: "text-emerald-700",
+    form: "bg-emerald-50 border-emerald-300",
+    divider: "border-emerald-200",
+    toggleOn: "bg-emerald-600 text-white",
+    toggleOff: "bg-white text-emerald-600 border border-emerald-200",
+    input: "border-emerald-200 focus:ring-emerald-500",
+    namePlaceholder: "e.g., My Crypto Wallet",
+    // A rising asset is good news; a rising liability isn't.
+    good: (change) => change >= 0,
+  },
+  LIABILITY: {
+    title: "Liabilities",
+    HeadingIcon: TrendingDown,
+    RowIcon: CreditCard,
+    heading: "text-rose-600",
+    solid: "bg-rose-600 hover:bg-rose-700",
+    row: "bg-rose-50 border-rose-200",
+    rowIcon: "text-rose-500",
+    badge: { backgroundColor: "#b91c1c22", color: "#b91c1c" },
+    balance: "text-rose-700",
+    form: "bg-rose-50 border-rose-300",
+    divider: "border-rose-200",
+    toggleOn: "bg-rose-600 text-white",
+    toggleOff: "bg-white text-rose-600 border border-rose-200",
+    input: "border-rose-200 focus:ring-rose-500",
+    namePlaceholder: "e.g., Personal Loan",
+    good: (change) => change < 0,
+  },
+};
+
+const LABEL = "block text-xs font-semibold text-slate-700 mb-3";
+const CANCEL =
+  "flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors";
+
+/**
+ * One month's accounts. Reads straight from the net-worth query, so every save
+ * (which refetches it) updates the totals here and in the table behind.
+ */
+export function MonthlyDetailModal({ date, title, onClose }) {
   const addToast = useToast();
-  const [editingAccount, setEditingAccount] = useState(null);
+  const { data: history } = useNetWorthHistory();
+  const { data: allAccounts = [] } = useAccounts();
+  const month = useMemo(() => monthAccounts(history, date), [history, date]);
+
+  const setAccountBalance = useSetAccountBalance();
+  const removeAccountBalance = useRemoveAccountBalance();
+  const createAccount = useCreateAccount();
+  const isSaving =
+    setAccountBalance.isPending ||
+    removeAccountBalance.isPending ||
+    createAccount.isPending;
+
+  const [editingAccountId, setEditingAccountId] = useState(null);
   const [editBalance, setEditBalance] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [displayMonth, setDisplayMonth] = useState(selectedMonth);
-  const [addingAccountType, setAddingAccountType] = useState(null);
-  const [newAccountBalance, setNewAccountBalance] = useState("");
-  const [allAccounts, setAllAccounts] = useState([]);
-  const [addMode, setAddMode] = useState("select"); // "select" or "create"
-  const [newAccountName, setNewAccountName] = useState("");
-  const [newAccountCategory, setNewAccountCategory] =
-    useState("Cash & Savings");
+  const [addingCategory, setAddingCategory] = useState(null);
 
-  // Helper function to get account balances for a specific month
-  const getAccountBalancesForMonth = useCallback(
-    (monthDate) => {
-      if (!netWorthHistory) return {};
-      const allEntries = Object.values(netWorthHistory);
-      const monthEntries = allEntries.filter((e) => e.date === monthDate);
-      if (monthEntries.length === 0) return {};
-
-      const entry = monthEntries[0];
-      const balancesByAccountId = {};
-      (entry.accounts || []).forEach((acc) => {
-        const key = acc.id || acc.accountId;
-        balancesByAccountId[key] = acc.balance;
-      });
-      return balancesByAccountId;
-    },
-    [netWorthHistory],
+  // Accounts already in this month can't be added again.
+  const presentIds = new Set(
+    [...month.assets, ...month.liabilities].map((a) => a.accountId),
   );
+  const availableFor = (category) =>
+    allAccounts.filter((a) => a.category === category && !presentIds.has(a.id));
 
-  // Helper function to calculate the previous month's date string
-  const getPreviousMonthDate = useCallback(() => {
-    if (!displayMonth.date) return null;
-    const [year, month] = displayMonth.date.split("-");
-    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
-    date.setMonth(date.getMonth() - 1);
-    const prevYear = date.getFullYear();
-    const prevMonth = String(date.getMonth() + 1).padStart(2, "0");
-    return `${prevYear}-${prevMonth}-01`;
-  }, [displayMonth.date]);
-
-  // Helper function to get change for a specific account
-  const getAccountChange = useCallback(
-    (account) => {
-      const prevMonthDate = getPreviousMonthDate();
-      if (!prevMonthDate) return { change: null, changePercent: null };
-
-      const prevBalances = getAccountBalancesForMonth(prevMonthDate);
-      const accountKey = account.id || account.accountId;
-      const prevBalance = prevBalances[accountKey];
-
-      if (prevBalance === undefined)
-        return { change: null, changePercent: null };
-
-      const change = account.balance - prevBalance;
-      const changePercent =
-        prevBalance !== 0 ? (change / prevBalance) * 100 : 0;
-      return { change, changePercent };
-    },
-    [getPreviousMonthDate, getAccountBalancesForMonth],
-  );
-
-  useEffect(() => {
-    // Load accounts on mount using IIFE to avoid setState linter warning
-    (async () => {
-      try {
-        const accounts = await getAccounts();
-        setAllAccounts(accounts);
-      } catch {
-        addToast("Failed to load accounts", "error");
-      }
-    })();
-  }, [addToast]);
-
-  // Callback for refetching accounts (used when creating new accounts)
-  const refetchAccounts = useCallback(async () => {
-    try {
-      const accounts = await getAccounts();
-      setAllAccounts(accounts);
-    } catch {
-      addToast("Failed to load accounts", "error");
-    }
-  }, [addToast]);
-
-  const CATEGORIES = {
-    "Cash & Savings": { label: "Cash & Savings" },
-    Investments: { label: "Investments" },
-    Retirement: { label: "Retirement" },
-    Property: { label: "Property" },
+  // Balances may be negative (e.g. an overdrawn account), unlike transactions and income.
+  const parseBalance = (raw) => {
+    const parsed = parseMoney(raw, { allowNegative: true });
+    if (!parsed.ok) addToast(parsed.error, "error");
+    return parsed.ok ? parsed.value : null;
   };
-  const catLabel = (t) => (CATEGORIES[t] || {}).label;
 
-  const handleEditClick = (account) => {
-    setEditingAccount(account);
+  /** Set an account's balance for this month; resolves true on success. */
+  const saveBalance = async (accountId, accountName, raw, doneMessage) => {
+    const balance = parseBalance(raw);
+    if (balance === null) return false;
+    try {
+      await setAccountBalance.mutateAsync({ accountId, date, balance });
+      addToast(`${accountName} ${doneMessage}`, "success");
+      return true;
+    } catch (err) {
+      addToast(err.message || "Failed to update balance", "error");
+      return false;
+    }
+  };
+
+  const startEdit = (account) => {
+    setEditingAccountId(account.accountId);
     setEditBalance(account.balance.toString());
   };
 
-  const handleSaveBalance = async () => {
-    if (!editingAccount || editBalance === "") return;
-
-    const newBalance = parseFloat(editBalance);
-    if (isNaN(newBalance)) {
-      addToast("Please enter a valid number", "error");
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await updateAccountBalance(
-        editingAccount.id || editingAccount.accountId,
-        displayMonth.date,
-        newBalance,
-      );
-
-      // Update the displayed month data with new balance
-      const updatedAccounts = displayMonth.accounts.map((acc) =>
-        acc === editingAccount ? { ...acc, balance: newBalance } : acc,
-      );
-
-      const updatedAssets = updatedAccounts
-        .filter((acc) => acc.category === "ASSET")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-      const updatedLiabilities = updatedAccounts
-        .filter((acc) => acc.category === "LIABILITY")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-
-      setDisplayMonth({
-        ...displayMonth,
-        accounts: updatedAccounts,
-        assets: updatedAssets,
-        liabilities: updatedLiabilities,
-        netWorth: updatedAssets - updatedLiabilities,
-      });
-
-      addToast(`${editingAccount.accountName} balance updated`, "success");
-      setEditingAccount(null);
-      setEditBalance("");
-      if (onRefresh) {
-        await onRefresh();
-      }
-    } catch (err) {
-      addToast(err.message || "Failed to update balance", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingAccount(null);
+  const cancelEdit = () => {
+    setEditingAccountId(null);
     setEditBalance("");
   };
 
-  const handleAddAccountClick = (accountType) => {
-    setAddingAccountType(accountType);
-    setNewAccountBalance("");
-    setAddMode("select");
-    setNewAccountName("");
-    setNewAccountCategory("Cash & Savings");
+  const handleSaveEdit = async (account) => {
+    const saved = await saveBalance(
+      account.accountId,
+      account.accountName,
+      editBalance,
+      "balance updated",
+    );
+    if (saved) cancelEdit();
   };
 
-  const handleAddAccountSave = async (account) => {
-    if (!newAccountBalance || newAccountBalance === "") {
-      addToast("Please enter a balance", "error");
-      return;
-    }
-
-    const newBalance = parseFloat(newAccountBalance);
-    if (isNaN(newBalance)) {
-      addToast("Please enter a valid number", "error");
-      return;
-    }
-
-    setIsLoading(true);
+  const handleDelete = async (account) => {
+    if (!confirm(`Delete ${account.accountName} from this month?`)) return;
     try {
-      await updateAccountBalance(
-        account.id || account.accountId,
-        displayMonth.date,
-        newBalance,
-      );
-
-      // Add the new account to display
-      const newAccount = {
-        ...account,
-        balance: newBalance,
-      };
-
-      const updatedAccounts = [...displayMonth.accounts, newAccount];
-      const updatedAssets = updatedAccounts
-        .filter((acc) => acc.category === "ASSET")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-      const updatedLiabilities = updatedAccounts
-        .filter((acc) => acc.category === "LIABILITY")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-
-      setDisplayMonth({
-        ...displayMonth,
-        accounts: updatedAccounts,
-        assets: updatedAssets,
-        liabilities: updatedLiabilities,
-        netWorth: updatedAssets - updatedLiabilities,
-        hasData: true,
+      await removeAccountBalance.mutateAsync({
+        accountId: account.accountId,
+        date,
       });
-
-      addToast(`${account.accountName} added for this month`, "success");
-      setAddingAccountType(null);
-      setNewAccountBalance("");
-      if (onRefresh) {
-        await onRefresh();
-      }
+      addToast(`${account.accountName} removed from this month`, "success");
     } catch (err) {
-      addToast(err.message || "Failed to add account", "error");
-    } finally {
-      setIsLoading(false);
+      addToast(err.message || "Failed to delete account", "error");
     }
   };
 
-  const handleCreateAndAddAccount = async () => {
-    if (!newAccountName.trim()) {
+  const handleAddExisting = async (account, raw) => {
+    if (!account) {
+      addToast("Please select an account", "error");
+      return;
+    }
+    const saved = await saveBalance(
+      account.id,
+      account.accountName,
+      raw,
+      "added for this month",
+    );
+    if (saved) setAddingCategory(null);
+  };
+
+  const handleCreate = async (category, { name, type, raw }) => {
+    if (!name.trim()) {
       addToast("Please enter an account name", "error");
       return;
     }
-
-    if (!newAccountBalance || newAccountBalance === "") {
-      addToast("Please enter a balance", "error");
+    if (!type.trim()) {
+      addToast("Please enter an account type", "error");
       return;
     }
-
-    const newBalance = parseFloat(newAccountBalance);
-    if (isNaN(newBalance)) {
-      addToast("Please enter a valid number", "error");
-      return;
-    }
-
-    setIsLoading(true);
+    const balance = parseBalance(raw);
+    if (balance === null) return;
     try {
-      // Create the new account
-      const newAccount = await createAccount(
-        newAccountName,
-        newAccountCategory,
-        addingAccountType,
-      );
-
-      // Add balance for this month
-      await updateAccountBalance(
-        newAccount.id || newAccount.accountId,
-        displayMonth.date,
-        newBalance,
-      );
-
-      // Add to display
-      const accountWithBalance = {
-        ...newAccount,
-        balance: newBalance,
-      };
-
-      const updatedAccounts = [...displayMonth.accounts, accountWithBalance];
-      const updatedAssets = updatedAccounts
-        .filter((acc) => acc.category === "ASSET")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-      const updatedLiabilities = updatedAccounts
-        .filter((acc) => acc.category === "LIABILITY")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-
-      setDisplayMonth({
-        ...displayMonth,
-        accounts: updatedAccounts,
-        assets: updatedAssets,
-        liabilities: updatedLiabilities,
-        netWorth: updatedAssets - updatedLiabilities,
-        hasData: true,
+      // One request: the API creates the account and this month's balance together.
+      await createAccount.mutateAsync({
+        accountName: name.trim(),
+        accountType: type.trim(),
+        category,
+        initialBalance: { balance, date },
       });
-
-      // Refresh accounts list
-      await refetchAccounts();
-
-      addToast(`${newAccountName} created and added for this month`, "success");
-      setAddingAccountType(null);
-      setNewAccountBalance("");
-      setNewAccountName("");
-      if (onRefresh) {
-        await onRefresh();
-      }
+      addToast(`${name.trim()} created and added for this month`, "success");
+      setAddingCategory(null);
     } catch (err) {
       addToast(err.message || "Failed to create account", "error");
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleCancelAdd = () => {
-    setAddingAccountType(null);
-    setNewAccountBalance("");
-  };
-
-  const handleDeleteAccount = async (account) => {
-    if (!confirm(`Delete ${account.accountName} from this month?`)) {
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      await deleteAccountBalance(
-        account.id || account.accountId,
-        displayMonth.date,
-      );
-
-      // Remove the account from display
-      const updatedAccounts = displayMonth.accounts.filter(
-        (acc) =>
-          (acc.id || acc.accountId) !== (account.id || account.accountId),
-      );
-      const updatedAssets = updatedAccounts
-        .filter((acc) => acc.category === "ASSET")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-      const updatedLiabilities = updatedAccounts
-        .filter((acc) => acc.category === "LIABILITY")
-        .reduce((sum, acc) => sum + acc.balance, 0);
-
-      setDisplayMonth({
-        ...displayMonth,
-        accounts: updatedAccounts,
-        assets: updatedAssets,
-        liabilities: updatedLiabilities,
-        netWorth: updatedAssets - updatedLiabilities,
-        hasData: updatedAccounts.length > 0,
-      });
-
-      addToast(`${account.accountName} removed from this month`, "success");
-      if (onRefresh) {
-        await onRefresh();
-      }
-    } catch (err) {
-      addToast(err.message || "Failed to delete account", "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const assetAccounts = displayMonth.accounts
-    .filter((account) => account.category === "ASSET")
-    .sort((a, b) => a.accountType.localeCompare(b.accountType));
-
-  const liabilityAccounts = displayMonth.accounts
-    .filter((account) => account.category === "LIABILITY")
-    .sort((a, b) => a.accountType.localeCompare(b.accountType));
+  const sectionProps = (category) => ({
+    category,
+    accounts: category === "ASSET" ? month.assets : month.liabilities,
+    available: availableFor(category),
+    isSaving,
+    editingAccountId,
+    editBalance,
+    onEditBalanceChange: setEditBalance,
+    onStartEdit: startEdit,
+    onSaveEdit: handleSaveEdit,
+    onCancelEdit: cancelEdit,
+    onDelete: handleDelete,
+    isAdding: addingCategory === category,
+    onStartAdd: () => setAddingCategory(category),
+    onCancelAdd: () => setAddingCategory(null),
+    onAddExisting: handleAddExisting,
+    onCreate: (fields) => handleCreate(category, fields),
+  });
 
   return (
     <Modal
@@ -384,21 +220,16 @@ export function MonthlyDetailModal({
         <div className="flex justify-between items-start">
           <div>
             <h2 className="text-xl sm:text-2xl font-bold text-slate-800 mb-1">
-              {displayMonth.month} {selectedYear}
+              {title}
             </h2>
-            <div className="flex gap-5">
-              <div>
-                <div className={`text-lg font-bold text-blue-700`}>
-                  {Currencyformatter.format(displayMonth.netWorth)}
-                </div>
-              </div>
+            <div className="text-lg font-bold text-blue-700">
+              {currencyFormatter.format(month.netWorth)}
             </div>
           </div>
           <button
-            onClick={() => {
-              onClose();
-            }}
-            className="text-slate-400 hover:text-slate-700 hover: cursor-pointer flex-shrink-0"
+            onClick={onClose}
+            aria-label="Close"
+            className="text-slate-400 hover:text-slate-700 cursor-pointer flex-shrink-0"
           >
             <X size={24} />
           </button>
@@ -406,7 +237,7 @@ export function MonthlyDetailModal({
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {!displayMonth.hasData && (
+        {!month.hasData && (
           <div className="px-3 sm:px-5 py-4 bg-yellow-50 border border-yellow-200 rounded-lg m-3 sm:m-5 flex gap-3">
             <AlertCircle
               size={20}
@@ -417,566 +248,332 @@ export function MonthlyDetailModal({
                 No data for this month yet
               </h4>
               <p className="text-sm text-yellow-800">
-                Click the + button below to add account balances for{" "}
-                {displayMonth.month} {selectedYear}
+                Click the + button below to add account balances for {title}
               </p>
             </div>
           </div>
         )}
 
-        {/* Assets */}
-        <div className="px-3 sm:px-5 py-4 sm:py-5 border-b border-slate-100">
-          <div className="flex justify-between items-center mb-3 gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 text-emerald-600">
-              <TrendingUp size={16} />
-              Assets
-            </h3>
-            <button
-              onClick={() => handleAddAccountClick("ASSET")}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0 disabled:opacity-50 transition-colors"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {assetAccounts.map((account, accountIndex) => {
-              const isEditing = editingAccount === account;
-              const { change, changePercent } = getAccountChange(account);
-              return (
-                <div key={accountIndex}>
-                  <div className="bg-emerald-50 rounded-lg p-2 border border-emerald-200 flex justify-between items-center gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <Wallet
-                        size={16}
-                        className="text-emerald-500 flex-shrink-0"
-                      />
-                      <span className="text-slate-700 font-medium text-sm truncate">
-                        {account.accountName}
-                      </span>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline-block flex-shrink-0"
-                        style={{
-                          backgroundColor: "#10b98122",
-                          color: "#10b981",
-                        }}
-                      >
-                        {catLabel(account.accountType)}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap justify-end">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span
-                          className={`font-bold text-emerald-700 text-sm sm:text-base`}
-                        >
-                          {Currencyformatter.format(account.balance)}
-                        </span>
-                        {change !== null && (
-                          <div
-                            className={`text-xs font-medium ${change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-                          >
-                            {change >= 0 ? "+" : ""}
-                            {Currencyformatter.format(change)}
-                            <span className="ml-1 opacity-75">
-                              ({change >= 0 ? "+" : ""}
-                              {changePercent.toFixed(1)}%)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleEditClick(account)}
-                          className="p-1.5 text-blue-600 rounded-md hover:bg-blue-200 hover:text-blue-800 transition-colors duration-200 hover:cursor-pointer"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAccount(account)}
-                          disabled={isLoading}
-                          className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer disabled:opacity-50"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isEditing && (
-                    <div className="mt-2 sm:p-1">
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editBalance}
-                          onChange={(e) => setEditBalance(e.target.value)}
-                          placeholder="0.00"
-                          className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleSaveBalance}
-                          disabled={isLoading}
-                          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm flex-shrink-0"
-                        >
-                          {isLoading ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isLoading}
-                          className="px-3 sm:px-4 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm flex-shrink-0"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Add new asset account form */}
-            {addingAccountType === "ASSET" && (
-              <div className="bg-emerald-50 rounded-lg p-3 border border-emerald-300 border-dashed">
-                {/* Mode Toggle */}
-                <div className="flex gap-2 mb-4 border-b border-emerald-200 pb-2">
-                  <button
-                    onClick={() => setAddMode("select")}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      addMode === "select"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white text-emerald-600 border border-emerald-200"
-                    }`}
-                    disabled={isLoading}
-                  >
-                    Select Existing
-                  </button>
-                  <button
-                    onClick={() => setAddMode("create")}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      addMode === "create"
-                        ? "bg-emerald-600 text-white"
-                        : "bg-white text-emerald-600 border border-emerald-200"
-                    }`}
-                    disabled={isLoading}
-                  >
-                    Create New
-                  </button>
-                </div>
-
-                {addMode === "select" ? (
-                  <>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Select Account
-                      </label>
-                      <select
-                        id="asset-select"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        disabled={isLoading}
-                      >
-                        <option value="">Choose an account...</option>
-                        {allAccounts
-                          .filter((acc) => acc.category === "ASSET")
-                          .map((acc) => (
-                            <option
-                              key={acc.id || acc.accountId}
-                              value={acc.id || acc.accountId}
-                            >
-                              {acc.accountName} ({catLabel(acc.accountType)})
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Balance
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={newAccountBalance}
-                        onChange={(e) => setNewAccountBalance(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        disabled={isLoading}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const select =
-                            document.getElementById("asset-select");
-                          const selectedAccountId = select.value;
-                          const account = allAccounts.find((acc) => {
-                            const accId = acc.id || acc.accountId;
-                            return String(accId) === String(selectedAccountId);
-                          });
-                          if (account) {
-                            handleAddAccountSave(account);
-                          } else {
-                            addToast("Please select an account", "error");
-                          }
-                        }}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        {isLoading ? "Adding..." : "Add"}
-                      </button>
-                      <button
-                        onClick={handleCancelAdd}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Account Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newAccountName}
-                        onChange={(e) => setNewAccountName(e.target.value)}
-                        placeholder="e.g., My Crypto Wallet"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        disabled={isLoading}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Account Type
-                      </label>
-                      <select
-                        value={newAccountCategory}
-                        onChange={(e) => setNewAccountCategory(e.target.value)}
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        disabled={isLoading}
-                      >
-                        <option value="Cash & Savings">Cash & Savings</option>
-                        <option value="Investments">Investments</option>
-                        <option value="Retirement">Retirement</option>
-                        <option value="Property">Property</option>
-                      </select>
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Balance
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={newAccountBalance}
-                        onChange={(e) => setNewAccountBalance(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-emerald-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 text-sm"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleCreateAndAddAccount}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        {isLoading ? "Creating..." : "Create & Add"}
-                      </button>
-                      <button
-                        onClick={handleCancelAdd}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
+        <div className="border-b border-slate-100">
+          <AccountSection {...sectionProps("ASSET")} />
         </div>
-
-        {/* Liabilities */}
-        <div className="px-3 sm:px-5 py-4 sm:py-5">
-          <div className="flex justify-between items-center mb-3 gap-2">
-            <h3 className="text-sm font-semibold uppercase tracking-wider flex items-center gap-2 text-rose-600">
-              <TrendingDown size={16} />
-              Liabilities
-            </h3>
-            <button
-              onClick={() => handleAddAccountClick("LIABILITY")}
-              disabled={isLoading}
-              className="flex items-center gap-2 px-3 py-1.5 bg-rose-600 hover:bg-rose-700 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0 disabled:opacity-50 transition-colors"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-          <div className="space-y-2">
-            {liabilityAccounts.map((liability, liabIndex) => {
-              const isEditing = editingAccount === liability;
-              const { change, changePercent } = getAccountChange(liability);
-              return (
-                <div key={liabIndex}>
-                  <div className="bg-rose-50 rounded-lg p-2 border border-rose-200 flex justify-between items-center gap-3">
-                    <div className="flex items-center gap-2 min-w-0">
-                      <CreditCard
-                        size={16}
-                        className="text-rose-500 flex-shrink-0"
-                      />
-                      <span className="text-slate-700 font-medium text-sm truncate">
-                        {liability.accountName}
-                      </span>
-                      <span
-                        className="text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline-block flex-shrink-0"
-                        style={{
-                          backgroundColor: "#b91c1c22",
-                          color: "#b91c1c",
-                        }}
-                      >
-                        {liability.accountType}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-3 flex-wrap justify-end">
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span
-                          className={`font-bold text-rose-700 text-sm sm:text-base`}
-                        >
-                          {Currencyformatter.format(liability.balance)}
-                        </span>
-                        {change !== null && (
-                          <div
-                            className={`text-xs font-medium ${change >= 0 ? "text-rose-600" : "text-emerald-600"}`}
-                          >
-                            {change >= 0 ? "+" : ""}
-                            {Currencyformatter.format(change)}
-                            <span className="ml-1 opacity-75">
-                              ({change >= 0 ? "+" : ""}
-                              {changePercent.toFixed(1)}%)
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => handleEditClick(liability)}
-                          className="p-1.5 text-blue-600 rounded-md hover:bg-blue-200 hover:text-blue-800 transition-colors duration-200 hover:cursor-pointer"
-                        >
-                          <Edit2 size={14} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteAccount(liability)}
-                          disabled={isLoading}
-                          className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer disabled:opacity-50"
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {isEditing && (
-                    <div className="mt-2 sm:p-1">
-                      <div className="flex gap-2">
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={editBalance}
-                          onChange={(e) => setEditBalance(e.target.value)}
-                          placeholder="0.00"
-                          className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                          autoFocus
-                        />
-                        <button
-                          onClick={handleSaveBalance}
-                          disabled={isLoading}
-                          className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm flex-shrink-0"
-                        >
-                          {isLoading ? "Saving..." : "Save"}
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          disabled={isLoading}
-                          className="px-3 sm:px-4 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm flex-shrink-0"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Add new liability account form */}
-            {addingAccountType === "LIABILITY" && (
-              <div className="bg-rose-50 rounded-lg p-3 border border-rose-300 border-dashed">
-                {/* Mode Toggle */}
-                <div className="flex gap-2 mb-4 border-b border-rose-200 pb-2">
-                  <button
-                    onClick={() => setAddMode("select")}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      addMode === "select"
-                        ? "bg-rose-600 text-white"
-                        : "bg-white text-rose-600 border border-rose-200"
-                    }`}
-                    disabled={isLoading}
-                  >
-                    Select Existing
-                  </button>
-                  <button
-                    onClick={() => setAddMode("create")}
-                    className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${
-                      addMode === "create"
-                        ? "bg-rose-600 text-white"
-                        : "bg-white text-rose-600 border border-rose-200"
-                    }`}
-                    disabled={isLoading}
-                  >
-                    Create New
-                  </button>
-                </div>
-
-                {addMode === "select" ? (
-                  <>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Select Account
-                      </label>
-                      <select
-                        id="liability-select"
-                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                        disabled={isLoading}
-                      >
-                        <option value="">Choose an account...</option>
-                        {allAccounts
-                          .filter((acc) => acc.category === "LIABILITY")
-                          .map((acc) => (
-                            <option
-                              key={acc.id || acc.accountId}
-                              value={acc.id || acc.accountId}
-                            >
-                              {acc.accountName} ({acc.accountType})
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Balance
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={newAccountBalance}
-                        onChange={(e) => setNewAccountBalance(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                        disabled={isLoading}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => {
-                          const select =
-                            document.getElementById("liability-select");
-                          const selectedAccountId = select.value;
-                          const account = allAccounts.find((acc) => {
-                            const accId = acc.id || acc.accountId;
-                            return String(accId) === String(selectedAccountId);
-                          });
-                          if (account) {
-                            handleAddAccountSave(account);
-                          } else {
-                            addToast("Please select an account", "error");
-                          }
-                        }}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 bg-rose-600 text-white rounded-lg font-semibold hover:bg-rose-700 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        {isLoading ? "Adding..." : "Add"}
-                      </button>
-                      <button
-                        onClick={handleCancelAdd}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Account Name
-                      </label>
-                      <input
-                        type="text"
-                        value={newAccountName}
-                        onChange={(e) => setNewAccountName(e.target.value)}
-                        placeholder="e.g., Personal Loan"
-                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                        disabled={isLoading}
-                        autoFocus
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Account Type
-                      </label>
-                      <input
-                        type="text"
-                        value={newAccountCategory}
-                        onChange={(e) => setNewAccountCategory(e.target.value)}
-                        placeholder="e.g., Credit Card, Mortgage"
-                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="mb-3">
-                      <label className="block text-xs font-semibold text-slate-700 mb-2">
-                        Balance
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={newAccountBalance}
-                        onChange={(e) => setNewAccountBalance(e.target.value)}
-                        placeholder="0.00"
-                        className="w-full px-3 py-2 border border-rose-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 text-sm"
-                        disabled={isLoading}
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleCreateAndAddAccount}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 bg-rose-600 text-white rounded-lg font-semibold hover:bg-rose-700 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        {isLoading ? "Creating..." : "Create & Add"}
-                      </button>
-                      <button
-                        onClick={handleCancelAdd}
-                        disabled={isLoading}
-                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm transition-colors"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
+        <AccountSection {...sectionProps("LIABILITY")} />
       </div>
     </Modal>
+  );
+}
+
+function AccountSection({
+  category,
+  accounts,
+  available,
+  isSaving,
+  editingAccountId,
+  editBalance,
+  onEditBalanceChange,
+  onStartEdit,
+  onSaveEdit,
+  onCancelEdit,
+  onDelete,
+  isAdding,
+  onStartAdd,
+  onCancelAdd,
+  onAddExisting,
+  onCreate,
+}) {
+  const s = SECTION[category];
+  const { HeadingIcon, RowIcon } = s;
+
+  return (
+    <div className="px-3 sm:px-5 py-4 sm:py-5">
+      <div className="flex justify-between items-center mb-3 gap-2">
+        <h3
+          className={`text-sm font-semibold uppercase tracking-wider flex items-center gap-2 ${s.heading}`}
+        >
+          <HeadingIcon size={16} />
+          {s.title}
+        </h3>
+        <button
+          onClick={onStartAdd}
+          disabled={isSaving}
+          aria-label={`Add to ${s.title.toLowerCase()}`}
+          className={`flex items-center gap-2 px-3 py-1.5 text-white rounded-lg font-semibold hover:cursor-pointer flex-shrink-0 disabled:opacity-50 transition-colors ${s.solid}`}
+        >
+          <Plus size={14} />
+        </button>
+      </div>
+
+      <div className="space-y-2">
+        {accounts.map((account) => (
+          <div key={account.accountId}>
+            <div
+              className={`rounded-lg p-2 border flex justify-between items-center gap-3 ${s.row}`}
+            >
+              <div className="flex items-center gap-2 min-w-0">
+                <RowIcon size={16} className={`flex-shrink-0 ${s.rowIcon}`} />
+                <span className="text-slate-700 font-medium text-sm truncate">
+                  {account.accountName}
+                </span>
+                <span
+                  className="text-xs px-2 py-0.5 rounded-full font-medium hidden sm:inline-block flex-shrink-0"
+                  style={s.badge}
+                >
+                  {account.accountType}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 flex-wrap justify-end">
+                <div className="flex flex-col items-end gap-0.5">
+                  <span
+                    className={`font-bold text-sm sm:text-base ${s.balance}`}
+                  >
+                    {currencyFormatter.format(account.balance)}
+                  </span>
+                  {account.change !== null && (
+                    <div
+                      className={`text-xs font-medium ${s.good(account.change) ? "text-emerald-600" : "text-rose-600"}`}
+                    >
+                      {account.change >= 0 ? "+" : ""}
+                      {currencyFormatter.format(account.change)}
+                      <span className="ml-1 opacity-75">
+                        ({account.change >= 0 ? "+" : ""}
+                        {account.changePercent.toFixed(1)}%)
+                      </span>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => onStartEdit(account)}
+                    aria-label={`Edit ${account.accountName}`}
+                    className="p-1.5 text-blue-600 rounded-md hover:bg-blue-200 hover:text-blue-800 transition-colors duration-200 hover:cursor-pointer"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    onClick={() => onDelete(account)}
+                    disabled={isSaving}
+                    aria-label={`Remove ${account.accountName} from this month`}
+                    className="p-1.5 text-rose-500 rounded-md hover:bg-rose-200 hover:text-rose-700 transition-colors duration-200 hover:cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {editingAccountId === account.accountId && (
+              <div className="mt-2 sm:p-1">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={editBalance}
+                    onChange={(e) => onEditBalanceChange(e.target.value)}
+                    placeholder="0.00"
+                    aria-label={`New balance for ${account.accountName}`}
+                    className="flex-1 px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                    autoFocus
+                  />
+                  <button
+                    onClick={() => onSaveEdit(account)}
+                    disabled={isSaving}
+                    className="px-3 sm:px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm flex-shrink-0"
+                  >
+                    {isSaving ? "Saving..." : "Save"}
+                  </button>
+                  <button
+                    onClick={onCancelEdit}
+                    disabled={isSaving}
+                    className="px-3 sm:px-4 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm flex-shrink-0"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+
+        {isAdding && (
+          <AddAccountForm
+            category={category}
+            available={available}
+            isSaving={isSaving}
+            onAddExisting={onAddExisting}
+            onCreate={onCreate}
+            onCancel={onCancelAdd}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** "Select Existing" / "Create New". Mounted fresh each time, so it always opens empty. */
+function AddAccountForm({
+  category,
+  available,
+  isSaving,
+  onAddExisting,
+  onCreate,
+  onCancel,
+}) {
+  const s = SECTION[category];
+  // Same cached query as the modal's; read here only for its loading/error state.
+  const accounts = useAccounts();
+  const [mode, setMode] = useState("select");
+  const [selectedId, setSelectedId] = useState("");
+  const [name, setName] = useState("");
+  const [type, setType] = useState(category === "ASSET" ? ASSET_TYPES[0] : "");
+  const [balance, setBalance] = useState("");
+  const field = `w-full mt-2 px-3 py-2 border rounded-lg font-normal focus:outline-none focus:ring-2 text-sm ${s.input}`;
+  const primary = `flex-1 px-3 py-2 text-white rounded-lg font-semibold disabled:opacity-50 text-sm transition-colors ${s.solid}`;
+
+  const balanceField = (autoFocus) => (
+    <label className={LABEL}>
+      Balance
+      <input
+        type="text"
+        inputMode="decimal"
+        value={balance}
+        onChange={(e) => setBalance(e.target.value)}
+        placeholder="0.00"
+        className={field}
+        disabled={isSaving}
+        autoFocus={autoFocus}
+      />
+    </label>
+  );
+
+  return (
+    <div className={`rounded-lg p-3 border border-dashed ${s.form}`}>
+      <div className={`flex gap-2 mb-4 border-b pb-2 ${s.divider}`}>
+        {[
+          ["select", "Select Existing"],
+          ["create", "Create New"],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setMode(key)}
+            className={`flex-1 px-3 py-2 text-sm font-semibold rounded-lg transition-colors ${mode === key ? s.toggleOn : s.toggleOff}`}
+            disabled={isSaving}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {mode === "select" && accounts.isLoadingError ? (
+        <>
+          <LoadError
+            what="accounts"
+            error={accounts.error}
+            onRetry={() => accounts.refetch()}
+            retrying={accounts.isFetching}
+            card={false}
+          />
+          <button onClick={onCancel} className={`w-full ${CANCEL}`}>
+            Cancel
+          </button>
+        </>
+      ) : mode === "select" ? (
+        <>
+          <label className={LABEL}>
+            Select Account
+            <select
+              value={selectedId}
+              onChange={(e) => setSelectedId(e.target.value)}
+              className={field}
+              disabled={isSaving || accounts.isPending}
+            >
+              <option value="">
+                {accounts.isPending
+                  ? "Loading accounts…"
+                  : available.length
+                    ? "Choose an account..."
+                    : "All accounts are already in this month"}
+              </option>
+              {available.map((acc) => (
+                <option key={acc.id} value={acc.id}>
+                  {acc.accountName} ({acc.accountType})
+                </option>
+              ))}
+            </select>
+          </label>
+          {balanceField(true)}
+          <div className="flex gap-2">
+            <button
+              onClick={() =>
+                onAddExisting(
+                  available.find((acc) => String(acc.id) === selectedId),
+                  balance,
+                )
+              }
+              disabled={isSaving}
+              className={primary}
+            >
+              {isSaving ? "Adding..." : "Add"}
+            </button>
+            <button onClick={onCancel} disabled={isSaving} className={CANCEL}>
+              Cancel
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <label className={LABEL}>
+            Account Name
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder={s.namePlaceholder}
+              className={field}
+              disabled={isSaving}
+              autoFocus
+            />
+          </label>
+          <label className={LABEL}>
+            Account Type
+            {category === "ASSET" ? (
+              <select
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                className={field}
+                disabled={isSaving}
+              >
+                {ASSET_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {t}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                type="text"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                placeholder="e.g., Credit Card, Mortgage"
+                className={field}
+                disabled={isSaving}
+              />
+            )}
+          </label>
+          {balanceField(false)}
+          <div className="flex gap-2">
+            <button
+              onClick={() => onCreate({ name, type, raw: balance })}
+              disabled={isSaving}
+              className={primary}
+            >
+              {isSaving ? "Creating..." : "Create & Add"}
+            </button>
+            <button onClick={onCancel} disabled={isSaving} className={CANCEL}>
+              Cancel
+            </button>
+          </div>
+        </>
+      )}
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Home, Galaxy } from "lucide-react";
 import { useMcuTracker } from "../context/McuTrackerContext";
-import { useMcuTrackerData } from "../hooks/useMcuTrackerData";
+import { useMcuTrackerData } from "../hooks";
 import { normalizeTrackerData } from "../utils/normalizeTrackerData";
 import { combineStats, computeStats, percentage } from "../utils/stats";
 import { VIEWS, BREAKDOWN } from "../utils/statConstants";

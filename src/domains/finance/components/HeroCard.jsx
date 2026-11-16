@@ -5,9 +5,9 @@ import {
   ChevronDown,
 } from "lucide-react";
 import { useState } from "react";
-import { Currencyformatter as currencyFormatter } from "../utils/currency.js";
-import { useNetWorthHistory } from "../hooks/useNetWorthHistory.js";
-import { getYearMetrics, getYearStats } from "../utils/metrics.js";
+import { currencyFormatter as currencyFormatter } from "../utils/currency";
+import { useNetWorthHistory } from "../hooks";
+import { getYearMetrics, getYearStats } from "../utils/metrics";
 
 function StatItem({ label, value, valueClass = "text-white" }) {
   return (
