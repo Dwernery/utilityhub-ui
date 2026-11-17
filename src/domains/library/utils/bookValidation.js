@@ -3,10 +3,9 @@ export function isBookValid(book) {
     book?.title?.trim() &&
     book?.authorName?.trim() &&
     book?.pages &&
-    Number(book.pages) > 0 &&
-    book?.isbn13?.trim(),
+    Number(book.pages) > 0,
   );
 }
 
 export const BOOK_VALIDATION_MESSAGE =
-  "Title, author, pages, and ISBN are required";
+  "Title, author, and pages are required";

@@ -22,7 +22,6 @@ export function AddBookForm({ setShowAddForm }) {
     authorName: "",
     seriesName: "",
     pages: "",
-    isbn13: "",
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
@@ -53,7 +52,6 @@ export function AddBookForm({ setShowAddForm }) {
         authorName: newBook.authorName.trim(),
         seriesName: newBook.seriesName.trim(),
         pages: newBook.pages,
-        isbn13: newBook.isbn13.trim(),
       };
 
       // Add the book and wait for success, capturing the response
@@ -94,7 +92,6 @@ export function AddBookForm({ setShowAddForm }) {
         authorName: "",
         seriesName: "",
         pages: "",
-        isbn13: "",
       });
       setSelectedFile(null);
       setShowAddForm(false);
@@ -173,15 +170,6 @@ export function AddBookForm({ setShowAddForm }) {
           }
           addNewLabel="Add series"
         />
-
-        <input
-          type="text"
-          placeholder="ISBN *"
-          value={newBook.isbn13}
-          disabled={isBusy}
-          onChange={(e) => setNewBook({ ...newBook, isbn13: e.target.value })}
-          className="px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 sm:col-span-2 disabled:bg-slate-50 disabled:opacity-60"
-        />
       </div>
 
       <FileUploadInput
@@ -210,7 +198,6 @@ export function AddBookForm({ setShowAddForm }) {
               authorName: "",
               seriesName: "",
               pages: "",
-              isbn13: "",
             });
             setSelectedFile(null);
           }}

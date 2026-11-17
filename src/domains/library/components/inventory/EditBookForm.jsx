@@ -78,7 +78,6 @@ export function EditBookForm() {
           : Number(book.pages),
       authorName: book.authorName?.trim(),
       seriesName: norm(book.seriesName?.trim() || null),
-      isbn13: norm(book.isbn13 || null),
       status: book.status,
       startDate: book.startDate || null,
       endDate: book.endDate || null,
@@ -92,7 +91,6 @@ export function EditBookForm() {
       "pages",
       "authorName",
       "seriesName",
-      "isbn13",
       "status",
       "startDate",
       "endDate",
@@ -157,7 +155,6 @@ export function EditBookForm() {
         {[
           ["Title", "title", "text"],
           ["Pages", "pages", "number"],
-          ["ISBN", "isbn13", "text"],
         ].map(([label, field, type]) => (
           <div key={field}>
             <label className="block text-xs font-medium text-slate-600 mb-1">

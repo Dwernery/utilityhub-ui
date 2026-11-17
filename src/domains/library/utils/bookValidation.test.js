@@ -5,7 +5,6 @@ const valid = {
   title: "Dune",
   authorName: "Frank Herbert",
   pages: 412,
-  isbn13: "9780441013593",
 };
 
 describe("isBookValid", () => {
@@ -19,7 +18,6 @@ describe("isBookValid", () => {
     ["missing author", { authorName: null }],
     ["zero pages", { pages: "0" }],
     ["non-numeric pages", { pages: "abc" }],
-    ["missing ISBN", { isbn13: "" }],
   ])("rejects a book with %s", (_, override) => {
     expect(isBookValid({ ...valid, ...override })).toBe(false);
   });

@@ -36,7 +36,7 @@ export async function createSeries(seriesName) {
   return { name: seriesName };
 }
 
-export function addBook({ title, pages, authorName, seriesName, isbn13 }) {
+export function addBook({ title, pages, authorName, seriesName }) {
   return requestJson("/api/library/books", {
     method: "POST",
     body: {
@@ -47,7 +47,6 @@ export function addBook({ title, pages, authorName, seriesName, isbn13 }) {
           : Number(pages),
       authorName,
       seriesName: seriesName || null,
-      isbn13: isbn13 || null,
     },
     errorMessage: "Failed to create book",
     includeErrorDetail: true,
@@ -73,7 +72,6 @@ export async function updateBook(data = {}) {
         payload[key] = value === "" || value === null ? 0 : Number(value);
         break;
       case "seriesName":
-      case "isbn13":
         payload[key] = value || null;
         break;
       default:
