@@ -4,7 +4,12 @@ import { Home, Galaxy } from "lucide-react";
 import { useMcuTracker } from "../context/McuTrackerContext";
 import { useMcuTrackerData } from "../hooks";
 import { normalizeTrackerData } from "../utils/normalizeTrackerData";
-import { combineStats, computeStats, percentage } from "../utils/stats";
+import {
+  combineStats,
+  computeStats,
+  formatMinutes,
+  percentage,
+} from "../utils/stats";
 import { VIEWS, BREAKDOWN } from "../utils/statConstants";
 
 export function Header() {
@@ -25,7 +30,9 @@ export function Header() {
     return combineStats([computeStats(items, watched)]);
   }, [view, phases, expandedCategories, watched]);
 
-  const pct = percentage(stats.done, stats.total);
+  // Weighted by runtime, so a 3-hour movie moves the bar more than a 30-minute episode.
+  const pct = percentage(stats.minutesDone, stats.minutes);
+  const left = stats.minutes - stats.minutesDone;
 
   return (
     <div className="max-w-7xl mx-auto px-4">
@@ -81,6 +88,17 @@ export function Header() {
                     className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-500 shadow-[0_0_10px_rgba(139,124,246,0.35)] transition-[width] duration-300"
                     style={{ width: `${pct}%` }}
                   />
+                </div>
+                <div className="flex items-center justify-between text-[10px] text-slate-400 tabular-nums">
+                  <span>
+                    {formatMinutes(stats.minutesDone)} of{" "}
+                    {formatMinutes(stats.minutes)}
+                  </span>
+                  <span>
+                    {left > 0
+                      ? `${formatMinutes(left)} to go`
+                      : "All caught up"}
+                  </span>
                 </div>
               </div>
             </div>

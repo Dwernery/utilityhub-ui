@@ -44,17 +44,26 @@ export function isItemPartial(item, watched) {
   return getStatus(watched, item.id) === "IN_PROGRESS";
 }
 
+/** Runtime in minutes; every production title has one, so a missing value just counts as 0. */
+function minutesOf(runtime) {
+  return runtime ?? 0;
+}
+
 /**
- * Get the progress fraction for a TV show (0-1)
+ * Get the progress fraction for a TV show (0-1): share of its runtime watched
  * Used for progress ring on poster cards
  */
 export function getItemProgressFraction(item, watched) {
   if (item.type !== "tv") return 0.5;
   if (!item.episodes?.length) return 0;
-  const watchedCount = item.episodes.filter(
-    (episode) => getStatus(watched, episode.globalId) === "WATCHED",
-  ).length;
-  return watchedCount / item.episodes.length;
+  let total = 0;
+  let done = 0;
+  for (const episode of item.episodes) {
+    const minutes = minutesOf(episode.runtime);
+    total += minutes;
+    if (getStatus(watched, episode.globalId) === "WATCHED") done += minutes;
+  }
+  return total > 0 ? done / total : 0;
 }
 
 export function unitCount(item) {
@@ -70,6 +79,9 @@ const EMPTY_STATS = {
   episodesDone: 0,
   specials: 0,
   specialsDone: 0,
+  // Runtime of everything counted, in minutes.
+  minutes: 0,
+  minutesDone: 0,
 };
 
 export function computeStats(items, watched) {
@@ -77,6 +89,14 @@ export function computeStats(items, watched) {
 
   for (const item of items) {
     stats.total += unitCount(item);
+
+    // Time watched: only finished titles count; in-progress ones add nothing until watched.
+    if (item.type !== "tv") {
+      const minutes = minutesOf(item.runtime);
+      stats.minutes += minutes;
+      if (getStatus(watched, item.id) === "WATCHED")
+        stats.minutesDone += minutes;
+    }
 
     if (item.type === "movie") {
       stats.movies++;
@@ -93,9 +113,12 @@ export function computeStats(items, watched) {
     } else if (item.type === "tv") {
       stats.episodes += item.episodes.length;
       for (const episode of item.episodes) {
+        const minutes = minutesOf(episode.runtime);
+        stats.minutes += minutes;
         if (getStatus(watched, episode.globalId) === "WATCHED") {
           stats.episodesDone++;
           stats.done++;
+          stats.minutesDone += minutes;
         }
       }
     }
@@ -113,6 +136,13 @@ export function combineStats(statsList) {
     },
     { ...EMPTY_STATS },
   );
+}
+
+/** Whole hours ("143h"); minutes only for the last stretch under an hour ("45 min to go"). */
+export function formatMinutes(minutes) {
+  return minutes < 60
+    ? `${Math.round(minutes)} min`
+    : `${Math.round(minutes / 60)}h`;
 }
 
 export function percentage(done, total) {

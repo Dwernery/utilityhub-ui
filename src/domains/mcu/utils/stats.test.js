@@ -1,6 +1,8 @@
 import { describe, it, expect } from "vitest";
 import {
   computeStats,
+  formatMinutes,
+  getItemProgressFraction,
   isItemComplete,
   isItemPartial,
   nextStatus,
@@ -64,7 +66,51 @@ describe("computeStats", () => {
       specialsDone: 0,
       episodes: 2,
       episodesDone: 1,
+      minutes: 0, // no runtimes in these fixtures
+      minutesDone: 0,
     });
+  });
+
+  it("weights time watched by runtime, and in-progress movies count as 0", () => {
+    const long = { ...movie, runtime: 180 };
+    const short = {
+      ...season,
+      episodes: [
+        { globalId: "episode:1", title: "E1", episodeNumber: 1, runtime: 30 },
+        { globalId: "episode:2", title: "E2", episodeNumber: 2, runtime: 30 },
+      ],
+    };
+    const stats = computeStats([long, short], {
+      "movie:1": "IN_PROGRESS",
+      "episode:1": "WATCHED",
+      "episode:2": "WATCHED",
+    });
+    expect(stats.minutes).toBe(240);
+    expect(stats.minutesDone).toBe(60);
+  });
+});
+
+describe("getItemProgressFraction", () => {
+  it("fills a show's ring by runtime, not episode count", () => {
+    const uneven = {
+      ...season,
+      episodes: [
+        { globalId: "episode:1", title: "E1", episodeNumber: 1, runtime: 30 },
+        { globalId: "episode:2", title: "E2", episodeNumber: 2, runtime: 90 },
+      ],
+    };
+    expect(getItemProgressFraction(uneven, { "episode:1": "WATCHED" })).toBe(
+      0.25,
+    );
+  });
+});
+
+describe("formatMinutes", () => {
+  it("uses whole hours, and minutes only under an hour", () => {
+    expect(formatMinutes(45)).toBe("45 min");
+    expect(formatMinutes(120)).toBe("2h");
+    expect(formatMinutes(150)).toBe("3h");
+    expect(formatMinutes(4870)).toBe("81h");
   });
 });
 

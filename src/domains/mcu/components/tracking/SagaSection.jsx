@@ -19,7 +19,7 @@ export function SagaSection({
   // Determine if this saga section should be expanded by checking sagaKey in expandedSections
   const expanded = !!expandedSections[sagaKey];
   const stats = combineStats(cards.map((card) => card.stats));
-  const pct = percentage(stats.done, stats.total);
+  const pct = percentage(stats.minutesDone, stats.minutes);
 
   return (
     <div className="mb-5">
