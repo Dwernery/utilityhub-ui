@@ -1,19 +1,17 @@
 import { API_URL } from "./config";
-import { clearApiToken, getApiToken } from "./apiToken";
+import { setSessionState } from "./session";
 
 // Shared fetch wrapper for every domain API client. Mirrors utility-hub-mobile's
 // src/lib/http.ts so the two clients build requests and report errors the same way.
+// The session travels as an HttpOnly cookie, which the browser adds by itself.
 
-/** The API refused the access token (HTTP 401): the user has to unlock again. */
+/** The API refused the session (HTTP 401): the user has to sign in again. */
 export class UnauthorizedError extends Error {
-  constructor(message = "Your access token was not accepted. Enter it again.") {
+  constructor(message = "Your session has ended. Sign in again.") {
     super(message);
     this.name = "UnauthorizedError";
   }
 }
-
-const authorization = (token) =>
-  token ? { Authorization: `Bearer ${token}` } : undefined;
 
 /**
  * Extracts a human-readable message from a failed response. The API returns RFC 9457
@@ -47,22 +45,18 @@ async function send(
   path,
   { method = "GET", body, errorMessage, includeErrorDetail },
 ) {
-  const token = getApiToken();
   const response = await fetch(`${API_URL}${path}`, {
     method,
-    headers: {
-      ...authorization(token),
-      ...((body !== undefined || method !== "GET") && {
-        "Content-Type": "application/json",
-      }),
-    },
+    credentials: "same-origin",
+    headers:
+      body !== undefined || method !== "GET"
+        ? { "Content-Type": "application/json" }
+        : undefined,
     body: body !== undefined ? JSON.stringify(body) : undefined,
   });
 
   if (response.status === 401) {
-    // Forget the token so the unlock screen appears, but only if it's still the one
-    // this request used: a slow, old request mustn't wipe a token just entered.
-    if (getApiToken() === token) clearApiToken();
+    setSessionState("signedOut"); // the sign-in screen appears
     throw new UnauthorizedError();
   }
 
@@ -76,6 +70,7 @@ async function send(
     throw new Error(`${errorMessage} (status ${response.status})`);
   }
 
+  setSessionState("signedIn");
   return response;
 }
 
@@ -100,17 +95,79 @@ export async function requestVoid(path, options) {
   await send(path, options);
 }
 
-/**
- * Tries a token against the API before it is saved, so a typo gets a clear message.
- * @returns {Promise<"valid" | "invalid">} rejects if the server can't be reached or fails
- */
-export async function checkApiToken(token) {
-  const response = await fetch(`${API_URL}/api/finance/accounts`, {
-    headers: authorization(token),
+/** Sign-in, sign-out and passkey calls: their errors are shown on the sign-in screen as they are. */
+async function authRequest(path, body) {
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "same-origin",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body ?? {}),
   });
-  if (response.status === 401) return "invalid";
+  if (!response.ok) {
+    const message =
+      response.status === 429
+        ? "Too many attempts. Wait a few minutes and try again."
+        : await readErrorMessage(response);
+    const error = new Error(
+      message || `The server had a problem (status ${response.status})`,
+    );
+    error.status = response.status;
+    throw error;
+  }
+  return response.status === 204 ? null : response.json();
+}
+
+/**
+ * Signs in with the password. On success the API sets the session cookie.
+ * @returns {Promise<{deviceName: string, expiresAt: string}>}
+ */
+export async function login(password, deviceName) {
+  const session = await authRequest("/api/auth/login", {
+    password,
+    deviceName,
+  });
+  setSessionState("signedIn");
+  return session;
+}
+
+/** Signs this browser out: the API clears the cookie. */
+export async function logout() {
+  try {
+    await authRequest("/api/auth/logout");
+  } finally {
+    setSessionState("signedOut");
+  }
+}
+
+/**
+ * Asks the API whether this browser's cookie is still a valid session.
+ * @returns {Promise<boolean>} rejects if the server can't be reached or fails
+ */
+export async function checkSession() {
+  const response = await fetch(`${API_URL}/api/auth/me`, {
+    credentials: "same-origin",
+  });
+  if (response.status === 401) {
+    setSessionState("signedOut");
+    return false;
+  }
   if (!response.ok) {
     throw new Error(`The server had a problem (status ${response.status})`);
   }
-  return "valid";
+  setSessionState("signedIn");
+  return true;
 }
+
+/** Passkey (Touch ID) steps; see lib/passkey.js. */
+export const passkeyApi = {
+  signInOptions: () => authRequest("/api/auth/passkey/options"),
+  signIn: (challengeToken, credential, deviceName) =>
+    authRequest("/api/auth/passkey/login", {
+      challengeToken,
+      credential,
+      deviceName,
+    }),
+  registrationOptions: () => authRequest("/api/auth/passkey/register/options"),
+  register: (challengeToken, credential) =>
+    authRequest("/api/auth/passkey/register", { challengeToken, credential }),
+};
