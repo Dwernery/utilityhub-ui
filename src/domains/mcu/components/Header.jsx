@@ -11,6 +11,7 @@ import {
   percentage,
 } from "../utils/stats";
 import { VIEWS, BREAKDOWN } from "../utils/statConstants";
+import { AddContentButton } from "./editing/AddContentButton";
 
 export function Header() {
   const { view, setView, watched } = useMcuTracker();
@@ -46,13 +47,16 @@ export function Header() {
                 Watch Tracker
               </span>
             </h1>
-            <Link
-              to="/"
-              className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-400 transition-colors w-fit"
-            >
-              <Home className="w-3 h-3" />
-              Home
-            </Link>
+            <div className="flex items-start gap-3">
+              <AddContentButton />
+              <Link
+                to="/"
+                className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-400 transition-colors w-fit pt-1"
+              >
+                <Home className="w-3 h-3" />
+                Home
+              </Link>
+            </div>
           </div>
 
           <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2 mt-3.5">

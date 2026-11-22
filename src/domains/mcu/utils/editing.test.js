@@ -1,0 +1,184 @@
+import { describe, expect, it } from "vitest";
+import {
+  domainOptions,
+  draftFromRaw,
+  draftToRequest,
+  emptyDraft,
+  episodeToRequest,
+  findRaw,
+  nextEpisodeNumber,
+  nextSeasonDraft,
+  parseGlobalId,
+} from "./editing";
+
+const data = {
+  domains: [
+    {
+      domainName: "Phase 4",
+      movies: [
+        {
+          globalId: "movie:7",
+          title: "Werewolf by Night",
+          type: "SPECIAL",
+          premiereDate: "2022-10-07",
+          runtime: 53,
+          synopsis: "Monsters.",
+        },
+      ],
+      shows: [
+        {
+          globalId: "show:3",
+          title: "Loki",
+          premiereDate: "2021-06-09",
+          synopsis: "Variant.",
+          seasons: [
+            {
+              seasonNumber: 1,
+              episodes: [
+                { id: 10, globalId: "episode:10", episodeNumber: 1 },
+                { id: 12, globalId: "episode:12", episodeNumber: 3 },
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    { domainName: "Fox X-Men Universe", movies: [], shows: [] },
+    { domainName: "Defenders", movies: [], shows: [] },
+  ],
+};
+
+describe("parseGlobalId", () => {
+  it("splits kind and numeric id", () => {
+    expect(parseGlobalId("show:3")).toEqual({ kind: "show", id: 3 });
+    expect(parseGlobalId("episode:40")).toEqual({ kind: "episode", id: 40 });
+  });
+  it("rejects anything else", () => {
+    expect(parseGlobalId("show:3-season1")).toBeNull();
+    expect(parseGlobalId(undefined)).toBeNull();
+  });
+});
+
+describe("findRaw", () => {
+  it("finds a movie with its domain", () => {
+    const raw = findRaw(data, "movie:7");
+    expect(raw.kind).toBe("movie");
+    expect(raw.domain).toBe("Phase 4");
+  });
+  it("finds a season with its episodes", () => {
+    const raw = findRaw(data, "show:3");
+    expect(raw.seasonNumber).toBe(1);
+    expect(raw.episodes).toHaveLength(2);
+  });
+  it("returns null for unknown ids", () => {
+    expect(findRaw(data, "movie:999")).toBeNull();
+  });
+});
+
+describe("domainOptions", () => {
+  it("lists Phase 1–6 first, then other domains alphabetically", () => {
+    expect(domainOptions(data)).toEqual([
+      "Phase 1",
+      "Phase 2",
+      "Phase 3",
+      "Phase 4",
+      "Phase 5",
+      "Phase 6",
+      "Defenders",
+      "Fox X-Men Universe",
+    ]);
+  });
+});
+
+describe("drafts", () => {
+  it("edits a special with its full date and domain", () => {
+    expect(draftFromRaw(findRaw(data, "movie:7"))).toMatchObject({
+      kind: "special",
+      premiereDate: "2022-10-07",
+      runtime: "53",
+      domain: "Phase 4",
+      synopsis: "Monsters.",
+    });
+  });
+  it("edits a season with its synopsis", () => {
+    expect(draftFromRaw(findRaw(data, "show:3"))).toMatchObject({
+      kind: "show",
+      season: "1",
+      synopsis: "Variant.",
+    });
+  });
+  it("prefills the next season", () => {
+    expect(nextSeasonDraft(findRaw(data, "show:3"))).toMatchObject({
+      title: "Loki",
+      season: "2",
+      domain: "Phase 4",
+      synopsis: "",
+      premiereDate: "",
+    });
+  });
+  it("suggests the episode after the highest number", () => {
+    expect(nextEpisodeNumber(findRaw(data, "show:3").episodes)).toBe(4);
+    expect(nextEpisodeNumber([])).toBe(1);
+  });
+});
+
+describe("draftToRequest", () => {
+  const movie = {
+    ...emptyDraft("movie"),
+    title: " Thunderbolts* ",
+    premiereDate: "2025-05-02",
+    runtime: "127",
+    domain: "Phase 5",
+    synopsis: " Antiheroes. ",
+  };
+
+  it("builds a trimmed movie body", () => {
+    expect(draftToRequest(movie)).toEqual({
+      ok: true,
+      body: {
+        title: "Thunderbolts*",
+        premiereDate: "2025-05-02",
+        runtime: 127,
+        synopsis: "Antiheroes.",
+        domain: "Phase 5",
+        special: false,
+      },
+    });
+  });
+  it("requires runtime and synopsis", () => {
+    expect(draftToRequest({ ...movie, runtime: "" }).ok).toBe(false);
+    expect(draftToRequest({ ...movie, synopsis: "  " }).ok).toBe(false);
+  });
+  it("builds a season body without runtime", () => {
+    const result = draftToRequest({ ...movie, kind: "show", season: "2" });
+    expect(result.body).toEqual({
+      title: "Thunderbolts*",
+      season: 2,
+      premiereDate: "2025-05-02",
+      synopsis: "Antiheroes.",
+      domain: "Phase 5",
+    });
+  });
+  it("rejects a zero season", () => {
+    expect(draftToRequest({ ...movie, kind: "show", season: "0" }).ok).toBe(
+      false,
+    );
+  });
+});
+
+describe("episodeToRequest", () => {
+  it("requires title and runtime", () => {
+    expect(
+      episodeToRequest({ episodeNumber: "1", title: "", runtime: "50" }).ok,
+    ).toBe(false);
+    expect(
+      episodeToRequest({ episodeNumber: "1", title: "Pilot", runtime: "" }).ok,
+    ).toBe(false);
+  });
+  it("builds a body", () => {
+    expect(
+      episodeToRequest({ episodeNumber: "2", title: " Optics ", runtime: "45" })
+        .body,
+    ).toEqual({ episodeNumber: 2, title: "Optics", runtime: 45 });
+  });
+});

@@ -20,9 +20,15 @@ const initialView = () => {
  */
 export function McuTrackerProvider({ children }) {
   const [view, setView] = useState(initialView);
+  // globalId of the item open in the detail modal ("movie:12", "show:3"), or null.
+  // Kept as an id, not an object, so the modal always shows the latest data.
+  const [selectedId, setSelectedId] = useState(null);
   const { data } = useMcuTrackerData();
   const watched = useMemo(() => buildWatchedMap(data), [data]);
-  const value = useMemo(() => ({ view, setView, watched }), [view, watched]);
+  const value = useMemo(
+    () => ({ view, setView, watched, selectedId, setSelectedId }),
+    [view, watched, selectedId],
+  );
 
   return (
     <McuTrackerContext.Provider value={value}>

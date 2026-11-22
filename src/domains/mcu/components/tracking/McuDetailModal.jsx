@@ -1,5 +1,22 @@
-import { X } from "lucide-react";
+import { CopyPlus, Pencil, Plus, Trash2, X } from "lucide-react";
+import { useState } from "react";
 import { Modal } from "../../../../components/Modal";
+import { useToast } from "../../../../context/ToastContext";
+import {
+  useDeleteEpisode,
+  useDeleteMcuItem,
+  useMcuTrackerData,
+} from "../../hooks";
+import {
+  draftFromRaw,
+  findRaw,
+  KIND_LABELS,
+  nextEpisodeNumber,
+  nextSeasonDraft,
+  parseGlobalId,
+} from "../../utils/editing";
+import { McuItemForm } from "../editing/McuItemForm";
+import { EpisodeForm } from "../editing/EpisodeForm";
 import { useMcuTracker } from "../../context/McuTrackerContext";
 import { useChangeStatus } from "../../useChangeStatus";
 import { getStatus, nextStatus } from "../../utils/stats";
@@ -7,16 +24,107 @@ import { TYPE_META } from "../../utils/constants";
 import { posterBackground } from "../../utils/posterArt";
 import { MODAL_TITLE, MODAL_LABELS, STATUS } from "../../utils/statConstants";
 
+const iconButton =
+  "p-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer disabled:opacity-50";
+
 export function McuDetailModal({
   isOpen,
   onClose,
+  onSelect,
   selectedItem,
   selectedItemColor,
 }) {
   const { watched } = useMcuTracker();
   const { change, isPending: isUpdating } = useChangeStatus();
+  const { data } = useMcuTrackerData();
+  const deleteItem = useDeleteMcuItem();
+  const deleteEpisode = useDeleteEpisode();
+  const addToast = useToast();
+  // "view" | "edit" | "next-season"
+  const [mode, setMode] = useState("view");
+  // The episode being edited (its id), "new" while adding one, or null.
+  const [episodeEditing, setEpisodeEditing] = useState(null);
 
   if (!selectedItem || !isOpen) return null;
+
+  const raw = findRaw(data, selectedItem.globalId);
+  const rawEpisodes = raw?.kind === "show" ? raw.episodes : [];
+  const rawEpisodeFor = (globalId) =>
+    rawEpisodes.find((e) => e.globalId === globalId);
+  const itemId = parseGlobalId(selectedItem.globalId)?.id;
+  const itemLabel =
+    selectedItem.type === "tv"
+      ? `${selectedItem.title} season ${selectedItem.seasonNumber}`
+      : selectedItem.title;
+
+  const handleDelete = async () => {
+    const episodes = selectedItem.episodes?.length ?? 0;
+    const message =
+      selectedItem.type === "tv" && episodes > 0
+        ? `Delete ${itemLabel} and its ${episodes} episode${episodes === 1 ? "" : "s"}? This can't be undone.`
+        : `Delete ${itemLabel}? This can't be undone.`;
+    if (!confirm(message)) return;
+    try {
+      await deleteItem.mutateAsync(selectedItem.globalId);
+      addToast(`Deleted ${itemLabel}`, "success");
+      onClose?.();
+    } catch (err) {
+      addToast(err.message || "Failed to delete", "error");
+    }
+  };
+
+  const handleDeleteEpisode = async (episode) => {
+    const rawEpisode = rawEpisodeFor(episode.globalId);
+    if (!rawEpisode) return;
+    if (
+      !confirm(`Delete episode ${episode.episodeNumber}, "${episode.title}"?`)
+    )
+      return;
+    try {
+      await deleteEpisode.mutateAsync(rawEpisode.id);
+      addToast(`Deleted episode ${episode.episodeNumber}`, "success");
+    } catch (err) {
+      addToast(err.message || "Failed to delete episode", "error");
+    }
+  };
+
+  if (mode !== "view" && raw) {
+    const isNextSeason = mode === "next-season";
+    return (
+      <Modal
+        onClose={() => setMode("view")}
+        panelClassName="bg-slate-900 w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-xl border border-slate-700 shadow-2xl"
+      >
+        <div className="sticky top-0 z-50 bg-slate-900 border-b border-slate-700 px-4 py-3 flex items-center justify-between">
+          <div className="font-semibold text-slate-100 text-sm truncate pr-4">
+            {isNextSeason
+              ? `Add ${selectedItem.title} season ${selectedItem.seasonNumber + 1}`
+              : `Edit ${KIND_LABELS[draftFromRaw(raw).kind]}`}
+          </div>
+          <button
+            onClick={() => setMode("view")}
+            className={`${iconButton} hover:bg-slate-800`}
+            aria-label="Cancel"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+        <div className="px-4 py-4">
+          <McuItemForm
+            initial={isNextSeason ? nextSeasonDraft(raw) : draftFromRaw(raw)}
+            id={isNextSeason ? undefined : itemId}
+            hasPoster={!isNextSeason && !!selectedItem.s3Url}
+            onCancel={() => setMode("view")}
+            onSaved={(globalId) => {
+              setMode("view");
+              // A new season is a different item: show it instead.
+              if (isNextSeason) onSelect?.(globalId);
+            }}
+          />
+        </div>
+      </Modal>
+    );
+  }
 
   const closeModal = () => {
     onClose?.();
@@ -50,12 +158,46 @@ export function McuDetailModal({
         <div className="font-semibold text-slate-100 text-sm truncate pr-4">
           {MODAL_TITLE[selectedItem.type] || MODAL_TITLE.movie}
         </div>
-        <button
-          onClick={closeModal}
-          className="p-1.5 hover:bg-slate-800 rounded-lg transition-colors flex-shrink-0 hover:cursor-pointer"
-        >
-          <X className="w-4 h-4 text-slate-400" />
-        </button>
+        <div className="flex items-center gap-1">
+          {raw && (
+            <>
+              <button
+                onClick={() => setMode("edit")}
+                className={`${iconButton} hover:bg-slate-800`}
+                title="Edit"
+                aria-label="Edit"
+              >
+                <Pencil className="w-4 h-4 text-slate-300" />
+              </button>
+              {isTv && (
+                <button
+                  onClick={() => setMode("next-season")}
+                  className={`${iconButton} hover:bg-slate-800`}
+                  title="Add next season"
+                  aria-label="Add next season"
+                >
+                  <CopyPlus className="w-4 h-4 text-slate-300" />
+                </button>
+              )}
+              <button
+                onClick={handleDelete}
+                disabled={deleteItem.isPending}
+                className={`${iconButton} hover:bg-rose-950`}
+                title="Delete"
+                aria-label="Delete"
+              >
+                <Trash2 className="w-4 h-4 text-rose-400" />
+              </button>
+            </>
+          )}
+          <button
+            onClick={closeModal}
+            className={`${iconButton} hover:bg-slate-800`}
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
       </div>
 
       {isTv ? (
@@ -167,20 +309,57 @@ export function McuDetailModal({
             </div>
           )}
 
-          {selectedItem.episodes && selectedItem.episodes.length > 0 && (
+          {raw && (
             <div>
-              <div className="text-xs text-slate-400 mb-3 font-semibold uppercase tracking-wide">
-                Episodes
+              <div className="flex items-center justify-between mb-3">
+                <div className="text-xs text-slate-400 font-semibold uppercase tracking-wide">
+                  Episodes
+                </div>
+                <button
+                  onClick={() => setEpisodeEditing("new")}
+                  disabled={episodeEditing === "new"}
+                  className="flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 cursor-pointer"
+                >
+                  <Plus size={14} />
+                  Add episode
+                </button>
               </div>
+              {episodeEditing === "new" && (
+                <div className="mb-2">
+                  <EpisodeForm
+                    showId={itemId}
+                    nextNumber={nextEpisodeNumber(rawEpisodes)}
+                    onDone={() => setEpisodeEditing(null)}
+                  />
+                </div>
+              )}
+              {selectedItem.episodes.length === 0 &&
+                episodeEditing !== "new" && (
+                  <p className="text-sm text-slate-500 italic">
+                    No episodes yet. Add them one at a time.
+                  </p>
+                )}
               <div className="space-y-1.5">
                 {selectedItem.episodes.map((episode, episodeIndex) => {
                   const episodeStatus =
                     getStatus(watched, episode.globalId) || "UNWATCHED";
                   const isWatched = episodeStatus === "WATCHED";
+                  const rawEpisode = rawEpisodeFor(episode.globalId);
+                  if (rawEpisode && episodeEditing === rawEpisode.id) {
+                    return (
+                      <EpisodeForm
+                        key={episode.globalId}
+                        showId={itemId}
+                        episode={rawEpisode}
+                        nextNumber={episode.episodeNumber}
+                        onDone={() => setEpisodeEditing(null)}
+                      />
+                    );
+                  }
                   return (
                     <div
-                      key={episodeIndex}
-                      className="flex items-center gap-3 p-2 rounded hover:bg-slate-800/50 transition-colors"
+                      key={episode.globalId ?? episodeIndex}
+                      className="group flex items-center gap-3 p-2 rounded hover:bg-slate-800/50 transition-colors"
                     >
                       <button
                         onClick={() =>
@@ -209,6 +388,9 @@ export function McuDetailModal({
                             isWatched ? "text-slate-400" : "text-white"
                           }`}
                         >
+                          <span className="text-slate-500 mr-2 tabular-nums">
+                            {episode.episodeNumber}.
+                          </span>
                           {episode.title}
                           {episode.runtime && (
                             <span className="text-slate-500 ml-2">
@@ -217,6 +399,27 @@ export function McuDetailModal({
                           )}
                         </div>
                       </div>
+                      {rawEpisode && (
+                        <div className="flex gap-0.5 opacity-60 group-hover:opacity-100 focus-within:opacity-100">
+                          <button
+                            onClick={() => setEpisodeEditing(rawEpisode.id)}
+                            className={`${iconButton} hover:bg-slate-700`}
+                            title="Edit episode"
+                            aria-label={`Edit episode ${episode.episodeNumber}`}
+                          >
+                            <Pencil className="w-3.5 h-3.5 text-slate-300" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEpisode(episode)}
+                            disabled={deleteEpisode.isPending}
+                            className={`${iconButton} hover:bg-rose-950`}
+                            title="Delete episode"
+                            aria-label={`Delete episode ${episode.episodeNumber}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          </button>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

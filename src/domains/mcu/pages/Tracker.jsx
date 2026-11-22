@@ -11,6 +11,16 @@ import { McuDetailModal } from "../components/tracking/McuDetailModal";
 import { LoadingState } from "../../../components/LoadingState";
 import { LoadError } from "../../../components/LoadError";
 
+/** The item (and its section color) with this globalId. Each season has its own globalId. */
+function findByGlobalId(phases, expandedCategories, globalId) {
+  if (!globalId) return null;
+  for (const section of [...phases, ...expandedCategories]) {
+    const item = section.items.find((i) => i.globalId === globalId);
+    if (item) return { item, color: section.color };
+  }
+  return null;
+}
+
 const getDefaultExpandedSections = (phases, expandedCategories, watched) => {
   return Object.fromEntries([
     // Sagas: open if any phase within it has unwatched content
@@ -69,15 +79,19 @@ export function Tracker() {
 }
 
 function TrackerBody({ data, view }) {
-  const { watched } = useMcuTracker();
+  const { watched, selectedId, setSelectedId } = useMcuTracker();
   const { change } = useChangeStatus();
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [selectedItemColor, setSelectedItemColor] = useState("#3b82f6");
 
   const { phases, expandedCategories } = useMemo(
     () => normalizeTrackerData(data),
     [data],
+  );
+
+  // Looked up on every render, so edits show up in the open modal, and a
+  // deleted item closes it.
+  const selected = useMemo(
+    () => findByGlobalId(phases, expandedCategories, selectedId),
+    [phases, expandedCategories, selectedId],
   );
 
   // Memoize saga section building to avoid rebuilding cards on every render
@@ -137,16 +151,8 @@ function TrackerBody({ data, view }) {
   const toggleSection = (key) =>
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  const handleSelectItem = (item, color) => {
-    setSelectedItem(item);
-    setSelectedItemColor(color);
-    setIsModalOpen(true);
-  };
-
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setSelectedItem(null);
-  };
+  const handleSelectItem = (item) => setSelectedId(item.globalId);
+  const handleCloseModal = () => setSelectedId(null);
 
   return (
     <div className="max-w-7xl mx-auto pb-4 px-4">
@@ -189,10 +195,12 @@ function TrackerBody({ data, view }) {
         </>
       ) : null}
       <McuDetailModal
-        isOpen={isModalOpen}
+        key={selectedId ?? "none"}
+        isOpen={!!selected}
         onClose={handleCloseModal}
-        selectedItem={selectedItem}
-        selectedItemColor={selectedItemColor}
+        onSelect={setSelectedId}
+        selectedItem={selected?.item}
+        selectedItemColor={selected?.color}
       />
     </div>
   );
