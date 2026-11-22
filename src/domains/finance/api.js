@@ -70,6 +70,23 @@ export function getTransactions() {
   });
 }
 
+export function createTransaction({ name, transactionType, amount, cash }) {
+  return requestJson(`${BASE}/transactions`, {
+    method: "POST",
+    body: { name, transactionType, amount, cash },
+    errorMessage: "Failed to create transaction",
+    includeErrorDetail: true,
+  });
+}
+
+export function deleteTransaction(id) {
+  return requestMaybeJson(`${BASE}/transactions/${id}`, {
+    method: "DELETE",
+    errorMessage: "Failed to delete transaction",
+    includeErrorDetail: true,
+  });
+}
+
 export function updateTransaction(id, name, amount, paid) {
   return requestMaybeJson(`${BASE}/transactions/${id}`, {
     method: "PUT",

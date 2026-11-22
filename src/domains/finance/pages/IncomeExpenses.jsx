@@ -1,8 +1,18 @@
-import { TrendingUp, TrendingDown, Edit2, Check, X } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Edit2,
+  Check,
+  X,
+  Plus,
+  Trash2,
+} from "lucide-react";
 import { useState } from "react";
 import {
   useTransactions,
   useClearAllPaid,
+  useCreateTransaction,
+  useDeleteTransaction,
   useUpdateTransaction,
 } from "../hooks";
 import { currencyFormatter, parseMoney } from "../utils/currency";
@@ -22,6 +32,8 @@ export function IncomeExpenses() {
   } = useTransactions();
   const updateTransaction = useUpdateTransaction();
   const clearAllPaid = useClearAllPaid();
+  const createTransaction = useCreateTransaction();
+  const deleteTransaction = useDeleteTransaction();
   const addToast = useToast();
   const [paidFilter, setPaidFilter] = useState("ALL"); // "ALL", "PAID", "UNPAID"
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -30,7 +42,18 @@ export function IncomeExpenses() {
     amount: "",
     paid: false,
   });
-  const isSaving = updateTransaction.isPending || clearAllPaid.isPending;
+  // Which column ("INCOME" | "EXPENSE") has its add form open, if any.
+  const [addingType, setAddingType] = useState(null);
+  const [addFormData, setAddFormData] = useState({
+    name: "",
+    amount: "",
+    cash: false,
+  });
+  const isSaving =
+    updateTransaction.isPending ||
+    clearAllPaid.isPending ||
+    createTransaction.isPending ||
+    deleteTransaction.isPending;
   const C = {
     networth: "text-blue-700",
     asset: "text-emerald-700",
@@ -49,6 +72,7 @@ export function IncomeExpenses() {
   });
 
   const handleEditClick = (transaction) => {
+    setAddingType(null);
     setEditingTransaction(transaction);
     setEditFormData({
       name: transaction.name,
@@ -83,6 +107,58 @@ export function IncomeExpenses() {
       setEditingTransaction(null);
     } catch (err) {
       addToast(err.message || "Failed to update transaction", "error");
+    }
+  };
+
+  const handleAddClick = (type) => {
+    setEditingTransaction(null);
+    setAddingType(type);
+    setAddFormData({ name: "", amount: "", cash: false });
+  };
+
+  const handleSaveAdd = async () => {
+    if (!addingType) return;
+
+    if (!addFormData.name.trim()) {
+      addToast("Please enter a name", "error");
+      return;
+    }
+    const parsed = parseMoney(addFormData.amount);
+    if (!parsed.ok) {
+      addToast(parsed.error, "error");
+      return;
+    }
+
+    try {
+      await createTransaction.mutateAsync({
+        name: addFormData.name.trim(),
+        transactionType: addingType,
+        amount: parsed.value,
+        cash: addFormData.cash,
+      });
+      addToast(
+        `${addingType === "INCOME" ? "Income" : "Expense"} added`,
+        "success",
+      );
+      setAddingType(null);
+    } catch (err) {
+      addToast(err.message || "Failed to add transaction", "error");
+    }
+  };
+
+  const handleDelete = async (transaction) => {
+    if (!confirm(`Delete "${transaction.name}"? This can't be undone.`)) {
+      return;
+    }
+
+    try {
+      await deleteTransaction.mutateAsync(transaction.id);
+      addToast(`Deleted "${transaction.name}"`, "success");
+      if (editingTransaction?.id === transaction.id) {
+        setEditingTransaction(null);
+      }
+    } catch (err) {
+      addToast(err.message || "Failed to delete transaction", "error");
     }
   };
 
@@ -193,7 +269,7 @@ export function IncomeExpenses() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {["INCOME", "EXPENSE"].map((dir) => (
             <div key={dir} className="mb-3">
-              <div className="flex justify-between mb-2">
+              <div className="flex justify-between items-center mb-2">
                 <h3
                   className={`text-sm font-semibold uppercase tracking-wider flex items-center gap-2 ${dir === "INCOME" ? C.pos : C.neg}`}
                 >
@@ -204,7 +280,87 @@ export function IncomeExpenses() {
                   )}
                   {dir === "INCOME" ? "Income" : "Expenses"}
                 </h3>
+                <button
+                  onClick={() => handleAddClick(dir)}
+                  disabled={isSaving || addingType === dir}
+                  className={`flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-white disabled:opacity-50 ${dir === "INCOME" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"}`}
+                  title={`Add ${dir === "INCOME" ? "income" : "expense"}`}
+                >
+                  <Plus size={14} />
+                  <span>Add</span>
+                </button>
               </div>
+              {addingType === dir && (
+                <div className="mb-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="space-y-3">
+                    <div className="flex gap-2 flex-col sm:flex-row">
+                      <input
+                        type="text"
+                        value={addFormData.name}
+                        onChange={(e) =>
+                          setAddFormData({
+                            ...addFormData,
+                            name: e.target.value,
+                          })
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && handleSaveAdd()}
+                        placeholder={
+                          dir === "INCOME" ? "Income name" : "Expense name"
+                        }
+                        maxLength={100}
+                        className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                        autoFocus
+                      />
+                      <input
+                        type="text"
+                        inputMode="decimal"
+                        value={addFormData.amount}
+                        onChange={(e) =>
+                          setAddFormData({
+                            ...addFormData,
+                            amount: e.target.value,
+                          })
+                        }
+                        onKeyDown={(e) => e.key === "Enter" && handleSaveAdd()}
+                        placeholder="0.00"
+                        className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={addFormData.cash}
+                        onChange={(e) =>
+                          setAddFormData({
+                            ...addFormData,
+                            cash: e.target.checked,
+                          })
+                        }
+                        className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                      />
+                      <span className="text-sm font-medium text-slate-700">
+                        Counts toward net cash flow
+                      </span>
+                    </label>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveAdd}
+                        disabled={isSaving}
+                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 text-sm"
+                      >
+                        {createTransaction.isPending ? "Adding..." : "Add"}
+                      </button>
+                      <button
+                        onClick={() => setAddingType(null)}
+                        disabled={isSaving}
+                        className="flex-1 px-3 py-2 text-slate-700 border border-slate-300 rounded-lg font-semibold hover:bg-slate-50 disabled:opacity-50 text-sm"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 {filteredTransactions
                   .filter((transaction) => transaction.transactionType === dir)
@@ -237,6 +393,14 @@ export function IncomeExpenses() {
                               className="p-1 text-blue-600 hover:text-blue-700 ml-2"
                             >
                               <Edit2 size={14} />
+                            </button>
+                            <button
+                              onClick={() => handleDelete(transaction)}
+                              disabled={isSaving}
+                              className="p-1 text-rose-600 hover:text-rose-700 disabled:opacity-50"
+                              title="Delete"
+                            >
+                              <Trash2 size={14} />
                             </button>
                           </div>
                         </div>
