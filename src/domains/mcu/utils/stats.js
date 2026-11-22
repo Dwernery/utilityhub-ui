@@ -2,15 +2,13 @@
 // `watched` is a flat map keyed by item id (movies/specials) or episode.globalId (tv episodes)
 // Values are one of: "UNWATCHED", "IN_PROGRESS", "WATCHED"
 
-export const STATUS_CYCLE = ["UNWATCHED", "IN_PROGRESS", "WATCHED"];
-
 export function getStatus(watched, key) {
   return watched[key] ?? "UNWATCHED";
 }
 
-export function nextStatus(current) {
-  const index = STATUS_CYCLE.indexOf(current ?? "UNWATCHED");
-  return STATUS_CYCLE[(index + 1) % STATUS_CYCLE.length];
+/** One-click toggle: anything not yet watched becomes WATCHED; WATCHED goes back to UNWATCHED. */
+export function toggleWatched(current) {
+  return current === "WATCHED" ? "UNWATCHED" : "WATCHED";
 }
 
 /**
@@ -143,6 +141,27 @@ export function formatMinutes(minutes) {
   return minutes < 60
     ? `${Math.round(minutes)} min`
     : `${Math.round(minutes / 60)}h`;
+}
+
+/** Runtime for detail views: "45 min", "2h", "2h 14m". */
+export function formatRuntime(minutes) {
+  const m = Math.round(minutes);
+  if (m < 60) return `${m} min`;
+  const h = Math.floor(m / 60);
+  const rest = m % 60;
+  return rest ? `${h}h ${rest}m` : `${h}h`;
+}
+
+const plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+
+/** "3 movies · 1 special", skipping types with none; "No titles yet" when empty. */
+export function typeSummary(stats) {
+  const parts = [
+    stats.movies && plural(stats.movies, "movie"),
+    stats.episodes && plural(stats.episodes, "episode"),
+    stats.specials && plural(stats.specials, "special"),
+  ].filter(Boolean);
+  return parts.length ? parts.join(" · ") : "No titles yet";
 }
 
 export function percentage(done, total) {

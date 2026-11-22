@@ -1,5 +1,6 @@
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { PosterCard } from "./PosterCard";
+import { typeSummary } from "../../utils/stats";
 
 export function SectionCard({
   label,
@@ -12,7 +13,7 @@ export function SectionCard({
   onToggleItem,
   onSelectItem,
 }) {
-  const summary = `${stats.movies} movies · ${stats.episodes} episodes · ${stats.specials} specials`;
+  const summary = typeSummary(stats);
 
   return (
     <section className="bg-slate-800 border border-slate-700 rounded-xl mb-2">

@@ -9,6 +9,7 @@ describe("buildWatchedMap", () => {
           domainName: "Phase 1",
           movies: [
             {
+              id: 1,
               globalId: "movie:1",
               title: "A",
               type: "MOVIE",
@@ -19,6 +20,7 @@ describe("buildWatchedMap", () => {
               status: "WATCHED",
             },
             {
+              id: 2,
               globalId: "movie:2",
               title: "B",
               type: "SPECIAL",
@@ -31,24 +33,21 @@ describe("buildWatchedMap", () => {
           ],
           shows: [
             {
+              id: 1,
               globalId: "show:1",
               title: "S",
+              seasonNumber: 1,
               premiereDate: "2021-01-15",
               synopsis: null,
               s3Url: null,
-              seasons: [
+              episodes: [
                 {
-                  seasonNumber: 1,
-                  episodes: [
-                    {
-                      id: 3,
-                      globalId: "episode:3",
-                      title: "E",
-                      episodeNumber: 1,
-                      runtime: null,
-                      status: "IN_PROGRESS",
-                    },
-                  ],
+                  id: 3,
+                  globalId: "episode:3",
+                  title: "E",
+                  episodeNumber: 1,
+                  runtime: null,
+                  status: "IN_PROGRESS",
                 },
               ],
             },

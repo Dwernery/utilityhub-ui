@@ -44,8 +44,8 @@ export function SagaHeader({
       <div className="flex items-center gap-2.5">
         <div className="w-20 h-1.5 bg-slate-700 rounded-full overflow-hidden">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-400 to-violet-400"
-            style={{ width: `${percentage}%` }}
+            className="h-full rounded-full transition-[width] duration-300"
+            style={{ width: `${percentage}%`, backgroundColor: color }}
           />
         </div>
         <div

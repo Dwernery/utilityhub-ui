@@ -1,15 +1,11 @@
 // Pure helpers for adding, editing and deleting MCU content.
 // Mirrors utility-hub-mobile's lib/mcu/utils/editing.ts.
+import { SAGAS } from "./constants";
 
-/** Phases the saga view knows about (see SAGAS). Other domains are Expanded Universe categories. */
-export const PHASE_DOMAINS = [
-  "Phase 1",
-  "Phase 2",
-  "Phase 3",
-  "Phase 4",
-  "Phase 5",
-  "Phase 6",
-];
+/** Phases the saga view knows about (from SAGAS). Other domains are Expanded Universe categories. */
+export const PHASE_DOMAINS = SAGAS.flatMap((saga) =>
+  saga.phaseNums.map((n) => `Phase ${n}`),
+);
 
 export const KIND_LABELS = {
   movie: "Movie",
@@ -17,43 +13,24 @@ export const KIND_LABELS = {
   show: "Show Season",
 };
 
-/** "movie:12" → { kind: "movie", id: 12 }; also "show:3", "episode:40". */
-export function parseGlobalId(globalId) {
-  const match = /^(movie|show|episode):(\d+)$/.exec(globalId ?? "");
-  return match ? { kind: match[1], id: Number(match[2]) } : null;
-}
-
 /**
  * The raw API record behind a tracker item, which still has the full premiere
- * date, the domain and the episode ids that the normalized items drop.
+ * date and the domain that the normalized items drop. A show record is one season.
  * @returns {{ kind: "movie", movie: object, domain: string }
- *   | { kind: "show", show: object, seasonNumber: number, episodes: object[], domain: string }
+ *   | { kind: "show", show: object, domain: string }
  *   | null}
  */
 export function findRaw(data, globalId) {
   for (const domain of data?.domains ?? []) {
-    for (const movie of domain.movies ?? []) {
-      if (movie.globalId === globalId) {
-        return { kind: "movie", movie, domain: domain.domainName };
-      }
-    }
-    for (const show of domain.shows ?? []) {
-      if (show.globalId === globalId) {
-        const season = show.seasons?.[0];
-        return {
-          kind: "show",
-          show,
-          seasonNumber: season?.seasonNumber ?? 1,
-          episodes: season?.episodes ?? [],
-          domain: domain.domainName,
-        };
-      }
-    }
+    const movie = domain.movies?.find((m) => m.globalId === globalId);
+    if (movie) return { kind: "movie", movie, domain: domain.domainName };
+    const show = domain.shows?.find((s) => s.globalId === globalId);
+    if (show) return { kind: "show", show, domain: domain.domainName };
   }
   return null;
 }
 
-/** Phase 1–6 first, then every other domain already in use, alphabetically. */
+/** Every saga phase first, then every other domain already in use, alphabetically. */
 export function domainOptions(data) {
   const others = new Set();
   for (const domain of data?.domains ?? []) {
@@ -105,7 +82,7 @@ export function draftFromRaw(raw) {
     title: raw.show.title ?? "",
     premiereDate: raw.show.premiereDate ?? "",
     runtime: "",
-    season: String(raw.seasonNumber),
+    season: String(raw.show.seasonNumber),
     domain: raw.domain ?? "",
     synopsis: raw.show.synopsis ?? "",
   };
@@ -117,7 +94,7 @@ export function nextSeasonDraft(raw) {
     ...emptyDraft("show"),
     title: raw.show.title ?? "",
     domain: raw.domain ?? "",
-    season: String(raw.seasonNumber + 1),
+    season: String(raw.show.seasonNumber + 1),
   };
 }
 

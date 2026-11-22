@@ -1,5 +1,6 @@
 import { createContext, useContext, useMemo, useState } from "react";
 import { buildWatchedMap } from "../utils/watchedMap";
+import { normalizeTrackerData } from "../utils/normalizeTrackerData";
 import { useMcuTrackerData } from "../hooks";
 
 const McuTrackerContext = createContext(null);
@@ -25,9 +26,22 @@ export function McuTrackerProvider({ children }) {
   const [selectedId, setSelectedId] = useState(null);
   const { data } = useMcuTrackerData();
   const watched = useMemo(() => buildWatchedMap(data), [data]);
+  // The tracker content as posters, converted once per response for every screen that shows it.
+  const { phases, expandedCategories } = useMemo(
+    () => normalizeTrackerData(data),
+    [data],
+  );
   const value = useMemo(
-    () => ({ view, setView, watched, selectedId, setSelectedId }),
-    [view, watched, selectedId],
+    () => ({
+      view,
+      setView,
+      watched,
+      phases,
+      expandedCategories,
+      selectedId,
+      setSelectedId,
+    }),
+    [view, watched, phases, expandedCategories, selectedId],
   );
 
   return (

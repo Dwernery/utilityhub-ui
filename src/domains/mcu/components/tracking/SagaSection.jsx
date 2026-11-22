@@ -1,25 +1,23 @@
-import { combineStats, percentage } from "../../utils/stats";
+import { percentage } from "../../utils/stats";
 import { SagaHeader } from "./SagaHeader";
 import { SectionCard } from "./SectionCard";
 import { PosterCard } from "./PosterCard";
 
+/**
+ * A saga (or Expanded Universe category): header with progress, then phase cards or posters.
+ * `section` comes from sagaSections / categorySections (utils/sections.js); its stats cover
+ * the whole section even when the "Not Finished" filter hides some cards.
+ */
 export function SagaSection({
-  sagaKey,
-  title,
-  subtitle,
-  color,
-  cards,
+  section,
   expandedSections,
   onToggleSection,
   watched,
   onToggleItem,
   onSelectItem,
-  isCategory = false,
 }) {
-  // Determine if this saga section should be expanded by checking sagaKey in expandedSections
-  const expanded = !!expandedSections[sagaKey];
-  const stats = combineStats(cards.map((card) => card.stats));
-  const pct = percentage(stats.minutesDone, stats.minutes);
+  const { key, title, subtitle, color, cards, isCategory, stats } = section;
+  const expanded = !!expandedSections[key];
 
   return (
     <div className="mb-5">
@@ -27,12 +25,12 @@ export function SagaSection({
         title={title}
         subtitle={subtitle}
         color={color}
-        percentage={pct}
+        percentage={percentage(stats.minutesDone, stats.minutes)}
         expanded={expanded}
-        onToggle={() => onToggleSection(sagaKey)}
+        onToggle={() => onToggleSection(key)}
       />
 
-      {/* For categories: render poster cards directly, no intermediate SectionCard header */}
+      {/* Categories: posters directly, no per-phase card header */}
       {isCategory && expanded && cards.length > 0 && (
         <div
           className="bg-slate-800 border border-slate-700 border-t-0 rounded-b-xl overflow-visible"
@@ -54,7 +52,7 @@ export function SagaSection({
         </div>
       )}
 
-      {/* For phases: render section cards with individual headers */}
+      {/* Phases: one card each, with its own header */}
       {!isCategory &&
         expanded &&
         cards.map((card) => (

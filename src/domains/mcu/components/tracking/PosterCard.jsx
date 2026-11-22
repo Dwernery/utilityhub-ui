@@ -7,7 +7,7 @@ import {
   isItemPartial,
   getItemProgressFraction,
 } from "../../utils/stats";
-import { MODAL_LABELS, STATUS } from "../../utils/statConstants";
+import { MODAL_LABELS } from "../../utils/constants";
 
 export function PosterCard({
   item,
@@ -15,6 +15,8 @@ export function PosterCard({
   watched,
   onToggleItem,
   onSelectItem,
+  // Always show the title overlay (search results), not just on hover.
+  showTitle = false,
 }) {
   const [imageLoaded, setImageLoaded] = useState(!!item.s3Url);
   const isTv = item.type === "tv";
@@ -22,7 +24,7 @@ export function PosterCard({
   // Count completed episodes for TV shows by checking globalId status
   const episodesDone = isTv
     ? item.episodes.filter(
-        (episode) => getStatus(watched, episode.globalId) === STATUS.WATCHED,
+        (episode) => getStatus(watched, episode.globalId) === "WATCHED",
       ).length
     : 0;
 
@@ -45,25 +47,22 @@ export function PosterCard({
       }}
       onClick={handleCardClick}
     >
-      {/* Background image */}
-      {item.s3Url && (
-        <img
-          src={item.s3Url}
-          alt={item.title}
-          loading="lazy"
-          className="absolute inset-0 w-full h-full object-cover z-0 rounded-[10px]"
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageLoaded(false)}
-        />
-      )}
-
-      {/* Gradient overlay */}
+      {/* Generative art, under the artwork: it shows when there's no image or it fails to load. */}
       <div
-        className="absolute inset-0 z-10 pointer-events-none rounded-[10px]"
+        className="absolute inset-0 pointer-events-none rounded-[10px]"
         style={{
           backgroundImage: posterBackground(item.id, color),
         }}
       />
+      {item.s3Url && imageLoaded && (
+        <img
+          src={item.s3Url}
+          alt={item.title}
+          loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover rounded-[10px]"
+          onError={() => setImageLoaded(false)}
+        />
+      )}
       {isTv && (
         <span className="text-[8.5px] font-medium text-white absolute top-1.5 left-1.5 px-2 py-0.5 rounded-md bg-slate-950/80 backdrop-blur-sm">
           {episodesDone}/{episodeCount} {MODAL_LABELS.EPS}
@@ -97,17 +96,28 @@ export function PosterCard({
           }
         }}
         aria-label={
-          complete ? MODAL_LABELS.MARK_UNWATCHED : MODAL_LABELS.MARK_WATCHED
+          isTv
+            ? `Open ${item.title} episodes`
+            : complete
+              ? MODAL_LABELS.MARK_UNWATCHED
+              : MODAL_LABELS.MARK_WATCHED
+        }
+        title={
+          isTv
+            ? undefined
+            : complete
+              ? MODAL_LABELS.MARK_UNWATCHED
+              : MODAL_LABELS.MARK_WATCHED
         }
       >
-        {!isTv && complete && (
-          <Check size={12} color="#12141B" strokeWidth={3} />
-        )}
+        {complete && <Check size={12} color="#12141B" strokeWidth={3} />}
       </button>
 
       <div
         className={`absolute left-0 right-0 bottom-0 px-1.5 pb-1.5 pt-3.5 transition-opacity duration-200 rounded-b-[10px] ${
-          imageLoaded ? "invisible group-hover:visible" : "visible"
+          imageLoaded && !showTitle
+            ? "invisible group-hover:visible"
+            : "visible"
         }`}
         style={{
           background:

@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
 import { getMcuTracker, updateContentStatus } from "./api";
-import { parseGlobalId } from "./utils/editing";
 import { uploadFileToS3, validateFile } from "../library/utils/s3Upload";
 import { MCU_TRACKER_KEY } from "./queryKeys";
 
@@ -33,14 +32,9 @@ export function useUpdateContentStatus() {
           ),
           shows: domain.shows?.map((show) => ({
             ...show,
-            seasons: show.seasons?.map((season) => ({
-              ...season,
-              episodes: season.episodes?.map((episode) =>
-                episode.globalId === globalId
-                  ? { ...episode, status }
-                  : episode,
-              ),
-            })),
+            episodes: show.episodes?.map((episode) =>
+              episode.globalId === globalId ? { ...episode, status } : episode,
+            ),
           })),
         }));
 
@@ -90,11 +84,7 @@ export function useSaveMcuItem() {
       let posterError = null;
       if (posterFile) {
         try {
-          await uploadPoster(
-            kind,
-            parseGlobalId(saved.globalId).id,
-            posterFile,
-          );
+          await uploadPoster(kind, saved.id, posterFile);
         } catch (error) {
           posterError = error;
         }
@@ -106,14 +96,12 @@ export function useSaveMcuItem() {
   });
 }
 
-/** Delete a movie/special ("movie:12") or a whole season with its episodes ("show:3"). */
+/** Delete a movie/special, or a whole season with its episodes. `{ kind: "movie" | "show", id }` */
 export function useDeleteMcuItem() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (globalId) => {
-      const { kind, id } = parseGlobalId(globalId);
-      return kind === "show" ? api.deleteShowSeason(id) : api.deleteMovie(id);
-    },
+    mutationFn: ({ kind, id }) =>
+      kind === "show" ? api.deleteShowSeason(id) : api.deleteMovie(id),
     onSuccess: () =>
       queryClient.invalidateQueries({ queryKey: MCU_TRACKER_KEY }),
   });

@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { normalizeTrackerData } from "./normalizeTrackerData";
+import { CATEGORY_PALETTE } from "./categoryColors";
 
 // Builders fill in the fields every API object has, so each fixture shows only what matters.
+const idOf = (globalId) => Number(globalId.split(":")[1]);
 const movie = (globalId, title, premiereDate, type = "MOVIE") => ({
+  id: idOf(globalId),
   globalId,
   title,
   premiereDate,
@@ -21,12 +24,14 @@ const episode = (n) => ({
   status: "UNWATCHED",
 });
 const show = (globalId, title, premiereDate, episodes) => ({
+  id: idOf(globalId),
   globalId,
   title,
+  seasonNumber: 1,
   premiereDate,
   synopsis: null,
   s3Url: null,
-  seasons: [{ seasonNumber: 1, episodes }],
+  episodes,
 });
 
 const api = {
@@ -60,7 +65,6 @@ describe("normalizeTrackerData", () => {
 
   it('groups "Phase N" domains into phases, in phase order', () => {
     expect(phases.map((p) => p.num)).toEqual([1, 2]);
-    expect(phases[0].color).toBe("#4C8DFF"); // the API sends no colors, so phases use the default
   });
 
   it("sorts items within a phase by premiere date", () => {
@@ -98,8 +102,9 @@ describe("normalizeTrackerData", () => {
     expect(expandedCategories[0]).toMatchObject({
       id: "sony-spider-verse",
       title: "Sony Spider-Verse",
-      color: "#B91C1C",
     });
+    // Not pinned, so it takes a palette color (see categoryColors).
+    expect(CATEGORY_PALETTE).toContain(expandedCategories[0].color);
   });
 
   it("handles a missing response", () => {

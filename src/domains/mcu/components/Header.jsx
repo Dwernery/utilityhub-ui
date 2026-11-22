@@ -2,33 +2,21 @@ import { useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Home, Galaxy } from "lucide-react";
 import { useMcuTracker } from "../context/McuTrackerContext";
-import { useMcuTrackerData } from "../hooks";
-import { normalizeTrackerData } from "../utils/normalizeTrackerData";
-import {
-  combineStats,
-  computeStats,
-  formatMinutes,
-  percentage,
-} from "../utils/stats";
-import { VIEWS, BREAKDOWN } from "../utils/statConstants";
+import { combineStats, formatMinutes, percentage } from "../utils/stats";
+import { categorySections, sagaSections } from "../utils/sections";
+import { BREAKDOWN } from "../utils/constants";
 import { AddContentButton } from "./editing/AddContentButton";
 
 export function Header() {
-  const { view, setView, watched } = useMcuTracker();
-  const { data } = useMcuTrackerData();
-  const { phases, expandedCategories } = useMemo(
-    () => normalizeTrackerData(data),
-    [data],
-  );
+  const { view, watched, phases, expandedCategories } = useMcuTracker();
 
+  // The same sections the tracker shows, so Overall counts exactly what's listed.
   const stats = useMemo(() => {
-    const items =
+    const sections =
       view === "phases"
-        ? phases.flatMap((p) => p.items)
-        : view === "categories"
-          ? expandedCategories.flatMap((c) => c.items)
-          : [];
-    return combineStats([computeStats(items, watched)]);
+        ? sagaSections(phases, watched)
+        : categorySections(expandedCategories, watched);
+    return combineStats(sections.map((s) => s.stats));
   }, [view, phases, expandedCategories, watched]);
 
   // Weighted by runtime, so a 3-hour movie moves the bar more than a 30-minute episode.
@@ -39,7 +27,7 @@ export function Header() {
     <div className="max-w-7xl mx-auto px-4">
       <div className="pt-5 pb-4 mb-2 border-b border-slate-700">
         <div className="mx-auto">
-          <div className="mb-3.5 flex justify-between ">
+          <div className="mb-3.5 flex justify-between items-center gap-3">
             <h1 className="text-2xl font-extrabold tracking-tight m-0">
               <Galaxy className="w-6 h-6 inline-block mr-2 " />
               MCU
@@ -47,11 +35,11 @@ export function Header() {
                 Watch Tracker
               </span>
             </h1>
-            <div className="flex items-start gap-3">
+            <div className="flex items-center gap-3">
               <AddContentButton />
               <Link
                 to="/"
-                className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-400 transition-colors w-fit pt-1"
+                className="inline-flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-blue-400 transition-colors"
               >
                 <Home className="w-3 h-3" />
                 Home
@@ -59,77 +47,54 @@ export function Header() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:gap-2 mt-3.5">
-            {/* Row 1 on mobile: Toggle + Overall Percentage */}
-            <div className="flex gap-2 lg:flex-[1.5]">
-              <div className="flex-1 flex items-center justify-center bg-slate-800 border border-slate-700 rounded-lg px-1.5 py-2">
-                <div className="flex gap-0.5 bg-slate-900 rounded p-1">
-                  {VIEWS.map(({ key, label }) => (
-                    <button
-                      key={key}
-                      type="button"
-                      onClick={() => setView(key)}
-                      className={`text-[10px] font-semibold py-1.5 px-3 rounded transition-all  ${
-                        view === key
-                          ? "bg-slate-700 text-slate-50 shadow-sm"
-                          : "text-slate-400 hover:text-slate-300 cursor-pointer"
-                      }`}
-                    >
-                      {label}
-                    </button>
-                  ))}
+          {/* Four equal boxes on wide screens. Narrower: Overall gets a full row and the three
+              counts share the next (like the iPhone app). The view switch is in the tracker's
+              search row, with the filter. */}
+          <div className="grid grid-cols-3 lg:grid-cols-4 gap-2 mt-3.5">
+            <div className="col-span-3 lg:col-span-1 flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
+              <div className="flex items-center justify-between">
+                <div className="text-[11px] text-slate-400 truncate">
+                  Overall
                 </div>
+                <div className="text-sm font-bold text-slate-50">{pct}%</div>
               </div>
-              <div className="flex-1 flex flex-col justify-center gap-1 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2">
-                <div className="flex items-center justify-between">
-                  <div className="text-[11px] text-slate-400 truncate">
-                    Overall
-                  </div>
-                  <div className="text-sm font-bold text-slate-50">{pct}%</div>
-                </div>
-                <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-500 shadow-[0_0_10px_rgba(139,124,246,0.35)] transition-[width] duration-300"
-                    style={{ width: `${pct}%` }}
-                  />
-                </div>
-                <div className="flex items-center justify-between text-[10px] text-slate-400 tabular-nums">
-                  <span>
-                    {formatMinutes(stats.minutesDone)} of{" "}
-                    {formatMinutes(stats.minutes)}
-                  </span>
-                  <span>
-                    {left > 0
-                      ? `${formatMinutes(left)} to go`
-                      : "All caught up"}
-                  </span>
-                </div>
+              <div className="h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-red-500 to-red-500 shadow-[0_0_10px_rgba(139,124,246,0.35)] transition-[width] duration-300"
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-slate-400 tabular-nums">
+                <span>
+                  {formatMinutes(stats.minutesDone)} of{" "}
+                  {formatMinutes(stats.minutes)}
+                </span>
+                <span>
+                  {left > 0 ? `${formatMinutes(left)} to go` : "All caught up"}
+                </span>
               </div>
             </div>
 
-            {/* Row 2 on mobile / right side on desktop: All Metrics */}
-            <div className="flex-1 lg:flex-[1.5] grid grid-cols-3 gap-2">
-              {BREAKDOWN.map(({ key, doneKey, label, icon: Icon }) => {
-                const total = stats[key];
-                const done = stats[doneKey];
-                return (
-                  <div
-                    key={key}
-                    className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"
-                  >
-                    <Icon className="w-4 h-4 text-slate-400 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="text-[11px] text-slate-400 truncate">
-                        {label}
-                      </div>
-                      <div className="text-sm font-bold text-slate-50">
-                        {total > 0 ? `${done}/${total}` : "—"}
-                      </div>
+            {BREAKDOWN.map(({ key, doneKey, label, icon: Icon }) => {
+              const total = stats[key];
+              const done = stats[doneKey];
+              return (
+                <div
+                  key={key}
+                  className="flex items-center gap-2 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2"
+                >
+                  <Icon className="w-4 h-4 text-slate-400 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="text-[11px] text-slate-400 truncate">
+                      {label}
+                    </div>
+                    <div className="text-sm font-bold text-slate-50">
+                      {total > 0 ? `${done}/${total}` : "—"}
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         </div>
       </div>

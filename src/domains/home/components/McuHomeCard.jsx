@@ -3,14 +3,13 @@ import { McuCurrentlyWatching } from "./McuCurrentlyWatching";
 import { useMemo } from "react";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
 import { useMcuTrackerData } from "../../mcu/hooks";
-import { normalizeTrackerData } from "../../mcu/utils/normalizeTrackerData";
 import { combineStats, computeStats } from "../../mcu/utils/stats";
 import { UtilityCard, UtilityCardSkeleton } from "./UtilityCard";
 import { LoadError } from "../../../components/LoadError";
 import { McuStatsSection } from "./McuStatsSection";
 
 export function McuHomeCard() {
-  const { watched } = useMcuTracker();
+  const { watched, phases, expandedCategories } = useMcuTracker();
   const {
     data = { domains: [] },
     isPending,
@@ -19,10 +18,6 @@ export function McuHomeCard() {
     refetch,
     isFetching,
   } = useMcuTrackerData();
-  const { phases, expandedCategories } = useMemo(
-    () => normalizeTrackerData(data),
-    [data],
-  );
   const mcuStats = useMemo(
     () =>
       combineStats(phases.map((phase) => computeStats(phase.items, watched))),
@@ -47,18 +42,16 @@ export function McuHomeCard() {
       })),
 
     ...(domain.shows ?? []).flatMap((show) =>
-      (show.seasons ?? []).flatMap((season) =>
-        (season.episodes ?? [])
-          .filter((episode) => episode.status === "IN_PROGRESS")
-          .map((episode) => ({
-            ...episode,
-            s3Url: show.s3Url,
-            showTitle: show.title,
-            showGlobalId: show.globalId,
-            seasonNumber: season.seasonNumber,
-            domainName: domain.domainName,
-          })),
-      ),
+      (show.episodes ?? [])
+        .filter((episode) => episode.status === "IN_PROGRESS")
+        .map((episode) => ({
+          ...episode,
+          s3Url: show.s3Url,
+          showTitle: show.title,
+          showGlobalId: show.globalId,
+          seasonNumber: show.seasonNumber,
+          domainName: domain.domainName,
+        })),
     ),
   ]);
 

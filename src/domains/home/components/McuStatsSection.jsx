@@ -1,5 +1,5 @@
 import { Galaxy } from "lucide-react";
-import { BREAKDOWN } from "../../mcu/utils/statConstants";
+import { BREAKDOWN } from "../../mcu/utils/constants";
 
 export function McuStatsSection({ label, stats }) {
   return (

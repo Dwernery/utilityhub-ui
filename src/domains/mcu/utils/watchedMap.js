@@ -13,11 +13,9 @@ export function buildWatchedMap(data) {
         watched[movie.globalId] = normalizeStatus(movie.status);
     }
     for (const show of domain?.shows ?? []) {
-      for (const season of show?.seasons ?? []) {
-        for (const episode of season?.episodes ?? []) {
-          if (episode?.globalId) {
-            watched[episode.globalId] = normalizeStatus(episode.status);
-          }
+      for (const episode of show?.episodes ?? []) {
+        if (episode?.globalId) {
+          watched[episode.globalId] = normalizeStatus(episode.status);
         }
       }
     }
