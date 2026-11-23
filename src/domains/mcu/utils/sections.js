@@ -79,47 +79,60 @@ export function categorySections(categories, watched) {
   });
 }
 
-/**
- * Keep only unfinished titles (unwatched or partly watched), dropping cards and sections left
- * empty. Stats stay those of the whole section, so percentages don't change with the filter.
- */
-export function unfinishedOnly(sections, watched) {
+/** Keep only titles passing `keep`, dropping cards and sections left empty. Stats stay whole-section. */
+function filterSections(sections, keep) {
   return sections
     .map((section) => ({
       ...section,
       cards: section.cards
-        .map((card) => ({
-          ...card,
-          items: card.items.filter((item) => !isItemComplete(item, watched)),
-        }))
+        .map((card) => ({ ...card, items: card.items.filter(keep) }))
         .filter((card) => card.items.length > 0),
     }))
     .filter((section) => section.cards.length > 0);
 }
 
 /**
- * Titles matching `query` (case-insensitive) across both views, in tracker order, each with
- * its poster color. A show matches on its title or any episode title; each matching season
- * is its own result.
- * @returns {{ item: object, color: string }[]}
+ * Keep only unfinished titles (unwatched or partly watched), dropping cards and sections left
+ * empty. Stats stay those of the whole section, so percentages don't change with the filter.
  */
-export function searchItems(phases, categories, query) {
+export function unfinishedOnly(sections, watched) {
+  return filterSections(sections, (item) => !isItemComplete(item, watched));
+}
+
+/**
+ * Keep only titles matching `query` (case-insensitive), like Library's search: a show matches
+ * on its title or any episode title. Empty cards and sections drop out; stats stay whole-section,
+ * as with "Not Finished". A blank query keeps everything.
+ */
+export function matchingOnly(sections, query) {
   const q = query.trim().toLowerCase();
-  if (!q) return [];
-  const seen = new Set();
-  const out = [];
-  for (const group of [...phases, ...categories]) {
-    for (const item of group.items) {
-      if (seen.has(item.globalId)) continue;
-      const hit =
-        item.title.toLowerCase().includes(q) ||
-        (item.type === "tv" &&
-          item.episodes.some((e) => e.title.toLowerCase().includes(q)));
-      if (hit) {
-        seen.add(item.globalId);
-        out.push({ item, color: groupColor(group) });
-      }
-    }
+  if (!q) return sections;
+  return filterSections(
+    sections,
+    (item) =>
+      item.title.toLowerCase().includes(q) ||
+      (item.type === "tv" &&
+        item.episodes.some((e) => e.title.toLowerCase().includes(q))),
+  );
+}
+
+/** How many titles (posters) the sections list. */
+export function countItems(sections) {
+  return sections.reduce(
+    (n, s) => n + s.cards.reduce((m, c) => m + c.items.length, 0),
+    0,
+  );
+}
+
+/**
+ * Every section and card open, so a search match isn't hidden in a collapsed phase, with
+ * `overrides` (what was toggled during this search) on top.
+ */
+export function allExpanded(sections, overrides = {}) {
+  const out = {};
+  for (const s of sections) {
+    out[s.key] = overrides[s.key] ?? true;
+    for (const c of s.cards) out[c.key] = overrides[c.key] ?? true;
   }
   return out;
 }
