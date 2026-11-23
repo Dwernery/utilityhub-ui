@@ -28,7 +28,7 @@ describe("periodYears", () => {
 
 describe("periodStats", () => {
   it("sums all time, with no comparison", () => {
-    expect(periodStats(books, null, TODAY)).toEqual({
+    expect(periodStats(books, null)).toEqual({
       books: 6,
       pages: 2200,
       avgPages: 367,
@@ -37,20 +37,25 @@ describe("periodStats", () => {
     });
   });
 
-  it("compares this year with last year up to the same date", () => {
-    // 2025 to Nov 22: Mar 10 + Nov 1 → 2 books, 600 pages, avg 300, rating 4.0.
-    const s = periodStats(books, 2026, TODAY);
+  it("compares this year so far with the whole year before", () => {
+    // All of 2025: 3 books, 1,100 pages, avg 367, rating 4.0.
+    const s = periodStats(books, 2026);
     expect(s).toMatchObject({
       books: 2,
       pages: 800,
       avgPages: 400,
       avgRating: 4,
     });
-    expect(s.vs).toEqual({ books: 0, pages: 200, avgPages: 100, avgRating: 0 });
+    expect(s.vs).toEqual({
+      books: -1,
+      pages: -300,
+      avgPages: 33,
+      avgRating: 0,
+    });
   });
 
   it("compares a past year with the whole year before", () => {
-    const s = periodStats(books, 2025, TODAY);
+    const s = periodStats(books, 2025);
     expect(s).toMatchObject({
       books: 3,
       pages: 1100,
@@ -61,14 +66,14 @@ describe("periodStats", () => {
   });
 
   it("has no comparison when the year before has no finished books", () => {
-    expect(periodStats(books, 2024, TODAY)).toMatchObject({
+    expect(periodStats(books, 2024)).toMatchObject({
       books: 1,
       vs: null,
     });
   });
 
   it("leaves averages empty for a year with nothing finished", () => {
-    const s = periodStats([read("2025-01-01", 100)], 2026, TODAY);
+    const s = periodStats([read("2025-01-01", 100)], 2026);
     expect(s).toMatchObject({ books: 0, avgPages: null, avgRating: null });
     expect(s.vs).toMatchObject({ books: -1, pages: -100, avgPages: null });
   });
