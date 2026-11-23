@@ -18,6 +18,7 @@ import { BookDetailModal } from "../components/inventory/BookDetailModal";
 import { AuthorDetailModal } from "../components/inventory/AuthorDetailModal";
 import { SeriesDetailModal } from "../components/inventory/SeriesDetailModal";
 import { BookCover } from "../components/BookCover";
+import { seriesLabel } from "../utils/series";
 
 const STATUS_FILTERS = [
   ["ALL", "All"],
@@ -184,7 +185,7 @@ export function Inventory() {
                         }}
                         className="text-xs text-blue-500 hover:text-blue-700 hover:underline truncate text-left cursor-pointer"
                       >
-                        {book.seriesName}
+                        {seriesLabel(book)}
                       </button>
                     )}
                   </div>

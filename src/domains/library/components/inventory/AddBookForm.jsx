@@ -3,11 +3,13 @@ import { SearchableDropdown } from "../SearchableDropdown";
 import { FileUploadInput } from "../FileUploadInput";
 import { useLibrary } from "../../context/LibraryContext";
 import {
+  useBooks,
   useCreateAuthor,
   useCreateSeries,
   useAddBook,
   useS3Upload,
 } from "../../hooks";
+import { nextSeriesPosition, parseSeriesPosition } from "../../utils/series";
 import { useToast } from "../../../../context/ToastContext";
 import {
   isBookValid,
@@ -21,10 +23,22 @@ export function AddBookForm({ setShowAddForm }) {
     title: "",
     authorName: "",
     seriesName: "",
+    seriesPosition: "",
     pages: "",
   });
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const { data: books = [] } = useBooks();
+  // No series, no number. Choosing a series suggests the next number in it.
+  const withSeries = (b, name) => ({
+    ...b,
+    seriesName: name,
+    seriesPosition: !name
+      ? ""
+      : name !== b.seriesName || !b.seriesPosition
+        ? String(nextSeriesPosition(books, name))
+        : b.seriesPosition,
+  });
 
   const createAuthor = useCreateAuthor();
   const createSeries = useCreateSeries();
@@ -44,6 +58,13 @@ export function AddBookForm({ setShowAddForm }) {
       addToast(BOOK_VALIDATION_MESSAGE, "error");
       return;
     }
+    const seriesPosition = newBook.seriesName.trim()
+      ? parseSeriesPosition(newBook.seriesPosition)
+      : null;
+    if (seriesPosition === "invalid") {
+      addToast("Book # must be a whole number from 1 to 999", "error");
+      return;
+    }
 
     try {
       // First, add the book
@@ -51,6 +72,7 @@ export function AddBookForm({ setShowAddForm }) {
         title: newBook.title.trim(),
         authorName: newBook.authorName.trim(),
         seriesName: newBook.seriesName.trim(),
+        seriesPosition,
         pages: newBook.pages,
       };
 
@@ -91,6 +113,7 @@ export function AddBookForm({ setShowAddForm }) {
         title: "",
         authorName: "",
         seriesName: "",
+        seriesPosition: "",
         pages: "",
       });
       setSelectedFile(null);
@@ -148,7 +171,7 @@ export function AddBookForm({ setShowAddForm }) {
         />
         <SearchableDropdown
           value={newBook.seriesName}
-          onChange={(v) => setNewBook({ ...newBook, seriesName: v })}
+          onChange={(v) => setNewBook((b) => withSeries(b, v))}
           options={seriesOptions}
           placeholder="Series (optional)"
           disabled={isBusy}
@@ -157,7 +180,7 @@ export function AddBookForm({ setShowAddForm }) {
             createSeries.mutate(v, {
               onSuccess: (data) => {
                 const name = data?.name || v;
-                setNewBook((b) => ({ ...b, seriesName: name }));
+                setNewBook((b) => withSeries(b, name));
                 addToast(`Series "${name}" created`, "success");
               },
               onError: (err) => {
@@ -170,6 +193,28 @@ export function AddBookForm({ setShowAddForm }) {
           }
           addNewLabel="Add series"
         />
+        {newBook.seriesName && (
+          <input
+            type="number"
+            min={1}
+            max={999}
+            step={1}
+            inputMode="numeric"
+            placeholder="Book # in series"
+            aria-label="Book number in series"
+            value={newBook.seriesPosition}
+            disabled={isBusy}
+            onChange={(e) =>
+              setNewBook({
+                ...newBook,
+                seriesPosition: e.target.value
+                  .replace(/[^0-9]/g, "")
+                  .slice(0, 3),
+              })
+            }
+            className="px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+          />
+        )}
       </div>
 
       <FileUploadInput
@@ -197,6 +242,7 @@ export function AddBookForm({ setShowAddForm }) {
               title: "",
               authorName: "",
               seriesName: "",
+              seriesPosition: "",
               pages: "",
             });
             setSelectedFile(null);

@@ -3,6 +3,7 @@ import { BookCover } from "../BookCover";
 import { Modal } from "../../../../components/Modal";
 import { useState } from "react";
 import { useStartReading } from "../../hooks";
+import { seriesLabel } from "../../utils/series";
 
 export function StartReadingModal({ setShowAddCurrentlyReading, books }) {
   const [currentlyReadingSearch, setCurrentlyReadingSearch] = useState("");
@@ -79,7 +80,7 @@ export function StartReadingModal({ setShowAddCurrentlyReading, books }) {
                   </div>
                   {book.seriesName && (
                     <div className="text-xs text-blue-500 mt-0.5">
-                      {book.seriesName}
+                      {seriesLabel(book)}
                     </div>
                   )}
                 </div>

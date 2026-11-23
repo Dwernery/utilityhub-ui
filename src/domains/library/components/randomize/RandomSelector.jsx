@@ -70,13 +70,13 @@ export function RandomSelector({
               </p>
               <div className="overflow-x-auto scrollbar-hide">
                 <div className="flex gap-3 pb-2">
-                  {booksInSeries.map((book, index) => (
+                  {booksInSeries.map((book) => (
                     <div key={book.id} className="flex-shrink-0 text-center">
                       <div className="w-20 h-28 rounded-lg overflow-hidden shadow-md border border-slate-200 mb-2 hover:shadow-lg transition-shadow">
                         <BookCover book={book} className="w-full h-full" />
                       </div>
                       <p className="text-xs text-slate-600 font-medium">
-                        {index + 1}
+                        {book.seriesPosition ? `#${book.seriesPosition}` : ""}
                       </p>
                       <p className="text-xs text-slate-500  max-w-20 leading-tight">
                         {book.title}

@@ -8,6 +8,7 @@ import { Modal } from "../../../../components/Modal";
 import { useUpdateBook, useDeleteBook } from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
 import { formatDate } from "../../../../lib/dates";
+import { seriesLabel } from "../../utils/series";
 
 export function BookDetailModal() {
   const {
@@ -121,7 +122,7 @@ export function BookDetailModal() {
                   }}
                   className="text-xs sm:text-sm text-blue-600 hover:underline text-left"
                 >
-                  {selectedBook.seriesName}
+                  {seriesLabel(selectedBook)}
                 </button>
               )}
 

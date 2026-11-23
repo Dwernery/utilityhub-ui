@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { useLibrary } from "../../context/LibraryContext";
+import { useBooks } from "../../hooks";
+import { nextSeriesPosition, parseSeriesPosition } from "../../utils/series";
 import { SearchableDropdown } from "../SearchableDropdown";
 import { FileUploadInput } from "../FileUploadInput";
 import { X } from "lucide-react";
@@ -30,6 +32,17 @@ export function EditBookForm() {
   // the book as it was when "Edit" was clicked.
   const [draft, setDraft] = useState(() => ({ ...selectedBook }));
   const [selectedFile, setSelectedFile] = useState(null);
+  const { data: books = [] } = useBooks();
+  // No series, no number. Choosing a different series suggests the next number in it.
+  const withSeries = (b, name) => ({
+    ...b,
+    seriesName: name,
+    seriesPosition: !name
+      ? ""
+      : name !== b.seriesName || !b.seriesPosition
+        ? String(nextSeriesPosition(books, name))
+        : b.seriesPosition,
+  });
 
   const updateBookMutation = useUpdateBook();
   const createAuthor = useCreateAuthor();
@@ -78,6 +91,10 @@ export function EditBookForm() {
           : Number(book.pages),
       authorName: book.authorName?.trim(),
       seriesName: norm(book.seriesName?.trim() || null),
+      // No series, no number; "invalid" is caught below.
+      seriesPosition: book.seriesName?.trim()
+        ? parseSeriesPosition(book.seriesPosition)
+        : null,
       status: book.status,
       startDate: book.startDate || null,
       endDate: book.endDate || null,
@@ -85,12 +102,17 @@ export function EditBookForm() {
 
     const current = normalize(draft);
     const original = selectedBook ? normalize(selectedBook) : null;
+    if (current.seriesPosition === "invalid") {
+      addToast("Book # must be a whole number from 1 to 999", "error");
+      return;
+    }
 
     const fields = [
       "title",
       "pages",
       "authorName",
       "seriesName",
+      "seriesPosition",
       "status",
       "startDate",
       "endDate",
@@ -206,7 +228,7 @@ export function EditBookForm() {
           </label>
           <SearchableDropdown
             value={draft.seriesName || ""}
-            onChange={(v) => setDraft({ ...draft, seriesName: v })}
+            onChange={(v) => setDraft((b) => withSeries(b, v))}
             options={seriesOptions}
             placeholder="Series"
             disabled={isBusy}
@@ -217,7 +239,7 @@ export function EditBookForm() {
               createSeries.mutate(name, {
                 onSuccess: (data) => {
                   const created = data?.name || name;
-                  setDraft((b) => ({ ...b, seriesName: created }));
+                  setDraft((b) => withSeries(b, created));
                   addToast(`Series "${created}" created`, "success");
                 },
                 onError: (err) => {
@@ -231,6 +253,35 @@ export function EditBookForm() {
             addNewLabel="Add series"
           />
         </div>
+        {draft.seriesName && (
+          <div>
+            <label
+              htmlFor="edit-series-position"
+              className="block text-xs font-medium text-slate-600 mb-1"
+            >
+              Book # in series
+            </label>
+            <input
+              id="edit-series-position"
+              type="number"
+              min={1}
+              max={999}
+              step={1}
+              inputMode="numeric"
+              value={draft.seriesPosition ?? ""}
+              disabled={isBusy}
+              onChange={(e) =>
+                setDraft({
+                  ...draft,
+                  seriesPosition: e.target.value
+                    .replace(/[^0-9]/g, "")
+                    .slice(0, 3),
+                })
+              }
+              className="w-full px-3 py-2 border border-slate-300 rounded-lg text-base focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-slate-50 disabled:opacity-60"
+            />
+          </div>
+        )}
         <div>
           <label className="block text-xs font-medium text-slate-600 mb-1">
             Status

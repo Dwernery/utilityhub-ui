@@ -3,11 +3,15 @@ import { BookCover } from "../BookCover";
 import { StarRating } from "../StarRating";
 import { Modal } from "../../../../components/Modal";
 import { useBooks } from "../../hooks";
+import { bySeriesOrder } from "../../utils/series";
 
 export function SeriesDetailModal({ series, onClose, onBookClick }) {
   const { data: books = [] } = useBooks();
 
-  const seriesBooks = books.filter((b) => b.seriesName === series);
+  // In series order: by number, then any without one in the order they were added.
+  const seriesBooks = books
+    .filter((b) => b.seriesName === series)
+    .sort(bySeriesOrder);
   const readBooks = seriesBooks.filter((b) => b.status === "READ");
   const totalSeriesPages = seriesBooks.reduce((s, b) => s + (b.pages || 0), 0);
   const pagesRead = readBooks.reduce((s, b) => s + (b.pages || 0), 0);
@@ -69,7 +73,8 @@ export function SeriesDetailModal({ series, onClose, onBookClick }) {
                 {book.title}
               </div>
               <div className="text-xs text-slate-500 truncate">
-                by {book.authorName}
+                {book.seriesPosition ? `#${book.seriesPosition} · ` : ""}by{" "}
+                {book.authorName}
               </div>
               <div className="flex items-center gap-2 mt-1">
                 {book.status === "READ" && (

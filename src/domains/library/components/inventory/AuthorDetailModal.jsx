@@ -3,6 +3,7 @@ import { BookCover } from "../BookCover";
 import { StarRating } from "../StarRating";
 import { Modal } from "../../../../components/Modal";
 import { useBooks } from "../../hooks";
+import { seriesLabel } from "../../utils/series";
 
 export function AuthorDetailModal({ author, onClose, onBookClick }) {
   const { data: books = [] } = useBooks();
@@ -64,7 +65,7 @@ export function AuthorDetailModal({ author, onClose, onBookClick }) {
               </div>
               {book.seriesName && (
                 <div className="text-xs text-blue-500 truncate">
-                  {book.seriesName}
+                  {seriesLabel(book)}
                 </div>
               )}
               <div className="flex items-center gap-2 mt-1">

@@ -6,6 +6,7 @@ import { RandomSelector } from "../components/randomize/RandomSelector";
 import { EligibleBooks } from "../components/randomize/EligibleBooks";
 import { LoadingState } from "../../../components/LoadingState";
 import { LoadError } from "../../../components/LoadError";
+import { bySeriesOrder } from "../utils/series";
 
 export function Randomize() {
   const [category, setCategory] = useState("standalone");
@@ -80,7 +81,9 @@ export function Randomize() {
         .map(([series]) => {
           const booksInSeries = books
             .filter((b) => b.seriesName === series)
-            .sort((a, b) => a.id - b.id);
+            // By number, then any without one in the order they were added. The first is
+            // where a picked series starts.
+            .sort(bySeriesOrder);
           const firstBook = booksInSeries[0];
 
           return {
