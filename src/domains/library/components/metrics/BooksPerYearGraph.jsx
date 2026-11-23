@@ -34,9 +34,14 @@ export function BooksPerYearGraph({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 px-4 pt-4 pb-3">
       <div className="flex items-center justify-between gap-3 mb-3">
-        <h2 className="font-semibold text-slate-800 text-sm">
-          {activeMetric.label}
-        </h2>
+        <div>
+          <h2 className="font-semibold text-slate-800 text-sm">
+            {activeMetric.label}
+          </h2>
+          <div className="text-[11px] text-slate-400">
+            Click a year to see it
+          </div>
+        </div>
         <div className="inline-flex rounded-full bg-slate-100 p-0.5">
           {Object.entries(metricConfig).map(([key, config]) => {
             const isActive = graphMetric === key;

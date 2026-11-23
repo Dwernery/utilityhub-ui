@@ -19,6 +19,13 @@ import { AuthorDetailModal } from "../components/inventory/AuthorDetailModal";
 import { SeriesDetailModal } from "../components/inventory/SeriesDetailModal";
 import { BookCover } from "../components/BookCover";
 
+const STATUS_FILTERS = [
+  ["ALL", "All"],
+  ["IN_PROGRESS", "Reading"],
+  ["UNREAD", "Unread"],
+  ["READ", "Read"],
+];
+
 export function Inventory() {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
@@ -94,15 +101,12 @@ export function Inventory() {
           <div className="text-xs text-slate-400">
             {filteredBooks.length}{" "}
             {filteredBooks.length === 1 ? "book" : "books"}
+            {statusFilter !== "ALL" &&
+              ` · ${STATUS_FILTERS.find(([value]) => value === statusFilter)[1]}`}
           </div>
 
           <div className="flex items-center gap-1 overflow-x-auto">
-            {[
-              ["ALL", "All"],
-              ["IN_PROGRESS", "Reading"],
-              ["UNREAD", "Unread"],
-              ["READ", "Read"],
-            ].map(([value, label]) => (
+            {STATUS_FILTERS.map(([value, label]) => (
               <button
                 key={value}
                 onClick={() => setStatusFilter(value)}
@@ -204,14 +208,24 @@ export function Inventory() {
               Try a different search or filter.
             </p>
 
-            {searchTerm && (
-              <button
-                onClick={() => setSearchTerm("")}
-                className="mt-3 text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
-              >
-                Clear search
-              </button>
-            )}
+            <div className="mt-3 flex justify-center gap-4">
+              {searchTerm && (
+                <button
+                  onClick={() => setSearchTerm("")}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  Clear search
+                </button>
+              )}
+              {statusFilter !== "ALL" && (
+                <button
+                  onClick={() => setStatusFilter("ALL")}
+                  className="text-xs font-medium text-blue-600 hover:text-blue-700 cursor-pointer"
+                >
+                  Show all books
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

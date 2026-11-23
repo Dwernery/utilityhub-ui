@@ -1,18 +1,24 @@
 import { Plus } from "lucide-react";
 import { useState } from "react";
 import { StartReadingModal } from "./StartReadingModal";
+import { RateFinishedModal } from "./RateFinishedModal";
 import { useUpdateBook } from "../../hooks";
 import { useToast } from "../../../../context/ToastContext";
 import { todayIso } from "../../../../lib/dates";
 import { readingProgress } from "../../utils/metricUtils";
+import { paceLabel } from "../../utils/pace";
 
-export function CurrentlyReading({ books }) {
+export function CurrentlyReading({ books, className = "" }) {
   const [showAddCurrentlyReading, setShowAddCurrentlyReading] = useState(false);
+  // The book just marked done, to ask for its rating.
+  const [justFinished, setJustFinished] = useState(null);
   const updateBook = useUpdateBook();
   const addToast = useToast();
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-200">
+    <div
+      className={`bg-white rounded-xl shadow-sm border border-slate-200 ${className}`}
+    >
       <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100">
         <h2 className="font-semibold text-slate-800 text-sm">
           Currently Reading
@@ -31,6 +37,7 @@ export function CurrentlyReading({ books }) {
             .filter((b) => b.status === "IN_PROGRESS")
             .map((book) => {
               const { pct, days } = readingProgress(book);
+              const pace = paceLabel(book);
               const isRowPending =
                 updateBook.isPending && updateBook.variables?.id === book.id;
               return (
@@ -45,6 +52,7 @@ export function CurrentlyReading({ books }) {
                         {days !== null ? ` · ${days}d` : ""}
                       </div>
                     </div>
+                    {/* Only "Done": books in progress always get finished, as on iPhone. */}
                     <div className="flex gap-1.5 flex-shrink-0">
                       <button
                         onClick={() => {
@@ -56,11 +64,13 @@ export function CurrentlyReading({ books }) {
                               currentPage: book.pages,
                             },
                             {
-                              onSuccess: () =>
+                              onSuccess: () => {
                                 addToast(
                                   `Marked ${book.title} as read`,
                                   "success",
-                                ),
+                                );
+                                setJustFinished(book);
+                              },
                               onError: (err) =>
                                 addToast(
                                   `Failed to mark book read: ${err?.message || "Unknown error"}`,
@@ -73,35 +83,6 @@ export function CurrentlyReading({ books }) {
                         className="px-2.5 py-1 bg-green-100 text-green-700 hover:bg-green-200 rounded-md text-xs font-medium transition-colors disabled:opacity-60"
                       >
                         Done
-                      </button>
-                      <button
-                        onClick={() => {
-                          updateBook.mutate(
-                            {
-                              id: book.id,
-                              status: "UNREAD",
-                              startDate: null,
-                              endDate: null,
-                              currentPage: 0,
-                            },
-                            {
-                              onSuccess: () =>
-                                addToast(
-                                  `Removed ${book.title} from progress`,
-                                  "success",
-                                ),
-                              onError: (err) =>
-                                addToast(
-                                  `Failed to remove book from progress: ${err?.message || "Unknown error"}`,
-                                  "error",
-                                ),
-                            },
-                          );
-                        }}
-                        disabled={isRowPending}
-                        className="px-2.5 py-1 bg-slate-100 text-slate-600 hover:bg-slate-200 rounded-md text-xs font-medium transition-colors disabled:opacity-60"
-                      >
-                        Remove
                       </button>
                     </div>
                   </div>
@@ -146,6 +127,11 @@ export function CurrentlyReading({ books }) {
                       {pct}%
                     </span>
                   </div>
+                  {pace && (
+                    <div className="mt-1.5 text-xs text-slate-400 tabular-nums">
+                      {pace}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -154,6 +140,12 @@ export function CurrentlyReading({ books }) {
         <p className="px-4 py-4 text-sm text-slate-400">
           No books in progress.
         </p>
+      )}
+      {justFinished && (
+        <RateFinishedModal
+          book={justFinished}
+          onClose={() => setJustFinished(null)}
+        />
       )}
       {showAddCurrentlyReading && (
         <StartReadingModal

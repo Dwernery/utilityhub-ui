@@ -18,22 +18,46 @@ export function getSeries() {
   });
 }
 
+/** Yearly reading goals: [{ year, target }]. */
+export function getGoals() {
+  return requestJson("/api/library/goals", {
+    errorMessage: "Failed to fetch reading goals",
+  });
+}
+
+export function setGoal({ year, target }) {
+  return requestJson(`/api/library/goals/${year}`, {
+    method: "PUT",
+    body: { target },
+    errorMessage: "Failed to save reading goal",
+  });
+}
+
+export async function deleteGoal(year) {
+  await requestVoid(`/api/library/goals/${year}`, {
+    method: "DELETE",
+    errorMessage: "Failed to remove reading goal",
+  });
+}
+
+/** Returns the saved name: an existing author's, if one matches ignoring case (the API doesn't duplicate). */
 export async function createAuthor(authorName) {
-  await requestVoid("/api/library/authors", {
+  const author = await requestJson("/api/library/authors", {
     method: "POST",
     body: { fullName: authorName },
     errorMessage: "Failed to create author",
   });
-  return { name: authorName };
+  return { name: author.fullName };
 }
 
+/** Returns the saved name: an existing series', if one matches ignoring case (the API doesn't duplicate). */
 export async function createSeries(seriesName) {
-  await requestVoid("/api/library/series", {
+  const series = await requestJson("/api/library/series", {
     method: "POST",
     body: { name: seriesName },
     errorMessage: "Failed to create series",
   });
-  return { name: seriesName };
+  return { name: series.name };
 }
 
 export function addBook({ title, pages, authorName, seriesName }) {

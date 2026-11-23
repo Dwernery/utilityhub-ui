@@ -3,3 +3,4 @@
 export const BOOKS_KEY = ["books"];
 export const AUTHORS_KEY = ["authors"];
 export const SERIES_KEY = ["series"];
+export const GOALS_KEY = ["reading-goals"];

@@ -2,12 +2,7 @@ import { CheckCircle2 } from "lucide-react";
 import { StarRating } from "../StarRating";
 import { daysBetween, formatDate, parseLocalDate } from "../../../../lib/dates";
 
-export function BooksPerYearDetails({
-  metrics,
-  selectedReadingYear,
-  setSelectedReadingYear,
-  books,
-}) {
+export function BooksPerYearDetails({ metrics, selectedReadingYear, books }) {
   const filteredBooks = books.filter(
     (b) =>
       b.status === "READ" &&
@@ -32,15 +27,8 @@ export function BooksPerYearDetails({
   return (
     <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-        <h2 className="font-semibold text-slate-800 text-sm">
-          {selectedReadingYear}
-        </h2>
-        <button
-          onClick={() => setSelectedReadingYear(null)}
-          className="text-xs text-slate-400 hover:text-slate-600"
-        >
-          Clear
-        </button>
+        {/* The period picker above chooses the year (and goes back to all time). */}
+        <h2 className="font-semibold text-slate-800 text-sm">By month</h2>
       </div>
       <div className="px-4 pt-3 pb-2">
         <div className="text-xs text-slate-400 mb-2">By month</div>
@@ -75,7 +63,8 @@ export function BooksPerYearDetails({
       </div>
       <div className="border-t border-slate-100">
         <div className="px-4 py-2 text-xs text-slate-400">
-          {filteredBooks.length} books finished
+          {filteredBooks.length} {filteredBooks.length === 1 ? "book" : "books"}{" "}
+          finished in {selectedReadingYear}
         </div>
         <div className="divide-y divide-slate-100">
           {[...filteredBooks]

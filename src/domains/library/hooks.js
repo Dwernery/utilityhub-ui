@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import * as api from "./api";
-import { AUTHORS_KEY, BOOKS_KEY, SERIES_KEY } from "./queryKeys";
+import { AUTHORS_KEY, BOOKS_KEY, GOALS_KEY, SERIES_KEY } from "./queryKeys";
 import { uploadFileToS3, validateFile } from "./utils/s3Upload";
 import { useToast } from "../../context/ToastContext";
 import { todayIso } from "../../lib/dates";
@@ -20,6 +20,11 @@ export function useAuthors() {
 
 export function useSeries() {
   return useQuery({ queryKey: SERIES_KEY, queryFn: api.getSeries });
+}
+
+/** Yearly reading goals. Doesn't retry: if the API has no goals yet, the goal card just stays hidden. */
+export function useGoals() {
+  return useQuery({ queryKey: GOALS_KEY, queryFn: api.getGoals, retry: false });
 }
 
 // ── Mutations ──────────────────────────────────────────────────────────────
@@ -42,6 +47,9 @@ export const useCreateAuthor = () =>
   useInvalidatingMutation((name) => api.createAuthor(name), AUTHORS_KEY);
 export const useCreateSeries = () =>
   useInvalidatingMutation((name) => api.createSeries(name), SERIES_KEY);
+export const useSetGoal = () => useInvalidatingMutation(api.setGoal, GOALS_KEY);
+export const useDeleteGoal = () =>
+  useInvalidatingMutation(api.deleteGoal, GOALS_KEY);
 
 // Shared "start reading" mutation used by Randomize, StartReadingModal, and
 // (indirectly) CurrentlyReading so the payload shape and toast copy can't
