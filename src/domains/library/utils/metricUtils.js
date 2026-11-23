@@ -1,4 +1,5 @@
 import { daysBetween, parseLocalDate, todayIso } from "../../../lib/dates";
+import { byInventoryOrder } from "./series";
 
 export const filterBooks = (books, normalizedSearch, statusFilter) => {
   const filteredBooks = books.filter((book) => {
@@ -20,6 +21,7 @@ export const filterBooks = (books, normalizedSearch, statusFilter) => {
   return filteredBooks;
 };
 
+/** Group books by author, authors A–Z; each author's books with each series together (see byInventoryOrder). */
 export const groupBooks = (filteredBooks) => {
   const groups = {};
   filteredBooks.forEach((book) => {
@@ -29,7 +31,9 @@ export const groupBooks = (filteredBooks) => {
   });
 
   return Object.fromEntries(
-    Object.entries(groups).sort(([a], [b]) => a.localeCompare(b)),
+    Object.entries(groups)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([author, list]) => [author, list.sort(byInventoryOrder)]),
   );
 };
 

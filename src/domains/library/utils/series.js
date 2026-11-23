@@ -15,6 +15,19 @@ export function bySeriesOrder(a, b) {
   return pa !== pb ? pa - pb : Number(a.id) - Number(b.id);
 }
 
+/**
+ * An author's books in Inventory: each series together (series A–Z, books in series order), then
+ * standalone books A–Z by title.
+ */
+export function byInventoryOrder(a, b) {
+  if (!!a.seriesName !== !!b.seriesName) return a.seriesName ? -1 : 1;
+  if (a.seriesName && b.seriesName) {
+    const bySeries = a.seriesName.localeCompare(b.seriesName);
+    return bySeries !== 0 ? bySeries : bySeriesOrder(a, b);
+  }
+  return a.title.localeCompare(b.title);
+}
+
 /** The number a new book would get at the end of `series`: one past the highest so far. */
 export function nextSeriesPosition(books, series) {
   const used = books
