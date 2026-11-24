@@ -31,9 +31,35 @@ export function deleteAccountBalance(accountId, balanceDate) {
   );
 }
 
+/**
+ * Fill a month (balanceDate, "YYYY-MM-01") from the month before it. Accounts
+ * that already have a balance that month are left alone. Resolves to
+ * { fromDate, toDate, copied }.
+ */
+export function copyPreviousMonthBalances(balanceDate) {
+  return requestJson(`${BASE}/balances/${balanceDate}/copy-previous-month`, {
+    method: "POST",
+    errorMessage: "Failed to copy last month's balances",
+    includeErrorDetail: true,
+  });
+}
+
 export function getAccounts() {
   return requestJson(`${BASE}/accounts`, {
     errorMessage: "Failed to fetch accounts",
+  });
+}
+
+/**
+ * Rename, retype or (un)archive an account. The type must stay in the
+ * account's category; the API rejects one from the other category.
+ */
+export function updateAccount(id, { accountName, accountType, archived }) {
+  return requestJson(`${BASE}/accounts/${id}`, {
+    method: "PUT",
+    body: { accountName, accountType, archived },
+    errorMessage: "Failed to update account",
+    includeErrorDetail: true,
   });
 }
 
@@ -87,10 +113,11 @@ export function deleteTransaction(id) {
   });
 }
 
-export function updateTransaction(id, name, amount, paid) {
+export function updateTransaction(id, name, amount, paid, cash) {
   return requestMaybeJson(`${BASE}/transactions/${id}`, {
     method: "PUT",
-    body: { name, amount, paid },
+    // Left out (undefined), cash keeps its current value on the server.
+    body: { name, amount, paid, cash },
     errorMessage: "Failed to update transaction",
     includeErrorDetail: true,
   });

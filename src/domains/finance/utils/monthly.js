@@ -11,6 +11,9 @@ import {
   previousMonthIso,
 } from "../../../lib/dates";
 
+const monthYear = (date) =>
+  `${MONTH_LABELS[isoMonth(date) - 1]} ${isoYear(date)}`;
+
 // Monthly net-worth table and month detail. Mirrors utility-hub-mobile's
 // lib/finance/utils/monthly.ts (which was itself ported from this app).
 
@@ -174,7 +177,25 @@ export function monthAccounts(history, date) {
   };
 }
 
-/** Asset account types offered when creating an account (liabilities take free text). */
+/**
+ * The month a "copy last month" for `date` would copy from, or null when that
+ * month has no account balances (nothing to copy, so offer no button).
+ * Mirrors utility-hub-mobile's previousMonthToCopy.
+ *
+ * @returns {{ fromDate: string, label: string } | null}  label: "October 2026"
+ */
+export function previousMonthToCopy(history, date) {
+  const fromDate = previousMonthIso(date);
+  if (!monthAccounts(history, fromDate).hasData) return null;
+  return { fromDate, label: monthYear(fromDate) };
+}
+
+/** The toast after a copy, from the API's { fromDate, copied }. */
+export function copyResultMessage({ fromDate, copied }) {
+  if (copied === 0) return "Every account already has a balance this month";
+  return `Copied ${copied} balance${copied === 1 ? "" : "s"} from ${monthYear(fromDate)}`;
+}
+
 /**
  * Totals for the Income & Expenses page. Net cash flow counts only items marked
  * cash. Mirrors utility-hub-mobile's transactionTotals.
@@ -193,6 +214,7 @@ export function transactionTotals(transactions = []) {
   return { income, expenses, netCashFlow, netIncome: income - expenses };
 }
 
+/** Asset account types offered when creating an account (liabilities take free text). */
 export const ASSET_TYPES = [
   "Cash & Savings",
   "Investments",

@@ -6,6 +6,7 @@ import { useState, useMemo } from "react";
 import { useNetWorthHistory } from "../hooks";
 import { Graph } from "../components/Graph";
 import { MonthlyTable } from "../components/MonthlyTable";
+import { AccountsModal } from "../components/AccountsModal";
 
 export function Dashboard() {
   const {
@@ -19,6 +20,7 @@ export function Dashboard() {
 
   const years = useMemo(() => getYears(netWorthHistory), [netWorthHistory]);
   const [selectedYear, setSelectedYear] = useState(null);
+  const [showAccounts, setShowAccounts] = useState(false);
   const activeYear = selectedYear ?? years?.[years.length - 1] ?? null;
 
   if (isPending) return <LoadingState what="net worth" />;
@@ -37,7 +39,10 @@ export function Dashboard() {
     <div className="flex flex-col lg:flex-row gap-4 lg:h-full lg:min-h-0 pb-16 md:pb-8 lg:pb-4">
       <div className="flex flex-col flex-1 min-w-0 gap-4 lg:min-h-0">
         <div className="flex-shrink-0">
-          <HeroCard selectedYear={activeYear} />
+          <HeroCard
+            selectedYear={activeYear}
+            onOpenAccounts={() => setShowAccounts(true)}
+          />
         </div>
         <div className="h-64 sm:h-80 lg:h-auto lg:flex-1 lg:min-h-0">
           <Graph
@@ -50,6 +55,7 @@ export function Dashboard() {
       <div className="w-full lg:w-[28rem] flex-shrink-0">
         <MonthlyTable selectedYear={activeYear} />
       </div>
+      {showAccounts && <AccountsModal onClose={() => setShowAccounts(false)} />}
     </div>
   );
 }

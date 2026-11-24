@@ -2,7 +2,8 @@ import {
   TrendingUp,
   TrendingDown,
   Edit2,
-  Check,
+  CheckCircle2,
+  Circle,
   X,
   Plus,
   Trash2,
@@ -41,6 +42,7 @@ export function IncomeExpenses() {
     name: "",
     amount: "",
     paid: false,
+    cash: false,
   });
   // Which column ("INCOME" | "EXPENSE") has its add form open, if any.
   const [addingType, setAddingType] = useState(null);
@@ -78,6 +80,7 @@ export function IncomeExpenses() {
       name: transaction.name,
       amount: transaction.amount.toString(),
       paid: transaction.paid || false,
+      cash: transaction.cash || false,
     });
   };
 
@@ -102,12 +105,29 @@ export function IncomeExpenses() {
         name: editFormData.name,
         amount: newAmount,
         paid: editFormData.paid,
+        cash: editFormData.cash,
       });
       addToast("Transaction updated successfully", "success");
       setEditingTransaction(null);
     } catch (err) {
       addToast(err.message || "Failed to update transaction", "error");
     }
+  };
+
+  // One-tap paid toggle on each row. Mirrors utility-hub-mobile's togglePaid.
+  const handleTogglePaid = (transaction) => {
+    updateTransaction.mutate(
+      {
+        id: transaction.id,
+        name: transaction.name,
+        amount: transaction.amount,
+        paid: !transaction.paid,
+      },
+      {
+        onError: (err) =>
+          addToast(err.message || "Failed to update transaction", "error"),
+      },
+    );
   };
 
   const handleAddClick = (type) => {
@@ -142,18 +162,22 @@ export function IncomeExpenses() {
       );
       setAddingType(null);
     } catch (err) {
-      addToast(err.message || "Failed to add transaction", "error");
+      addToast(
+        err.message ||
+          `Failed to add ${addingType === "INCOME" ? "income" : "expense"}`,
+        "error",
+      );
     }
   };
 
   const handleDelete = async (transaction) => {
-    if (!confirm(`Delete "${transaction.name}"? This can't be undone.`)) {
+    if (!confirm(`Delete ${transaction.name}? This can't be undone.`)) {
       return;
     }
 
     try {
       await deleteTransaction.mutateAsync(transaction.id);
-      addToast(`Deleted "${transaction.name}"`, "success");
+      addToast(`${transaction.name} deleted`, "success");
       if (editingTransaction?.id === transaction.id) {
         setEditingTransaction(null);
       }
@@ -241,7 +265,11 @@ export function IncomeExpenses() {
               Filter:
             </span>
             <div className="flex gap-2">
-              {["ALL", "PAID", "UNPAID"].map((filter) => (
+              {[
+                ["ALL", "All"],
+                ["PAID", "Paid"],
+                ["UNPAID", "Unpaid"],
+              ].map(([filter, label]) => (
                 <button
                   key={filter}
                   onClick={() => setPaidFilter(filter)}
@@ -251,7 +279,7 @@ export function IncomeExpenses() {
                       : "bg-slate-200 text-slate-700 hover:bg-slate-300"
                   }`}
                 >
-                  {filter}
+                  {label}
                 </button>
               ))}
             </div>
@@ -339,7 +367,10 @@ export function IncomeExpenses() {
                         className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
                       />
                       <span className="text-sm font-medium text-slate-700">
-                        Counts toward net cash flow
+                        Cash
+                      </span>
+                      <span className="text-xs text-slate-500">
+                        Cash items count toward Net Cash Flow.
                       </span>
                     </label>
                     <div className="flex gap-2">
@@ -366,21 +397,45 @@ export function IncomeExpenses() {
                   .filter((transaction) => transaction.transactionType === dir)
                   .map((transaction) => {
                     const isEditing = editingTransaction?.id === transaction.id;
+                    // Only this row waits on its own toggle; the others stay usable.
+                    const isToggling =
+                      updateTransaction.isPending &&
+                      updateTransaction.variables?.id === transaction.id;
                     return (
                       <div key={transaction.id}>
                         <div
                           className={`rounded-lg p-3 border flex justify-between items-center hover:shadow-sm transition-all ${dir === "INCOME" ? "bg-emerald-50 border-emerald-200" : "bg-rose-50 border-rose-200"}`}
                         >
-                          <div className="flex items-center gap-2">
-                            <span className="text-slate-800 font-medium text-sm">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <button
+                              type="button"
+                              role="checkbox"
+                              aria-checked={transaction.paid}
+                              aria-label={`${transaction.name} paid`}
+                              title={
+                                transaction.paid
+                                  ? "Mark as unpaid"
+                                  : "Mark as paid"
+                              }
+                              onClick={() => handleTogglePaid(transaction)}
+                              // While its edit form is open, the form owns "paid".
+                              disabled={isToggling || isEditing}
+                              className="flex-shrink-0 rounded-full hover:cursor-pointer disabled:opacity-50 disabled:cursor-default"
+                            >
+                              {transaction.paid ? (
+                                <CheckCircle2
+                                  size={20}
+                                  className={dir === "INCOME" ? C.pos : C.neg}
+                                />
+                              ) : (
+                                <Circle size={20} className="text-slate-300" />
+                              )}
+                            </button>
+                            <span
+                              className={`font-medium text-sm ${transaction.paid ? "text-slate-500" : "text-slate-800"}`}
+                            >
                               {transaction.name}
                             </span>
-                            {transaction.paid && (
-                              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold whitespace-nowrap bg-slate-700 text-white">
-                                <Check size={12} />
-                                <span>Paid</span>
-                              </div>
-                            )}
                           </div>
                           <div className="flex items-center gap-2">
                             <span
@@ -436,7 +491,7 @@ export function IncomeExpenses() {
                                   className="flex-1 px-3 py-2 border border-blue-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
                                 />
                               </div>
-                              <div className="flex items-center gap-3">
+                              <div className="flex items-center gap-x-4 gap-y-2 flex-wrap">
                                 <label className="flex items-center gap-2 cursor-pointer">
                                   <input
                                     type="checkbox"
@@ -451,6 +506,25 @@ export function IncomeExpenses() {
                                   />
                                   <span className="text-sm font-medium text-slate-700">
                                     Mark as Paid
+                                  </span>
+                                </label>
+                                <label className="flex items-center gap-2 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={editFormData.cash}
+                                    onChange={(e) =>
+                                      setEditFormData({
+                                        ...editFormData,
+                                        cash: e.target.checked,
+                                      })
+                                    }
+                                    className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  />
+                                  <span className="text-sm font-medium text-slate-700">
+                                    Cash
+                                  </span>
+                                  <span className="text-xs text-slate-500">
+                                    Counts toward Net Cash Flow.
                                   </span>
                                 </label>
                               </div>
@@ -480,8 +554,8 @@ export function IncomeExpenses() {
                   (transaction) => transaction.transactionType === dir,
                 ).length === 0 && (
                   <p className="text-slate-400 text-sm italic">
-                    No {dir === "INCOME" ? "income" : "expense"} transactions
-                    yet
+                    No {dir === "INCOME" ? "income" : "expenses"} yet. Click Add
+                    to add one.
                   </p>
                 )}
               </div>

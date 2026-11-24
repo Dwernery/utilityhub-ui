@@ -62,14 +62,27 @@ export const useRemoveAccountBalance = () =>
     [NET_WORTH_HISTORY_KEY],
   );
 
+export const useCopyPreviousMonthBalances = () =>
+  useInvalidating(
+    (date) => api.copyPreviousMonthBalances(date),
+    [NET_WORTH_HISTORY_KEY],
+  );
+
+// Names and types show in every month of the history, so it's refetched too.
+export const useUpdateAccount = () =>
+  useInvalidating(
+    ({ id, ...fields }) => api.updateAccount(id, fields),
+    [ACCOUNTS_KEY, NET_WORTH_HISTORY_KEY],
+  );
+
 // An initial balance changes the net-worth history too, so both are refetched.
 export const useCreateAccount = () =>
   useInvalidating(api.createAccount, [ACCOUNTS_KEY, NET_WORTH_HISTORY_KEY]);
 
 export const useUpdateTransaction = () =>
   useInvalidating(
-    ({ id, name, amount, paid }) =>
-      api.updateTransaction(id, name, amount, paid),
+    ({ id, name, amount, paid, cash }) =>
+      api.updateTransaction(id, name, amount, paid, cash),
     [TRANSACTIONS_KEY],
   );
 

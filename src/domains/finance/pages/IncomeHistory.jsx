@@ -16,6 +16,7 @@ import {
   getIncomeYoY,
 } from "../utils/income";
 import { useToast } from "../../../context/ToastContext";
+import { IncomeByYearChart } from "../components/IncomeByYearChart";
 
 export function IncomeHistory() {
   const {
@@ -51,6 +52,15 @@ export function IncomeHistory() {
   const sources = getSourcesForYear(incomeSources, activeYear);
   const total = getYearTotal(incomeSources, activeYear);
   const { change, changePercent } = getIncomeYoY(incomeSources, activeYear);
+  // Only years with saved sources; a just-added empty year has no bar yet.
+  const yearTotals = useMemo(
+    () =>
+      years.map((year) => ({
+        year,
+        total: getYearTotal(incomeSources, year),
+      })),
+    [years, incomeSources],
+  );
 
   const openAddForm = () => {
     setFormData({ name: "", amount: "" });
@@ -217,87 +227,100 @@ export function IncomeHistory() {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-xl">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-xl font-bold text-slate-800">
-            Income — {activeYear}
-          </h2>
-          <button
-            onClick={openAddForm}
-            className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm hover:cursor-pointer"
-          >
-            <Plus size={16} />
-            <span>Add</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 pb-2 border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider">
-          <div>Source</div>
-          <div className="text-right">Amount</div>
-        </div>
-
-        {sources.length === 0 && (
-          <div className="py-8 text-center text-slate-400 text-sm">
-            No income sources yet for {activeYear}. Click + Add to get started.
+      <div className="flex flex-col lg:flex-row gap-4 lg:items-stretch">
+        <div className="lg:flex-[1.3] min-w-0 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-xl">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-slate-800">
+              Income — {activeYear}
+            </h2>
+            <button
+              onClick={openAddForm}
+              className="flex items-center gap-2 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-semibold text-sm hover:cursor-pointer"
+            >
+              <Plus size={16} />
+              <span>Add</span>
+            </button>
           </div>
-        )}
 
-        {sources.map((source) => (
-          <div
-            key={source.id}
-            className="grid grid-cols-2 items-center py-3 border-b border-slate-100"
-          >
-            <div className="font-semibold text-slate-800 truncate pr-2">
-              {source.name}
+          <div className="grid grid-cols-2 pb-2 border-b border-slate-200 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            <div>Source</div>
+            <div className="text-right">Amount</div>
+          </div>
+
+          {sources.length === 0 && (
+            <div className="py-8 text-center text-slate-400 text-sm">
+              No income sources yet for {activeYear}. Click + Add to get
+              started.
             </div>
-            <div className="flex items-center justify-end gap-3 sm:gap-4">
-              <span className="font-bold text-emerald-600 whitespace-nowrap">
-                {currencyFormatter.format(source.amount)}
-              </span>
-              <div className="flex items-center gap-0.5 flex-shrink-0">
-                <button
-                  onClick={() => openEditForm(source)}
-                  className="p-1 text-blue-600 hover:text-blue-700 hover:cursor-pointer"
-                >
-                  <Edit2 size={14} />
-                </button>
-                <button
-                  onClick={() => handleDelete(source)}
-                  className="p-1 text-rose-600 hover:text-rose-700 hover:cursor-pointer"
-                >
-                  <Trash2 size={14} />
-                </button>
+          )}
+
+          {sources.map((source) => (
+            <div
+              key={source.id}
+              className="grid grid-cols-2 items-center py-3 border-b border-slate-100"
+            >
+              <div className="font-semibold text-slate-800 truncate pr-2">
+                {source.name}
+              </div>
+              <div className="flex items-center justify-end gap-3 sm:gap-4">
+                <span className="font-bold text-emerald-600 whitespace-nowrap">
+                  {currencyFormatter.format(source.amount)}
+                </span>
+                <div className="flex items-center gap-0.5 flex-shrink-0">
+                  <button
+                    onClick={() => openEditForm(source)}
+                    className="p-1 text-blue-600 hover:text-blue-700 hover:cursor-pointer"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(source)}
+                    className="p-1 text-rose-600 hover:text-rose-700 hover:cursor-pointer"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        <div className="grid grid-cols-2 items-center py-3 px-3 mt-1 bg-emerald-50 rounded-lg border border-emerald-100">
-          <div className="font-bold text-slate-800">Total</div>
-          <div className="text-right font-extrabold text-base sm:text-lg text-emerald-700 whitespace-nowrap">
-            {currencyFormatter.format(total)}
+          <div className="grid grid-cols-2 items-center py-3 px-3 mt-1 bg-emerald-50 rounded-lg border border-emerald-100">
+            <div className="font-bold text-slate-800">Total</div>
+            <div className="text-right font-extrabold text-base sm:text-lg text-emerald-700 whitespace-nowrap">
+              {currencyFormatter.format(total)}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 items-center pt-3">
+            <div className="text-xs sm:text-sm text-slate-400">
+              vs {activeYear - 1}
+            </div>
+            <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
+              {change >= 0 ? (
+                <TrendingUp className="text-emerald-600" size={16} />
+              ) : (
+                <TrendingDown className="text-rose-600" size={16} />
+              )}
+              <span
+                className={`font-semibold ${change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
+              >
+                {change >= 0 ? "+" : ""}
+                {currencyFormatter.format(change)} ({change >= 0 ? "+" : "-"}
+                {Math.abs(changePercent).toFixed(1)}%)
+              </span>
+            </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 items-center pt-3">
-          <div className="text-xs sm:text-sm text-slate-400">
-            Year-over-Year Change
+        {yearTotals.length > 0 && (
+          <div className="lg:flex-1 min-w-0">
+            <IncomeByYearChart
+              data={yearTotals}
+              selectedYear={activeYear}
+              onSelectYear={setSelectedYear}
+            />
           </div>
-          <div className="flex items-center justify-end gap-1.5 whitespace-nowrap">
-            {change >= 0 ? (
-              <TrendingUp className="text-emerald-600" size={16} />
-            ) : (
-              <TrendingDown className="text-rose-600" size={16} />
-            )}
-            <span
-              className={`font-semibold ${change >= 0 ? "text-emerald-600" : "text-rose-600"}`}
-            >
-              {change >= 0 ? "+" : ""}
-              {currencyFormatter.format(change)} ({change >= 0 ? "+" : "-"}
-              {Math.abs(changePercent).toFixed(1)}%)
-            </span>
-          </div>
-        </div>
+        )}
       </div>
 
       {(isAdding || editingSource) && (

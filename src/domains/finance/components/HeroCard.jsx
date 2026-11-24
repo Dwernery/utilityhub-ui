@@ -3,6 +3,7 @@ import {
   TrendingUp,
   TrendingDown,
   ChevronDown,
+  Landmark,
 } from "lucide-react";
 import { useState } from "react";
 import { currencyFormatter as currencyFormatter } from "../utils/currency";
@@ -24,7 +25,7 @@ function StatItem({ label, value, valueClass = "text-white" }) {
   );
 }
 
-export function HeroCard({ selectedYear }) {
+export function HeroCard({ selectedYear, onOpenAccounts }) {
   let { data: netWorthHistory } = useNetWorthHistory();
   const [showDetails, setShowDetails] = useState(false);
 
@@ -49,6 +50,16 @@ export function HeroCard({ selectedYear }) {
           <span className="text-blue-100 text-[10px] md:text-xs font-medium uppercase tracking-wide">
             Net Worth
           </span>
+          {onOpenAccounts && (
+            <button
+              type="button"
+              onClick={onOpenAccounts}
+              className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold hover:cursor-pointer"
+            >
+              <Landmark size={14} />
+              Accounts
+            </button>
+          )}
         </div>
         <div className="text-2xl md:text-4xl lg:text-5xl font-bold text-white mb-2">
           {currencyFormatter.format(currentNetWorth)}
@@ -73,7 +84,7 @@ export function HeroCard({ selectedYear }) {
           onClick={() => setShowDetails((prev) => !prev)}
           className="flex md:hidden items-center justify-between w-full text-blue-200 text-[10px] uppercase tracking-wide font-medium"
         >
-          <span>{showDetails ? "" : "Show details"}</span>
+          <span>{showDetails ? "Hide details" : "Show details"}</span>
           <ChevronDown
             size={14}
             className={`transition-transform ${showDetails ? "rotate-180" : ""}`}

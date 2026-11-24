@@ -9,14 +9,22 @@ import {
   TrendingUp,
   TrendingDown,
   AlertCircle,
+  Copy,
 } from "lucide-react";
 import { Modal } from "../../../components/Modal";
 import { LoadError } from "../../../components/LoadError";
 import { currencyFormatter, parseMoney } from "../utils/currency";
-import { ASSET_TYPES, monthAccounts } from "../utils/monthly";
+import {
+  ASSET_TYPES,
+  copyResultMessage,
+  monthAccounts,
+  previousMonthToCopy,
+} from "../utils/monthly";
+import { addableAccounts } from "../utils/accounts";
 import {
   useNetWorthHistory,
   useAccounts,
+  useCopyPreviousMonthBalances,
   useCreateAccount,
   useRemoveAccountBalance,
   useSetAccountBalance,
@@ -41,7 +49,7 @@ const SECTION = {
     toggleOn: "bg-emerald-600 text-white",
     toggleOff: "bg-white text-emerald-600 border border-emerald-200",
     input: "border-emerald-200 focus:ring-emerald-500",
-    namePlaceholder: "e.g., My Crypto Wallet",
+    namePlaceholder: "e.g. My Crypto Wallet",
     // A rising asset is good news; a rising liability isn't.
     good: (change) => change >= 0,
   },
@@ -60,7 +68,7 @@ const SECTION = {
     toggleOn: "bg-rose-600 text-white",
     toggleOff: "bg-white text-rose-600 border border-rose-200",
     input: "border-rose-200 focus:ring-rose-500",
-    namePlaceholder: "e.g., Personal Loan",
+    namePlaceholder: "e.g. Personal Loan",
     good: (change) => change < 0,
   },
 };
@@ -82,10 +90,26 @@ export function MonthlyDetailModal({ date, title, onClose }) {
   const setAccountBalance = useSetAccountBalance();
   const removeAccountBalance = useRemoveAccountBalance();
   const createAccount = useCreateAccount();
+  const copyPrevious = useCopyPreviousMonthBalances();
   const isSaving =
     setAccountBalance.isPending ||
     removeAccountBalance.isPending ||
-    createAccount.isPending;
+    createAccount.isPending ||
+    copyPrevious.isPending;
+  // Offered only on an empty month whose previous month has balances.
+  const copySource = month.hasData ? null : previousMonthToCopy(history, date);
+
+  const handleCopyPrevious = async () => {
+    try {
+      const result = await copyPrevious.mutateAsync(date);
+      addToast(
+        copyResultMessage(result),
+        result.copied === 0 ? "info" : "success",
+      );
+    } catch (err) {
+      addToast(err.message || "Failed to copy last month's balances", "error");
+    }
+  };
 
   const [editingAccountId, setEditingAccountId] = useState(null);
   const [editBalance, setEditBalance] = useState("");
@@ -95,8 +119,10 @@ export function MonthlyDetailModal({ date, title, onClose }) {
   const presentIds = new Set(
     [...month.assets, ...month.liabilities].map((a) => a.accountId),
   );
+  // Archived accounts aren't offered for new months.
   const availableFor = (category) =>
-    allAccounts.filter((a) => a.category === category && !presentIds.has(a.id));
+    addableAccounts(allAccounts, category, presentIds);
+  const accountById = new Map(allAccounts.map((a) => [a.id, a]));
 
   // Balances may be negative (e.g. an overdrawn account), unlike transactions and income.
   const parseBalance = (raw) => {
@@ -196,6 +222,7 @@ export function MonthlyDetailModal({ date, title, onClose }) {
     category,
     accounts: category === "ASSET" ? month.assets : month.liabilities,
     available: availableFor(category),
+    accountById,
     isSaving,
     editingAccountId,
     editBalance,
@@ -248,8 +275,22 @@ export function MonthlyDetailModal({ date, title, onClose }) {
                 No data for this month yet
               </h4>
               <p className="text-sm text-yellow-800">
-                Click the + button below to add account balances for {title}
+                {copySource
+                  ? `Start from ${copySource.label}'s balances and update what changed, or click + on Assets or Liabilities.`
+                  : `Click + on Assets or Liabilities to add balances for ${title}.`}
               </p>
+              {copySource && (
+                <button
+                  onClick={handleCopyPrevious}
+                  disabled={isSaving}
+                  className="mt-3 flex items-center gap-2 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white rounded-lg font-semibold text-sm hover:cursor-pointer"
+                >
+                  <Copy size={14} />
+                  {copyPrevious.isPending
+                    ? "Copying..."
+                    : `Copy from ${copySource.label}`}
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -267,6 +308,7 @@ function AccountSection({
   category,
   accounts,
   available,
+  accountById,
   isSaving,
   editingAccountId,
   editBalance,
@@ -320,6 +362,11 @@ function AccountSection({
                 >
                   {account.accountType}
                 </span>
+                {accountById.get(account.accountId)?.archived && (
+                  <span className="text-xs px-2 py-0.5 rounded-full font-medium bg-slate-200 text-slate-600 flex-shrink-0">
+                    Archived
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-3 flex-wrap justify-end">
                 <div className="flex flex-col items-end gap-0.5">
@@ -344,7 +391,8 @@ function AccountSection({
                 <div className="flex items-center gap-1">
                   <button
                     onClick={() => onStartEdit(account)}
-                    aria-label={`Edit ${account.accountName}`}
+                    aria-label={`Edit balance for ${account.accountName}`}
+                    title="Edit balance"
                     className="p-1.5 text-blue-600 rounded-md hover:bg-blue-200 hover:text-blue-800 transition-colors duration-200 hover:cursor-pointer"
                   >
                     <Edit2 size={14} />
@@ -393,6 +441,10 @@ function AccountSection({
             )}
           </div>
         ))}
+
+        {accounts.length === 0 && !isAdding && (
+          <p className="text-slate-400 text-sm italic">None this month</p>
+        )}
 
         {isAdding && (
           <AddAccountForm
@@ -553,7 +605,7 @@ function AddAccountForm({
                 type="text"
                 value={type}
                 onChange={(e) => setType(e.target.value)}
-                placeholder="e.g., Credit Card, Mortgage"
+                placeholder="e.g. Credit Card, Mortgage"
                 className={field}
                 disabled={isSaving}
               />
