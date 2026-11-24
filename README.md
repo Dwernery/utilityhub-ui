@@ -1,16 +1,37 @@
-# React + Vite
+# Project SHIELD (UtilityHub web)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The web app for UtilityHub: Library, MCU tracker and Finances. `utility-hub-mobile` is the iOS version of the same app, and the two are kept in step.
 
-Currently, two official plugins are available:
+- **Stack:** React, Vite, Tailwind CSS, TanStack Query, Recharts.
+- **Backend:** `platform-api` (Spring Boot), reached at `/api`.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Setup
 
-## React Compiler
+```bash
+npm install
+```
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+In development, Vite forwards `/api` to the API at `http://localhost:8080`. To use another address, set `VITE_API_URL` in a git-ignored `.env`. The app and the API need to share an address, because the session cookie only works that way (see `src/lib/config.js`).
 
-## Expanding the ESLint configuration
+## Run
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+```bash
+npm run dev       # http://localhost:5173, with the API running
+npm run build     # production build in dist/
+npm run preview   # serve the build locally
+```
+
+`platform-api/scripts/deploy.sh` builds this app on the server and publishes it.
+
+## Checks
+
+```bash
+npm run lint && npm run format:check && npm test && npm run build
+```
+
+## Layout
+
+- `src/domains/<domain>/`: pages, components, `api.js`, TanStack Query `hooks.js` and pure `utils/` per domain (`finance`, `library`, `mcu`, `home`)
+- `src/components/`: shared UI
+- `src/lib/`: config, HTTP, sign-in session and date helpers
+- `src/domains/finance/utils/shared-cases.json`: test cases the mobile app runs too, so the two can't drift
