@@ -1,19 +1,22 @@
+import { WifiOff } from "lucide-react";
 import { Link } from "react-router-dom";
 
 /**
  * A home-page tile. With `to` it links to that utility and shows "Live";
  * without it (a utility that isn't built yet) it's a plain card marked "Soon".
  * `linked={false}` keeps the "Live" badge but drops the link, for content
- * that has its own buttons (a link can't contain a button).
+ * that has its own buttons (a link can't contain a button). A `notice` (such as
+ * <RefreshNotice>) shows under the header and drops the link for the same reason.
  */
 export function UtilityCard({
   icon: Icon,
   title,
   to,
   linked = true,
+  notice,
   children,
 }) {
-  const isLink = Boolean(to) && linked;
+  const isLink = Boolean(to) && linked && !notice;
   const Root = isLink ? Link : "div";
   return (
     <Root
@@ -34,6 +37,7 @@ export function UtilityCard({
         </span>
       </div>
 
+      {notice}
       {children}
     </Root>
   );
@@ -47,6 +51,34 @@ export function UtilityCardSkeleton() {
       <div className="h-4 bg-slate-100 rounded w-3/4" />
       <div className="h-4 bg-slate-100 rounded w-1/2" />
       <div className="h-4 bg-slate-100 rounded w-2/3" />
+    </div>
+  );
+}
+
+/**
+ * A failed background refresh: the card keeps the data it has and says so.
+ * Mirrors utility-hub-mobile's RefreshNotice in components/home/parts.tsx.
+ */
+export function RefreshNotice({
+  message = "Couldn’t refresh. Showing earlier data.",
+  onRetry,
+  retrying = false,
+}) {
+  return (
+    <div
+      role="status"
+      className="mb-3 flex items-center gap-2 rounded-lg bg-amber-50 px-3 py-1.5 text-xs text-amber-800"
+    >
+      <WifiOff className="w-3.5 h-3.5 flex-shrink-0" />
+      <span className="flex-1 min-w-0">{message}</span>
+      <button
+        type="button"
+        onClick={onRetry}
+        disabled={retrying}
+        className="font-semibold hover:underline hover:cursor-pointer disabled:opacity-50 disabled:cursor-default"
+      >
+        {retrying ? "Retrying…" : "Retry"}
+      </button>
     </div>
   );
 }

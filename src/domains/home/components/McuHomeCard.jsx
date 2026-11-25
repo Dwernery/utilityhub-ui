@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { useMcuTracker } from "../../mcu/context/McuTrackerContext";
 import { useMcuTrackerData } from "../../mcu/hooks";
 import { combineStats, computeStats } from "../../mcu/utils/stats";
-import { UtilityCard, UtilityCardSkeleton } from "./UtilityCard";
+import { RefreshNotice, UtilityCard, UtilityCardSkeleton } from "./UtilityCard";
 import { LoadError } from "../../../components/LoadError";
 import { McuStatsSection } from "./McuStatsSection";
 
@@ -14,6 +14,7 @@ export function McuHomeCard() {
     data = { domains: [] },
     isPending,
     isLoadingError,
+    isRefetchError,
     error,
     refetch,
     isFetching,
@@ -83,7 +84,16 @@ export function McuHomeCard() {
   }
 
   return (
-    <UtilityCard icon={Clapperboard} title="MCU" to="/mcu/tracker">
+    <UtilityCard
+      icon={Clapperboard}
+      title="MCU"
+      to="/mcu/tracker"
+      notice={
+        isRefetchError && (
+          <RefreshNotice onRetry={() => refetch()} retrying={isFetching} />
+        )
+      }
+    >
       <McuStatsSection label="MCU Phases" stats={mcuStats} />
 
       <div className="border-t border-slate-100 pt-2 mt-2">

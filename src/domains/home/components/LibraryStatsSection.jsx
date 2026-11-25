@@ -30,7 +30,7 @@ export function LibraryStatsSection({ label, booksRead, pages, avgRating }) {
         <div>
           <div className="flex items-center justify-center gap-1 text-lg font-bold text-slate-800">
             <Star className="w-3.5 h-3.5 text-slate-400" />
-            {avgRating}
+            {avgRating ?? "—"}
           </div>
           <div className="text-[11px] text-slate-400">Avg Rating</div>
         </div>

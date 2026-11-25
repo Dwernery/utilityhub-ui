@@ -7,7 +7,7 @@ import { MONTH_LABELS } from "../../finance/utils/metrics";
 import { isoMonth, previousMonthIso, todayIso } from "../../../lib/dates";
 import { BREAKPOINTS, useMediaQuery } from "../../../lib/useMediaQuery";
 import { LoadError } from "../../../components/LoadError";
-import { UtilityCard } from "./UtilityCard";
+import { RefreshNotice, UtilityCard } from "./UtilityCard";
 
 // The chart library is ~45% of the app's code; load it only where the graph shows.
 const Graph = lazy(() =>
@@ -31,11 +31,16 @@ export function FinancesHomeCard() {
     data: netWorthHistory,
     isPending,
     isLoadingError,
+    isRefetchError,
     error,
     refetch,
     isFetching,
   } = useNetWorthHistory();
-  const { data: transactions } = useTransactions();
+  const transactionsQuery = useTransactions();
+  const transactions = transactionsQuery.data;
+  // Projected needs the unpaid transactions: hold it back until they load.
+  const projectedPending = transactionsQuery.isPending;
+  const projectedFailed = transactionsQuery.isLoadingError;
   const currentYear = new Date().getFullYear();
   const stats = useMemo(
     () => financeHomeSummary(netWorthHistory, transactions),
@@ -77,8 +82,40 @@ export function FinancesHomeCard() {
   // previousMonthIso, not setMonth(-1): on Mar 31 that gives "Feb 31" = Mar 3.
   const priorMonth = MONTH_LABELS[isoMonth(previousMonthIso(today)) - 1];
 
+  const retryAll = () => {
+    refetch();
+    transactionsQuery.refetch();
+  };
+  const retrying = isFetching || transactionsQuery.isFetching;
+  const notice = projectedFailed ? (
+    <RefreshNotice
+      message="Couldn’t load transactions, so Projected is missing."
+      onRetry={retryAll}
+      retrying={retrying}
+    />
+  ) : (
+    (isRefetchError || transactionsQuery.isRefetchError) && (
+      <RefreshNotice onRetry={retryAll} retrying={retrying} />
+    )
+  );
+
+  // A projected figure: a pulsing bar while transactions load, a dash if they failed.
+  const projected = (content) =>
+    projectedPending ? (
+      <span className="inline-block h-5 w-16 align-middle bg-slate-100 rounded animate-pulse" />
+    ) : projectedFailed ? (
+      <span className="text-slate-400">—</span>
+    ) : (
+      content
+    );
+
   return (
-    <UtilityCard icon={DollarSign} title="Finances" to="/finances/dashboard">
+    <UtilityCard
+      icon={DollarSign}
+      title="Finances"
+      to="/finances/dashboard"
+      notice={notice}
+    >
       {/* Year Net Worth Header - Mobile Only */}
       <div className="md:hidden mb-2">
         <div className="text-xs text-slate-500 font-semibold">
@@ -156,7 +193,7 @@ export function FinancesHomeCard() {
             <div className="grid grid-cols-3 text-center md:divide-x divide-slate-100 gap-2">
               <div>
                 <div className="text-base font-bold text-slate-800 tabular-nums">
-                  {formatCurrency(stats.projectedNetWorth)}
+                  {projected(formatCurrency(stats.projectedNetWorth))}
                 </div>
                 <div className="text-[11px] text-slate-400">Net Worth</div>
               </div>
@@ -169,7 +206,9 @@ export function FinancesHomeCard() {
                       : "text-rose-600"
                   }`}
                 >
-                  {`${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.projectedNetWorth - stats.netWorth))}`}
+                  {projected(
+                    `${stats.projectedNetWorth - stats.netWorth >= 0 ? "+" : "-"}${formatCurrency(Math.abs(stats.projectedNetWorth - stats.netWorth))}`,
+                  )}
                 </div>
                 <div className="text-[11px] text-slate-400">Change $</div>
               </div>
@@ -182,7 +221,9 @@ export function FinancesHomeCard() {
                       : "text-rose-600"
                   }`}
                 >
-                  {`${stats.projectedPercentChange >= 0 ? "+" : "-"}${Math.abs(stats.projectedPercentChange).toFixed(1)}%`}
+                  {projected(
+                    `${stats.projectedPercentChange >= 0 ? "+" : "-"}${Math.abs(stats.projectedPercentChange).toFixed(1)}%`,
+                  )}
                 </div>
                 <div className="text-[11px] text-slate-400">Change %</div>
               </div>
