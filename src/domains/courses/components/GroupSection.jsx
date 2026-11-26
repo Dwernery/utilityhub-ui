@@ -76,20 +76,26 @@ export function GroupSection({
       {open && (
         <div id={bodyId}>
           {courses.length > 0 ? (
-            // Two across on wide screens, reading left to right. Each row draws its own
-            // bottom line (and the left column a right one); -mb-px hides the last line,
-            // which the card's edge already makes.
-            <div className="grid lg:grid-cols-2 -mb-px">
-              {courses.map((course) => (
+            // Two columns on wide screens, read down the left, then down the right: the
+            // first half of the (sorted) courses on the left, the rest on the right. On
+            // narrow screens the halves stack, so it's one list in the same order.
+            // Each row draws its own bottom line; -mb-px hides the line under the
+            // tallest column, which the card's edge already makes.
+            <div className="grid lg:grid-cols-2 items-start -mb-px">
+              {columns(courses).map((column, i) => (
                 <div
-                  key={course.id}
-                  className="min-w-0 border-b border-slate-100 lg:odd:border-r"
+                  key={i}
+                  className={`min-w-0 ${i === 0 ? "lg:border-r border-slate-100 lg:self-stretch" : ""}`}
                 >
-                  <CourseRow
-                    course={course}
-                    onEdit={onEditCourse}
-                    onStep={onStep}
-                  />
+                  {column.map((course) => (
+                    <div key={course.id} className="border-b border-slate-100">
+                      <CourseRow
+                        course={course}
+                        onEdit={onEditCourse}
+                        onStep={onStep}
+                      />
+                    </div>
+                  ))}
                 </div>
               ))}
             </div>
@@ -114,4 +120,10 @@ export function GroupSection({
       )}
     </section>
   );
+}
+
+/** Splits courses into a left and right column, the left taking the extra one. */
+function columns(courses) {
+  const half = Math.ceil(courses.length / 2);
+  return [courses.slice(0, half), courses.slice(half)];
 }
