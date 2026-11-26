@@ -13,7 +13,7 @@ export function LibraryCurrentlyReading({ books }) {
       {books.length > 0 ? (
         <div className="space-y-3">
           {books.slice(0, 4).map((book) => {
-            const { pct, days } = readingProgress(book);
+            const { pct } = readingProgress(book);
 
             return (
               <div key={book.id} className="flex gap-4 items-center">
@@ -22,14 +22,9 @@ export function LibraryCurrentlyReading({ books }) {
                 </div>
 
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between gap-2 mb-1">
-                    <span className="text-sm font-medium text-slate-700 truncate">
-                      {book.title}
-                    </span>
-
-                    <span className="text-xs text-slate-400 flex-shrink-0">
-                      {book.currentPage || 0}/{book.pages ?? "?"} pages
-                    </span>
+                  {/* The page count sits under the bar, so the title gets the whole line. */}
+                  <div className="text-sm font-medium text-slate-700 truncate mb-1">
+                    {book.title}
                   </div>
 
                   <div className="w-full bg-slate-100 rounded-full h-1.5">
@@ -41,8 +36,7 @@ export function LibraryCurrentlyReading({ books }) {
 
                   <div className="flex items-center justify-between gap-2 mt-1">
                     <span className="text-xs text-slate-400 truncate">
-                      {book.authorName}
-                      {days !== null ? ` · ${days}d` : ""}
+                      {book.currentPage || 0}/{book.pages ?? "?"} pages
                     </span>
 
                     <span className="text-xs font-medium text-slate-400 font-semibold flex-shrink-0">

@@ -107,21 +107,17 @@ export function CoursesHomeCard() {
                     className="w-14 h-9 rounded-md flex-shrink-0 ring-1 ring-slate-200"
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <span className="text-sm font-medium text-slate-700 truncate">
-                        {course.title}
-                      </span>
-                      <span className="text-xs text-slate-400 flex-shrink-0 tabular-nums">
-                        {course.completedLessons}/{course.totalLessons}
-                      </span>
+                    {/* The lesson count sits under the bar, so the title gets the whole line. */}
+                    <div className="text-sm font-medium text-slate-700 truncate mb-1">
+                      {course.title}
                     </div>
                     <ProgressBar
                       completed={course.completedLessons}
                       total={course.totalLessons}
                     />
                     <div className="flex items-center justify-between gap-2 mt-1">
-                      <span className="text-xs text-slate-400 truncate">
-                        {course.creatorName}
+                      <span className="text-xs text-slate-400 truncate tabular-nums">
+                        {course.completedLessons}/{course.totalLessons} lessons
                       </span>
                       <span className="text-xs font-semibold text-slate-400 flex-shrink-0">
                         {percentLabel(
