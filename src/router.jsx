@@ -109,6 +109,22 @@ export const routes = [
         ],
       },
       {
+        path: "courses",
+        lazy: lazyComponent(
+          () => import("./domains/courses/AppLayout"),
+          "AppLayout",
+        ),
+        children: [
+          {
+            index: true,
+            lazy: lazyComponent(
+              () => import("./domains/courses/pages/Courses"),
+              "Courses",
+            ),
+          },
+        ],
+      },
+      {
         path: "*",
         element: <NotFound />,
       },
