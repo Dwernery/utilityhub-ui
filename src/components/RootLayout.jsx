@@ -3,10 +3,13 @@ import { useEffect } from "react";
 
 export function RootLayout() {
   const { pathname } = useLocation();
+  // Sections with their own layout (sticky header, own padding). Anything else gets
+  // Home's padding, which would add to their full-height layout and make them scroll.
   const isFullBleed =
     pathname.startsWith("/mcu") ||
     pathname.startsWith("/finances") ||
-    pathname.startsWith("/library");
+    pathname.startsWith("/library") ||
+    pathname.startsWith("/courses");
   const isMcuPage = pathname.startsWith("/mcu");
   const isFinancesPage = pathname.startsWith("/finances");
   const isLibraryPage = pathname.startsWith("/library");

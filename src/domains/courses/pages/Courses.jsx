@@ -3,7 +3,6 @@ import { Folders, GraduationCap, Plus, Search, Users, X } from "lucide-react";
 import { LoadError } from "../../../components/LoadError";
 import { LoadingState } from "../../../components/LoadingState";
 import { useToast } from "../../../context/ToastContext";
-import { BREAKPOINTS, useMediaQuery } from "../../../lib/useMediaQuery";
 import { useCourses, useGroups, useSetProgress } from "../hooks";
 import {
   courseOrder,
@@ -23,7 +22,6 @@ export function Courses() {
   const groups = useGroups();
   const setProgress = useSetProgress();
   const addToast = useToast();
-  const twoColumns = useMediaQuery(BREAKPOINTS.lg);
 
   const [search, setSearch] = useState("");
   // { course: null | course, groupId } while the course form is open
@@ -196,35 +194,22 @@ export function Courses() {
           No courses match “{search.trim()}”.
         </p>
       ) : (
-        // Wide screens: two columns that stack independently, groups alternating
-        // left and right (reading order), so a short group never leaves a gap
-        // beside a tall one.
-        <div className="grid gap-4 lg:grid-cols-2 items-start">
-          {(twoColumns
-            ? [
-                sections.filter((_, i) => i % 2 === 0),
-                sections.filter((_, i) => i % 2 === 1),
-              ]
-            : [sections]
-          ).map((column, c) => (
-            <div key={c} className="space-y-4 min-w-0">
-              {column.map((section) => {
-                return (
-                  <GroupSection
-                    key={sectionKey(section)}
-                    section={section}
-                    open={isOpen(section)}
-                    onToggle={() => toggle(section)}
-                    searching={searching}
-                    onStep={step}
-                    onEditCourse={(course) => setCourseForm({ course })}
-                    onAddCourse={(groupId) =>
-                      setCourseForm({ course: null, groupId })
-                    }
-                  />
-                );
-              })}
-            </div>
+        // Groups stack in one column, in your order, so closed groups line up as tidy
+        // bars; an open group's courses go two across on wide screens (GroupSection).
+        <div className="space-y-4">
+          {sections.map((section) => (
+            <GroupSection
+              key={sectionKey(section)}
+              section={section}
+              open={isOpen(section)}
+              onToggle={() => toggle(section)}
+              searching={searching}
+              onStep={step}
+              onEditCourse={(course) => setCourseForm({ course })}
+              onAddCourse={(groupId) =>
+                setCourseForm({ course: null, groupId })
+              }
+            />
           ))}
         </div>
       )}

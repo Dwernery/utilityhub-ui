@@ -76,14 +76,21 @@ export function GroupSection({
       {open && (
         <div id={bodyId}>
           {courses.length > 0 ? (
-            <div className="divide-y divide-slate-100">
+            // Two across on wide screens, reading left to right. Each row draws its own
+            // bottom line (and the left column a right one); -mb-px hides the last line,
+            // which the card's edge already makes.
+            <div className="grid lg:grid-cols-2 -mb-px">
               {courses.map((course) => (
-                <CourseRow
+                <div
                   key={course.id}
-                  course={course}
-                  onEdit={onEditCourse}
-                  onStep={onStep}
-                />
+                  className="min-w-0 border-b border-slate-100 lg:odd:border-r"
+                >
+                  <CourseRow
+                    course={course}
+                    onEdit={onEditCourse}
+                    onStep={onStep}
+                  />
+                </div>
               ))}
             </div>
           ) : (
